@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 include(CMakeParseArguments)
 
-set(RUNTIME_LIBRARIES @CONF_RUNTIME_LIBRARIES@)
+list(APPEND THORIN_RUNTIME_LIBRARIES "@CONF_RUNTIME_LIBRARIES@")
 
 # find impala
 find_program(IMPALA_BIN impala)
