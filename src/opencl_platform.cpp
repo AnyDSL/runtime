@@ -98,6 +98,8 @@ void OpenCLPlatform::checkOpenCLErrors(cl_int err, const char* name, const char*
         error("OpenCL API function % (%) [file %, line %]: %", name, err, file, line, get_opencl_error_code_str(err));
 }
 
+#define map_bool(VALUE) (VALUE ? "yes" : "no")
+
 OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
     : Platform(runtime)
 {
@@ -173,7 +175,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
                 spir_version = "(Version: " + std::string(buffer) + ")";
             }
             #endif
-            debug("      Device SPIR Support: % %", has_spir, spir_version);
+            debug("      Device SPIR Support: % %", map_bool(has_spir), spir_version);
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
@@ -191,7 +193,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             cl_bool has_unified = false;
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_HOST_UNIFIED_MEMORY, sizeof(has_unified), &has_unified, NULL);
-            debug("      Device Host Unified Memory: %", has_unified);
+            debug("      Device Host Unified Memory: %", map_bool(has_unified));
             checkErr(err, "clGetDeviceInfo()");
 
             auto dev = devices_.size();
