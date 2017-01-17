@@ -1,76 +1,22 @@
-SET ( RUNTIME_DEFINITIONS )
-SET ( CONF_RUNTIME_LIBRARIES )
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-# Add path for custom modules
-LIST( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/runtime/cmake/modules" )
+project(RUNTIME)
 
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/src )
+set(PACKAGE_VERSION "0.3.9" )
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
 
-# Look for CUDA
-FIND_PACKAGE ( CUDA QUIET )
-IF ( CUDA_FOUND )
-    FIND_LIBRARY ( CUDA_NVVM_LIBRARY nvvm HINTS ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib64 )
-    FIND_LIBRARY ( CUDA_NVRTC_LIBRARY nvrtc HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib ${CUDA_TOOLKIT_ROOT_DIR}/lib64 )
-    IF ( CUDA_NVRTC_LIBRARY )
-        SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DCUDA_NVRTC )
-    ELSE ()
-        SET ( CUDA_NVRTC_LIBRARY "" )
-    ENDIF ()
-    FIND_LIBRARY ( CUDA_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib ${CUDA_TOOLKIT_ROOT_DIR}/lib64 )
-    INCLUDE_DIRECTORIES ( ${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include" )
-    SET ( CUDA_PLATFORM cuda_platform.cpp cuda_platform.h )
-    SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_CUDA )
-    SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DLIBDEVICE_DIR=\"${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/\"" )
-    SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DNVCC_BIN=\"${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc\"" )
-    SET ( CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} "${CUDA_LIBRARY}" "${CUDA_NVVM_LIBRARY}" "${CUDA_NVRTC_LIBRARY}" )
-ELSE ()
-    SET ( CUDA_PLATFORM "" )
-ENDIF ()
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
-# Look for OpenCL
-FIND_PACKAGE( OpenCL )
-IF ( OpenCL_FOUND )
-    INCLUDE_DIRECTORIES ( ${OpenCL_INCLUDE_DIRS} )
-    SET ( OPENCL_PLATFORM opencl_platform.cpp opencl_platform.h )
-    SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_OPENCL )
-    SET ( CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} "${OpenCL_LIBRARIES}" )
-ELSE ()
-    SET ( OPENCL_PLATFORM "" )
-ENDIF ()
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug or Release" FORCE)
+endif()
 
-# Look for TBB
-FIND_PACKAGE ( Threads REQUIRED )
-FIND_PACKAGE ( TBB )
-IF ( TBB_FOUND )
-    INCLUDE_DIRECTORIES ( ${TBB_INCLUDE_DIRS} )
-    SET ( RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_TBB )
-    SET ( CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} "${TBB_LIBRARIES}" )
-ELSE ()
-    SET ( CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} "${CMAKE_THREAD_LIBS_INIT}" )
-ENDIF ()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-IF ( NOT MSVC )
-    ADD_DEFINITIONS ( "-Wall -Wextra" )
-ENDIF ()
+add_subdirectory(src)
 
-ADD_DEFINITIONS ( ${RUNTIME_DEFINITIONS} )
-
-ADD_LIBRARY ( thorin_runtime
-              runtime.cpp
-              runtime.h
-              thorin_runtime.h
-              platform.h
-              cpu_platform.h
-              dummy_platform.h
-              ${CMAKE_SOURCE_DIR}/src/thorin/util/log.h
-              ${CMAKE_SOURCE_DIR}/src/thorin/util/log.cpp
-              ${CMAKE_SOURCE_DIR}/src/thorin/util/stream.h
-              ${CMAKE_SOURCE_DIR}/src/thorin/util/stream.cpp
-              ${CUDA_PLATFORM}
-              ${OPENCL_PLATFORM} )
-
-TARGET_LINK_LIBRARIES ( thorin_runtime ${CONF_RUNTIME_LIBRARIES} )
-SET_TARGET_PROPERTIES ( thorin_runtime PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON )
-
-# Generate the ThorinRuntime.cmake file from the template
-CONFIGURE_FILE ( cmake/ThorinRuntime.cmake.in "${CMAKE_BINARY_DIR}/cmake/ThorinRuntime.cmake" @ONLY )
+message(STATUS "Using Debug flags: ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "Using Release flags: ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
