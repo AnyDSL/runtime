@@ -1,0 +1,110 @@
+cmake_minimum_required(VERSION 3.1)
+
+include(CMakeParseArguments)
+
+set(RUNTIME_LIBRARIES @CONF_RUNTIME_LIBRARIES@)
+
+# find impala
+find_program(IMPALA_BIN impala)
+if(NOT IMPALA_BIN)
+    message(FATAL_ERROR "Could not find impala binary, it has to be in the PATH")
+endif()
+
+find_program(LLVM_AS_BIN llvm-as
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
+find_program(CLANG_BIN clang
+    PATHS
+        ${LLVM_TOOLS_BINARY_DIR}
+        ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES
+        ${CMAKE_CONFIGURATION_TYPES}
+)
+if(NOT LLVM_AS_BIN )
+    message(FATAL_ERROR "Could not find llvm-as binary, it has to be in the PATH")
+endif()
+if(NOT CLANG_BIN)
+    message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
+endif()
+
+# find python for post-patcher.py
+find_package(PythonInterp REQUIRED)
+message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
+set(PYTHON_BIN ${PYTHON_EXECUTABLE})
+
+set(BACKEND ${BACKEND} CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL, SPIR")
+if(NOT BACKEND)
+    set(BACKEND cpu CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL, SPIR" FORCE)
+endif()
+
+string(TOLOWER "${BACKEND}" BACKEND)
+message(STATUS "Selected backend: ${BACKEND}")
+
+string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE)
+if("${BUILD_TYPE}" STREQUAL "debug")
+    set(OPT_FLAGS "-g")
+else()
+    set(OPT_FLAGS "-O3")
+endif()
+
+macro(RUNTIME_WRAP outfiles)
+    cmake_parse_arguments("TRW" "" "BACKEND" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
+    if(NOT "${TRW_UNPARSED_ARGUMENTS}" STREQUAL "")
+        message(FATAL_ERROR "Unparsed arguments ${TRW_UNPARSED_ARGUMENTS}")
+    endif()
+
+    # get last filename, and absolute filenames
+    set(_infiles)
+    foreach(_it ${TRW_FILES})
+        get_filename_component(_infile ${_it} ABSOLUTE)
+        set(_infiles ${_infiles} ${_infile})
+        set(_lastfile ${_it})
+    endforeach()
+
+    # add all input files as one impala job
+    get_filename_component(_basename ${_lastfile} NAME_WE)
+    set(_llfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.ll)
+    set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
+
+    set(_impala_platform
+        ${RUNTIME_DIR}/src/runtime.impala
+        ${RUNTIME_DIR}/platforms/intrinsics_thorin.impala
+        ${RUNTIME_DIR}/platforms/intrinsics_${TRW_BACKEND}.impala)
+
+    set(_impala_flags -emit-llvm ${OPT_FLAGS})
+    if(TRW_IMPALA_FLAGS)
+        set(_impala_flags ${_impala_flags} ${TRW_IMPALA_FLAGS})
+    endif()
+
+    set(_clang_flags ${OPT_FLAGS})
+    if(TRW_CLANG_FLAGS)
+        set(_clang_flags ${_clang_flags} ${TRW_CLANG_FLAGS})
+    endif()
+
+    # generate .ll file and patch it
+    add_custom_command(OUTPUT ${_llfile}
+        COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} ${_impala_flags}
+        COMMAND ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${TRW_BACKEND} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
+    
+    # generate .bc files for NVVM & SPIR
+    if("${TRW_BACKEND}" STREQUAL "spir" OR "${TRW_BACKEND}" STREQUAL "nvvm")
+        set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${TRW_BACKEND})
+        set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${TRW_BACKEND}.bc)
+        add_custom_command(OUTPUT ${_bcfile} COMMAND ${LLVM_AS_BIN} ${_irfile} DEPENDS ${_irfile} VERBATIM)
+        set_source_files_properties(${_irfile} $_bcfile} PROPERTIES GENERATED true)
+    endif()
+
+    # run clang on the patched .ll file to get the .o
+    add_custom_command(OUTPUT ${_objfile}
+        COMMAND ${CLANG_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+        DEPENDS ${_llfile} VERBATIM)
+
+    set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
+    set(${outfiles} ${${outfiles}} ${_objfile} ${_bcfile} ${_irfile})
+endmacro()
