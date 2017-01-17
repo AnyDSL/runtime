@@ -91,7 +91,7 @@ macro(RUNTIME_WRAP outfiles)
         COMMAND ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${TRW_BACKEND} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
-    
+
     # generate .bc files for NVVM & SPIR
     if("${TRW_BACKEND}" STREQUAL "spir" OR "${TRW_BACKEND}" STREQUAL "nvvm")
         set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${TRW_BACKEND})

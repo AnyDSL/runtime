@@ -75,7 +75,7 @@ public:
 
     void set_grid_size(platform_id plat, device_id dev, int32_t x, int32_t y, int32_t z) {
         check_device(plat, dev);
-        platforms_[plat]->set_grid_size(dev, x, y, z); 
+        platforms_[plat]->set_grid_size(dev, x, y, z);
     }
 
     void set_kernel_arg(platform_id plat, device_id dev, int32_t arg, void* ptr, int32_t size) {

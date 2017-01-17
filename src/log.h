@@ -1,10 +1,11 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <ostream>
+#include <iostream>
+#include <cassert>
 #include <cstring>
 
-void print(std::ostream& os, const char* fmt) {
+inline void print(std::ostream& os, const char* fmt) {
     assert(!strchr(fmt, '%') && "Not enough arguments to print");
     os << fmt << std::endl;
 }
