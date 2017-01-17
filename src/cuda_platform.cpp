@@ -30,18 +30,18 @@ inline std::string cudaErrorString(CUresult errorCode) {
 
 void CudaPlatform::checkCudaErrors(CUresult err, const char* name, const char* file, const int line) {
     if (CUDA_SUCCESS != err)
-        ELOG("Driver API function % (%) [file %, line %]: %", name, err, file, line, cudaErrorString(err));
+        error("Driver API function % (%) [file %, line %]: %", name, err, file, line, cudaErrorString(err));
 }
 
 void CudaPlatform::checkNvvmErrors(nvvmResult err, const char* name, const char* file, const int line) {
     if (NVVM_SUCCESS != err)
-        ELOG("NVVM API function % (%) [file %, line %]: %", name, err, file, line, nvvmGetErrorString(err));
+        error("NVVM API function % (%) [file %, line %]: %", name, err, file, line, nvvmGetErrorString(err));
 }
 
 #ifdef CUDA_NVRTC
 void CudaPlatform::checkNvrtcErrors(nvrtcResult err, const char* name, const char* file, const int line) {
     if (NVRTC_SUCCESS != err)
-        ELOG("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
+        error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
 #endif
 
@@ -66,14 +66,14 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     nvvmResult errNvvm = nvvmVersion(&nvvm_major, &nvvm_minor);
     checkErrNvvm(errNvvm, "nvvmVersion()");
 
-    ILOG("CUDA Driver Version %.%", driver_version/1000, (driver_version%100)/10);
+    debug("CUDA Driver Version %.%", driver_version/1000, (driver_version%100)/10);
     #ifdef CUDA_NVRTC
     int nvrtc_major = 0, nvrtc_minor = 0;
     nvrtcResult errNvrtc = nvrtcVersion(&nvrtc_major, &nvrtc_minor);
     checkErrNvrtc(errNvrtc, "nvrtcVersion()");
-    ILOG("NVRTC Version %.%", nvrtc_major, nvrtc_minor);
+    debug("NVRTC Version %.%", nvrtc_major, nvrtc_minor);
     #endif
-    ILOG("NVVM Version %.%", nvvm_major, nvvm_minor);
+    debug("NVVM Version %.%", nvvm_major, nvvm_minor);
 
     devices_.resize(device_count);
 
@@ -90,7 +90,7 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
         err = cuDeviceGetAttribute(&devices_[i].compute_minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, devices_[i].dev);
         checkErrDrv(err, "cuDeviceGetAttribute()");
 
-        ILOG("  (%) %, Compute capability: %.%", i, name, devices_[i].compute_major, devices_[i].compute_minor);
+        debug("  (%) %, Compute capability: %.%", i, name, devices_[i].compute_major, devices_[i].compute_minor);
 
         err = cuCtxCreate(&devices_[i].ctx, CU_CTX_MAP_HOST, devices_[i].dev);
         checkErrDrv(err, "cuCtxCreate()");
@@ -225,7 +225,7 @@ void CudaPlatform::load_kernel(device_id dev, const char* file, const char* name
             compile_cuda(dev, file, target_cc);
             cuCtxPopCurrent(NULL);
         } else {
-            ELOG("Could not find kernel file '%'.[nvvm.bc|ptx|cu]", file);
+            error("Could not find kernel file '%'.[nvvm.bc|ptx|cu]", file);
         }
 
         mod = mod_cache[file];
@@ -241,7 +241,7 @@ void CudaPlatform::load_kernel(device_id dev, const char* file, const char* name
         CUfunction func;
         CUresult err = cuModuleGetFunction(&func, mod, name);
         if (err != CUDA_SUCCESS)
-            ILOG("Function '%' is not present in '%'", name, file);
+            debug("Function '%' is not present in '%'", name, file);
         checkErrDrv(err, "cuModuleGetFunction()");
         func_map.emplace(name, func);
         devices_[dev].kernel = func;
@@ -256,7 +256,7 @@ void CudaPlatform::load_kernel(device_id dev, const char* file, const char* name
         checkErrDrv(err, "cuFuncGetAttribute()");
         err = cuFuncGetAttribute(&threads, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, func);
         checkErrDrv(err, "cuFuncGetAttribute()");
-        ILOG("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", name, regs, smem, cmem, lmem, threads);
+        debug("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", name, regs, smem, cmem, lmem, threads);
     } else {
         devices_[dev].kernel = func_it->second;
     }
@@ -355,7 +355,7 @@ std::string CudaPlatform::load_ptx(const std::string& filename) {
     std::string ptx_filename = filename + ".ptx";
     std::ifstream src_file(ptx_filename);
     if (!src_file.is_open())
-        ELOG("Can't open PTX source file '%'", ptx_filename);
+        error("Can't open PTX source file '%'", ptx_filename);
 
     return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 }
@@ -380,14 +380,14 @@ void CudaPlatform::compile_nvvm(device_id dev, const std::string& filename, CUji
 
     std::ifstream libdevice_file(std::string(LIBDEVICE_DIR) + libdevice_filename);
     if (!libdevice_file.is_open())
-        ELOG("Can't open libdevice source file '%'", libdevice_filename);
+        error("Can't open libdevice source file '%'", libdevice_filename);
 
     std::string libdevice_string = std::string(std::istreambuf_iterator<char>(libdevice_file), (std::istreambuf_iterator<char>()));
 
     std::string nvvm_filename = filename + ".nvvm.bc";
     std::ifstream src_file(std::string(KERNEL_DIR) + nvvm_filename);
     if (!src_file.is_open())
-        ELOG("Can't open NVVM source file '%/%'", KERNEL_DIR, nvvm_filename);
+        error("Can't open NVVM source file '%/%'", KERNEL_DIR, nvvm_filename);
 
     std::string src_string = std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 
@@ -408,14 +408,14 @@ void CudaPlatform::compile_nvvm(device_id dev, const std::string& filename, CUji
     options[1] = "-opt=3";
     options[2] = "-g";
 
-    ILOG("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
     err = nvvmCompileProgram(program, num_options, options);
     if (err != NVVM_SUCCESS) {
         size_t log_size;
         nvvmGetProgramLogSize(program, &log_size);
         std::string error_log(log_size, '\0');
         nvvmGetProgramLog(program, &error_log[0]);
-        ELOG("Compilation error: %", error_log);
+        error("Compilation error: %", error_log);
     }
     checkErrNvvm(err, "nvvmCompileProgram()");
 
@@ -438,7 +438,7 @@ void CudaPlatform::compile_cuda(device_id dev, const std::string& filename, CUji
     std::string cuda_filename = filename + ".cu";
     std::ifstream src_file(std::string(KERNEL_DIR) + cuda_filename);
     if (!src_file.is_open())
-        ELOG("Can't open CUDA source file '%/%'", KERNEL_DIR, cuda_filename);
+        error("Can't open CUDA source file '%/%'", KERNEL_DIR, cuda_filename);
 
     std::string src_string = std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 
@@ -453,14 +453,14 @@ void CudaPlatform::compile_cuda(device_id dev, const std::string& filename, CUji
     options[1] = "-G";
     options[2] = "-lineinfo";
 
-    ILOG("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     err = nvrtcCompileProgram(program, num_options, options);
     if (err != NVRTC_SUCCESS) {
         size_t log_size;
         nvrtcGetProgramLogSize(program, &log_size);
         std::string error_log(log_size, '\0');
         nvrtcGetProgramLog(program, &error_log[0]);
-        ELOG("Compilation error: %", error_log);
+        error("Compilation error: %", error_log);
     }
     checkErrNvrtc(err, "nvrtcCompileProgram()");
 
@@ -488,7 +488,7 @@ void CudaPlatform::compile_cuda(device_id dev, const std::string& filename, CUji
     std::string command = (NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(target_cc) + " ";
     command += std::string(KERNEL_DIR) + cuda_filename + " -o " + ptx_filename + " 2>&1";
 
-    ILOG("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {
         std::string log;
         char buffer[256];
@@ -498,12 +498,12 @@ void CudaPlatform::compile_cuda(device_id dev, const std::string& filename, CUji
 
         int exit_status = pclose(stream);
         if (!WEXITSTATUS(exit_status)) {
-            WLOG("%", log);
+            info("%", log);
         } else {
-            ELOG("Compilation error: %", log);
+            error("Compilation error: %", log);
         }
     } else {
-        ELOG("Cannot run NVCC");
+        error("Cannot run NVCC");
     }
 
     create_module(dev, filename, target_cc, load_ptx(cuda_filename).c_str());
@@ -519,7 +519,7 @@ void CudaPlatform::create_module(device_id dev, const std::string& filename, CUj
     CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
     void* option_values[]  = { (void*)error_log_buffer, (void*)(size_t)error_log_size, (void*)target_cc, (void*)(size_t)opt_level };
 
-    ILOG("Creating module from PTX '%' on CUDA device %", filename, dev);
+    debug("Creating module from PTX '%' on CUDA device %", filename, dev);
     CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx, num_options, options, option_values);
     checkErrDrv(err, "cuModuleLoadDataEx()");

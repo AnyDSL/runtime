@@ -4,8 +4,6 @@ set(CONF_RUNTIME_LIBRARIES)
 # add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-include_directories( ../../thorin/src)
-
 # Look for CUDA
 find_package(CUDA QUIET)
 if(CUDA_FOUND)
@@ -62,10 +60,7 @@ add_library(thorin_runtime
             platform.h
             cpu_platform.h
             dummy_platform.h
-            ../../thorin/src/thorin/util/log.h
-            ../../thorin/src/thorin/util/log.cpp
-            ../../thorin/src/thorin/util/stream.h
-            ../../thorin/src/thorin/util/stream.cpp
+            log.h
             ${CUDA_PLATFORM}
             ${OPENCL_PLATFORM})
 

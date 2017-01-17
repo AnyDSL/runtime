@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include "thorin/util/log.h"
+#include "log.h"
 
 class Runtime;
 enum device_id : unsigned {};
@@ -64,7 +64,7 @@ public:
 
 protected:
     void platform_error() {
-        ELOG("The selected platform is not available");
+        error("The selected platform is not available");
     }
 
     Runtime* runtime_;

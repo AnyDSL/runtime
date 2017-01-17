@@ -26,10 +26,10 @@ public:
     }
 
     /// Displays available platforms.
-    void display_info(std::ostream& os) {
-        os << "Available platforms:" << std::endl;
+    void display_info() {
+        info("Available platforms:");
         for (auto p: platforms_) {
-            os << "    * " << p->name() << ": " << p->dev_count() << " device(s)" << std::endl;
+            info("    * %: % device(s)", p->name(), p->dev_count());
         }
     }
 
@@ -116,19 +116,19 @@ public:
         if (plat_src == plat_dst) {
             // Copy from same platform
             platforms_[plat_src]->copy(dev_src, src, offset_src, dev_dst, dst, offset_dst, size);
-            ILOG("Copy between devices % and % on platform %", dev_src, dev_dst, plat_src);
+            debug("Copy between devices % and % on platform %", dev_src, dev_dst, plat_src);
         } else {
             // Copy from another platform
             if (plat_src == 0) {
                 // Source is the CPU platform
                 platforms_[plat_dst]->copy_from_host(src, offset_src, dev_dst, dst, offset_dst, size);
-                ILOG("Copy from host to device % on platform %", dev_dst, plat_dst);
+                debug("Copy from host to device % on platform %", dev_dst, plat_dst);
             } else if (plat_dst == 0) {
                 // Destination is the CPU platform
                 platforms_[plat_src]->copy_to_host(dev_src, src, offset_src, dst, offset_dst, size);
-                ILOG("Copy to host from device % on platform %", dev_src, plat_src);
+                debug("Copy to host from device % on platform %", dev_src, plat_src);
             } else {
-                ELOG("Cannot copy memory between different platforms");
+                error("Cannot copy memory between different platforms");
             }
         }
     }
@@ -136,17 +136,6 @@ public:
 private:
     void check_device(platform_id plat, device_id dev) {
         assert((int)dev < platforms_[plat]->dev_count() && "Invalid device");
-    }
-
-    template <typename T, typename... Args>
-    static void print(T t, Args... args) {
-        std::cerr << t;
-        print(args...);
-    }
-
-    template <typename T>
-    static void print(T t) {
-        std::cerr << t << std::endl;
     }
 
     std::vector<Platform*> platforms_;

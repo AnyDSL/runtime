@@ -40,7 +40,6 @@
 static Runtime runtime;
 
 Runtime::Runtime() {
-    thorin::Log::set(thorin::Log::Debug, &std::cout, false);
     register_platform<CpuPlatform>();
 #ifdef ENABLE_CUDA
     register_platform<CudaPlatform>();
@@ -63,7 +62,7 @@ inline device_id to_device(int32_t m) {
 }
 
 void thorin_info(void) {
-    runtime.display_info(std::cout);
+    runtime.display_info();
 }
 
 void* thorin_alloc(int32_t mask, int64_t size) {

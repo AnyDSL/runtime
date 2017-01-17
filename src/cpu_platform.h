@@ -38,7 +38,7 @@ protected:
         release(dev, ptr);
     }
 
-    void no_kernel() { ELOG("Kernels are not supported on the CPU"); }
+    void no_kernel() { error("Kernels are not supported on the CPU"); }
 
     void set_block_size(device_id, int32_t, int32_t, int32_t) override { no_kernel(); }
     void set_grid_size(device_id, int32_t, int32_t, int32_t) override { no_kernel(); }
