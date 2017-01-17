@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 
 inline void print(std::ostream& os, const char* fmt) {
@@ -21,9 +22,9 @@ void print(std::ostream& os, const char* fmt, const T& t, Args... args) {
 }
 
 template <typename... Args>
-void error(Args... args) {
+[[noreturn]] void error(Args... args) {
     print(std::cerr, args...);
-    abort();
+    std::abort();
 }
 
 template <typename... Args>
