@@ -15,7 +15,7 @@ public:
 
 protected:
     void* alloc(device_id, int64_t size) override {
-        return thorin_aligned_malloc(size, 64);
+        return anydsl_aligned_malloc(size, 64);
     }
 
     void* alloc_host(device_id dev, int64_t size) override {
@@ -31,7 +31,7 @@ protected:
     }
 
     void release(device_id, void* ptr) override {
-        thorin_aligned_free(ptr);
+        anydsl_aligned_free(ptr);
     }
 
     void release_host(device_id dev, void* ptr) override {

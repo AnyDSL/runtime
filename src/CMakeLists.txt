@@ -56,7 +56,8 @@ add_definitions(${RUNTIME_DEFINITIONS})
 add_library(runtime
             runtime.cpp
             runtime.h
-            thorin_runtime.h
+            anydsl_runtime.h
+            anydsl_runtime.hpp
             platform.h
             cpu_platform.h
             dummy_platform.h

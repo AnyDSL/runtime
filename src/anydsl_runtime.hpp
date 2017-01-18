@@ -1,16 +1,16 @@
-#ifndef THORIN_RUNTIME_HPP
-#define THORIN_RUNTIME_HPP
+#ifndef ANYDSL_RUNTIME_HPP
+#define ANYDSL_RUNTIME_HPP
 
-#ifndef THORIN_RUNTIME_H
-#include "thorin_runtime.h"
+#ifndef ANYDSL_RUNTIME_H
+#include "anydsl_runtime.h"
 #endif
 
-namespace thorin {
+namespace anydsl {
 
 enum class Platform : int32_t {
-    HOST = THORIN_HOST,
-    CUDA = THORIN_CUDA,
-    OPENCL = THORIN_OPENCL
+    HOST = ANYDSL_HOST,
+    CUDA = ANYDSL_CUDA,
+    OPENCL = ANYDSL_OPENCL
 };
 
 struct Device {
@@ -19,7 +19,7 @@ struct Device {
 };
 
 inline int32_t make_device(Platform p, Device d) {
-    return THORIN_DEVICE((int32_t)p, d.id);
+    return ANYDSL_DEVICE((int32_t)p, d.id);
 }
 
 template <typename T>
@@ -89,11 +89,11 @@ public:
 protected:
     void allocate(int64_t size) {
         size_ = size;
-        data_ = (T*)thorin_alloc(dev_, sizeof(T) * size);
+        data_ = (T*)anydsl_alloc(dev_, sizeof(T) * size);
     }
 
     void deallocate() {
-        if (data_) thorin_release(dev_, (void*)data_);
+        if (data_) anydsl_release(dev_, (void*)data_);
     }
 
     T* data_;
@@ -103,25 +103,25 @@ protected:
 
 template <typename T>
 void copy(const Array<T>& a, Array<T>& b) {
-    thorin_copy(a.device(), (const void*)a.data(), 0,
+    anydsl_copy(a.device(), (const void*)a.data(), 0,
                 b.device(), (void*)b.data(), 0,
                 a.size() * sizeof(T));
 }
 
 template <typename T>
 void copy(const Array<T>& a, Array<T>& b, int64_t size) {
-    thorin_copy(a.device(), (const void*)a.data(), 0,
+    anydsl_copy(a.device(), (const void*)a.data(), 0,
                 b.device(), (void*)b.data(), 0,
                 size * sizeof(T));
 }
 
 template <typename T>
 void copy(const Array<T>& a, int64_t offset_a, Array<T>& b, int64_t offset_b, int64_t size) {
-    thorin_copy(a.device(), (const void*)a.data(), offset_a,
+    anydsl_copy(a.device(), (const void*)a.data(), offset_a,
                 b.device(), (void*)b.data(), offset_b,
                 size * sizeof(T));
 }
 
-} // namespace thorin
+} // namespace anydsl
 
 #endif

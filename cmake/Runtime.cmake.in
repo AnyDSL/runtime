@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 include(CMakeParseArguments)
 
-list(APPEND THORIN_RUNTIME_LIBRARIES "@CONF_RUNTIME_LIBRARIES@")
+list(APPEND ANYDSL_RUNTIME_LIBRARIES "@CONF_RUNTIME_LIBRARIES@")
 
 # find impala
 find_program(IMPALA_BIN impala)
@@ -51,15 +51,15 @@ else()
     set(OPT_FLAGS "-O3")
 endif()
 
-macro(RUNTIME_WRAP outfiles)
-    cmake_parse_arguments("TRW" "" "BACKEND" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
-    if(NOT "${TRW_UNPARSED_ARGUMENTS}" STREQUAL "")
-        message(FATAL_ERROR "Unparsed arguments ${TRW_UNPARSED_ARGUMENTS}")
+macro(anydsl_runtime_wrap outfiles)
+    cmake_parse_arguments("PARGS" "" "BACKEND" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
+    if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
+        message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
 
     # get last filename, and absolute filenames
     set(_infiles)
-    foreach(_it ${TRW_FILES})
+    foreach(_it ${PARGS_FILES})
         get_filename_component(_infile ${_it} ABSOLUTE)
         set(_infiles ${_infiles} ${_infile})
         set(_lastfile ${_it})
@@ -71,31 +71,31 @@ macro(RUNTIME_WRAP outfiles)
     set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
 
     set(_impala_platform
-        ${RUNTIME_DIR}/src/runtime.impala
-        ${RUNTIME_DIR}/platforms/intrinsics_thorin.impala
-        ${RUNTIME_DIR}/platforms/intrinsics_${TRW_BACKEND}.impala)
+        ${ANYDSL_RUNTIME_DIR}/src/runtime.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_thorin.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_${PARGS_BACKEND}.impala)
 
     set(_impala_flags -emit-llvm ${OPT_FLAGS})
-    if(TRW_IMPALA_FLAGS)
-        set(_impala_flags ${_impala_flags} ${TRW_IMPALA_FLAGS})
+    if(PARGS_IMPALA_FLAGS)
+        set(_impala_flags ${_impala_flags} ${PARGS_IMPALA_FLAGS})
     endif()
 
     set(_clang_flags ${OPT_FLAGS})
-    if(TRW_CLANG_FLAGS)
-        set(_clang_flags ${_clang_flags} ${TRW_CLANG_FLAGS})
+    if(PARGS_CLANG_FLAGS)
+        set(_clang_flags ${_clang_flags} ${PARGS_CLANG_FLAGS})
     endif()
 
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
         COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} ${_impala_flags}
-        COMMAND ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${TRW_BACKEND} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        COMMAND ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${PARGS_BACKEND} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
+        DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
 
     # generate .bc files for NVVM & SPIR
-    if("${TRW_BACKEND}" STREQUAL "spir" OR "${TRW_BACKEND}" STREQUAL "nvvm")
-        set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${TRW_BACKEND})
-        set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${TRW_BACKEND}.bc)
+    if("${PARGS_BACKEND}" STREQUAL "spir" OR "${PARGS_BACKEND}" STREQUAL "nvvm")
+        set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND})
+        set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND}.bc)
         add_custom_command(OUTPUT ${_bcfile} COMMAND ${LLVM_AS_BIN} ${_irfile} DEPENDS ${_irfile} VERBATIM)
         set_source_files_properties(${_irfile} $_bcfile} PROPERTIES GENERATED true)
     endif()

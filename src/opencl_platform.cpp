@@ -375,7 +375,7 @@ void OpenCLPlatform::load_kernel(device_id dev, const char* file, const char* na
     }
 }
 
-extern std::atomic_llong thorin_kernel_time;
+extern std::atomic_llong anydsl_kernel_time;
 
 void OpenCLPlatform::launch_kernel(device_id dev) {
     cl_int err = CL_SUCCESS;
@@ -408,7 +408,7 @@ void OpenCLPlatform::launch_kernel(device_id dev) {
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
     checkErr(err, "clGetEventProfilingInfo()");
     time = (end-start)*1.0e-6f;
-    thorin_kernel_time.fetch_add(time * 1000);
+    anydsl_kernel_time.fetch_add(time * 1000);
 
     err = clReleaseEvent(event);
     checkErr(err, "clReleaseEvent()");

@@ -295,7 +295,7 @@ void CudaPlatform::launch_kernel(device_id dev) {
     cuCtxPopCurrent(NULL);
 }
 
-extern std::atomic_llong thorin_kernel_time;
+extern std::atomic_llong anydsl_kernel_time;
 
 void CudaPlatform::synchronize(device_id dev) {
     auto& cuda_dev = devices_[dev];
@@ -306,7 +306,7 @@ void CudaPlatform::synchronize(device_id dev) {
     checkErrDrv(err, "cuEventSynchronize()");
 
     cuEventElapsedTime(&time, cuda_dev.start_kernel, cuda_dev.end_kernel);
-    thorin_kernel_time.fetch_add(time * 1000);
+    anydsl_kernel_time.fetch_add(time * 1000);
 
     err = cuCtxSynchronize();
     checkErrDrv(err, "cuCtxSynchronize()");
