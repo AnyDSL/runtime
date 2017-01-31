@@ -67,7 +67,6 @@ add_library(runtime
             ${OPENCL_PLATFORM})
 
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
-set_target_properties(runtime PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
 
 # generate the Runtime.cmake file from the template
 configure_file(${CMAKE_SOURCE_DIR}/cmake/Runtime.cmake.in "${CMAKE_BINARY_DIR}/cmake/Runtime.cmake" @ONLY)
