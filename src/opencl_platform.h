@@ -36,13 +36,7 @@ protected:
     void release(device_id dev, void* ptr) override;
     void release_host(device_id, void*) override { platform_error(); }
 
-    void set_block_size(device_id dev, int32_t x, int32_t y, int32_t z) override;
-    void set_grid_size(device_id dev, int32_t x, int32_t y, int32_t z) override;
-    void set_kernel_arg(device_id dev, int32_t arg, void* ptr, int32_t size) override;
-    void set_kernel_arg_ptr(device_id dev, int32_t arg, void* ptr) override;
-    void set_kernel_arg_struct(device_id dev, int32_t arg, void* ptr, int32_t size) override;
-    void load_kernel(device_id dev, const char* file, const char* name) override;
-    void launch_kernel(device_id dev) override;
+    void launch_kernel(device_id dev, const char* file, const char* name, const int32_t* grid, const int32_t* block, const void** args) override;
     void synchronize(device_id dev) override;
 
     void copy(device_id dev_src, const void* src, int64_t offset_src, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) override;

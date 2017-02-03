@@ -27,13 +27,11 @@ void  anydsl_release_host(int32_t, void*);
 
 void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t);
 
-void anydsl_set_block_size(int32_t, int32_t, int32_t, int32_t);
-void anydsl_set_grid_size(int32_t, int32_t, int32_t, int32_t);
-void anydsl_set_kernel_arg(int32_t, int32_t, void*, int32_t);
-void anydsl_set_kernel_arg_ptr(int32_t, int32_t, void*);
-void anydsl_set_kernel_arg_struct(int32_t, int32_t, void*, int32_t);
-void anydsl_load_kernel(int32_t, const char*, const char*);
-void anydsl_launch_kernel(int32_t);
+void anydsl_launch_kernel(int32_t,
+                          const char*, const char*,
+                          const uint32_t*, const uint32_t*,
+                          void**, const uint32_t*, const uint8_t*,
+                          uint32_t);
 void anydsl_synchronize(int32_t);
 
 float anydsl_random_val();
