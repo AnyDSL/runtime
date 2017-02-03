@@ -28,18 +28,18 @@ inline std::string cudaErrorString(CUresult errorCode) {
     return std::string(error_name) + ": " + std::string(error_string);
 }
 
-void CudaPlatform::checkCudaErrors(CUresult err, const char* name, const char* file, const int line) {
+void CudaPlatform::checkCudaErrors(CUresult err, const char* name, const char* file, const int line) const {
     if (CUDA_SUCCESS != err)
         error("Driver API function % (%) [file %, line %]: %", name, err, file, line, cudaErrorString(err));
 }
 
-void CudaPlatform::checkNvvmErrors(nvvmResult err, const char* name, const char* file, const int line) {
+void CudaPlatform::checkNvvmErrors(nvvmResult err, const char* name, const char* file, const int line) const {
     if (NVVM_SUCCESS != err)
         error("NVVM API function % (%) [file %, line %]: %", name, err, file, line, nvvmGetErrorString(err));
 }
 
 #ifdef CUDA_NVRTC
-void CudaPlatform::checkNvrtcErrors(nvrtcResult err, const char* name, const char* file, const int line) {
+void CudaPlatform::checkNvrtcErrors(nvrtcResult err, const char* name, const char* file, const int line) const {
     if (NVRTC_SUCCESS != err)
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
@@ -170,66 +170,9 @@ void CudaPlatform::launch_kernel(DeviceId dev,
                                  const uint32_t* grid, const uint32_t* block,
                                  void** args, const uint32_t*, const KernelArgType*,
                                  uint32_t) {
-    auto& cuda_dev = devices_[dev];
-    auto& mod_cache = cuda_dev.modules;
-    auto mod_it = mod_cache.find(file);
+    cuCtxPushCurrent(devices_[dev].ctx);
 
-    cuCtxPushCurrent(cuda_dev.ctx);
-
-    // Lock the device mutex when the function cache is accessed
-    cuda_dev.mutex.lock();
-
-    CUmodule mod;
-    if (mod_it == mod_cache.end()) {
-        CUjit_target target_cc =
-            (CUjit_target)(cuda_dev.compute_major * 10 +
-                           cuda_dev.compute_minor);
-
-        // Compile the given file
-        if (std::ifstream(std::string(file) + ".nvvm.bc").good()) {
-             compile_nvvm(dev, file, target_cc);
-        } else if (std::ifstream(std::string(file) + ".ptx").good()) {
-            create_module(dev, file, target_cc, load_ptx(file).c_str());
-        } else if (std::ifstream(std::string(file) + ".cu").good()) {
-            compile_cuda(dev, file, target_cc);
-        } else {
-            error("Could not find kernel file '%'.[nvvm.bc|ptx|cu]", file);
-        }
-
-        mod = mod_cache[file];
-    } else {
-        mod = mod_it->second;
-    }
-
-    // Checks that the function exists
-    auto& func_cache = devices_[dev].functions;
-    auto& func_map = func_cache[mod];
-    auto func_it = func_map.find(kernel);
-
-    CUfunction func;
-    if (func_it == func_map.end()) {
-        CUresult err = cuModuleGetFunction(&func, mod, kernel);
-        if (err != CUDA_SUCCESS)
-            debug("Function '%' is not present in '%'", kernel, file);
-        checkErrDrv(err, "cuModuleGetFunction()");
-        func_map.emplace(kernel, func);
-        int regs, cmem, lmem, smem, threads;
-        err = cuFuncGetAttribute(&regs, CU_FUNC_ATTRIBUTE_NUM_REGS, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        err = cuFuncGetAttribute(&smem, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        err = cuFuncGetAttribute(&cmem, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        err = cuFuncGetAttribute(&lmem, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        err = cuFuncGetAttribute(&threads, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        debug("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", kernel, regs, smem, cmem, lmem, threads);
-    } else {
-        func = func_it->second;
-    }
-
-    cuda_dev.mutex.unlock();
+    auto func = load_kernel(dev, file, kernel);
 
     if (!start_kernel) checkErrDrv(cuEventCreate(&start_kernel, CU_EVENT_DEFAULT), "cuEventCreate()");
     if (!end_kernel)   checkErrDrv(cuEventCreate(&end_kernel,   CU_EVENT_DEFAULT), "cuEventCreate()");
@@ -309,6 +252,76 @@ int CudaPlatform::dev_count() {
     return devices_.size();
 }
 
+CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernel) {
+    auto& cuda_dev = devices_[dev];
+
+    // Lock the device when the function cache is accessed
+    cuda_dev.lock();
+
+    CUmodule mod;
+    auto& mod_cache = cuda_dev.modules;
+    auto mod_it = mod_cache.find(file);
+    if (mod_it == mod_cache.end()) {
+        cuda_dev.unlock();
+
+        CUjit_target target_cc =
+            (CUjit_target)(cuda_dev.compute_major * 10 +
+                           cuda_dev.compute_minor);
+
+        // Compile the given file
+        if (std::ifstream(file + ".nvvm.bc").good()) {
+            mod = compile_nvvm(dev, file, target_cc);
+        } else if (std::ifstream(file + ".ptx").good()) {
+            mod = create_module(dev, file, target_cc, load_ptx(file).c_str());
+        } else if (std::ifstream(file + ".cu").good()) {
+            mod = compile_cuda(dev, file, target_cc);
+        } else {
+            error("Could not find kernel file '%'.[nvvm.bc|ptx|cu]", file);
+        }
+
+        cuda_dev.lock();
+        mod_cache[file] = mod;
+    } else {
+        mod = mod_it->second;
+    }
+
+    // Checks that the function exists
+    auto& func_cache = devices_[dev].functions;
+    auto& func_map = func_cache[mod];
+    auto func_it = func_map.find(kernel);
+
+    CUfunction func;
+    if (func_it == func_map.end()) {
+        cuda_dev.unlock();
+
+        CUresult err = cuModuleGetFunction(&func, mod, kernel.c_str());
+        if (err != CUDA_SUCCESS)
+            debug("Function '%' is not present in '%'", kernel, file);
+        checkErrDrv(err, "cuModuleGetFunction()");
+        int regs, cmem, lmem, smem, threads;
+        err = cuFuncGetAttribute(&regs, CU_FUNC_ATTRIBUTE_NUM_REGS, func);
+        checkErrDrv(err, "cuFuncGetAttribute()");
+        err = cuFuncGetAttribute(&smem, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, func);
+        checkErrDrv(err, "cuFuncGetAttribute()");
+        err = cuFuncGetAttribute(&cmem, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, func);
+        checkErrDrv(err, "cuFuncGetAttribute()");
+        err = cuFuncGetAttribute(&lmem, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, func);
+        checkErrDrv(err, "cuFuncGetAttribute()");
+        err = cuFuncGetAttribute(&threads, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, func);
+        checkErrDrv(err, "cuFuncGetAttribute()");
+        debug("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", kernel, regs, smem, cmem, lmem, threads);
+
+        cuda_dev.lock();
+        func_cache[mod][kernel] = func;
+    } else {
+        func = func_it->second;
+    }
+
+    cuda_dev.unlock();
+
+    return func;
+}
+
 std::string CudaPlatform::load_ptx(const std::string& filename) {
     std::string ptx_filename = filename + ".ptx";
     std::ifstream src_file(ptx_filename);
@@ -318,7 +331,7 @@ std::string CudaPlatform::load_ptx(const std::string& filename) {
     return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 }
 
-void CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) {
+CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
     // Select libdevice module according to documentation
     std::string libdevice_filename;
     if (target_cc < 30)
@@ -388,14 +401,14 @@ void CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, CUjit
     err = nvvmDestroyProgram(&program);
     checkErrNvvm(err, "nvvmDestroyProgram()");
 
-    create_module(dev, filename, target_cc, ptx.c_str());
+    return create_module(dev, filename, target_cc, ptx.c_str());
 }
 
 #ifdef CUDA_NVRTC
 #ifndef NVCC_INC
 #define NVCC_INC "/usr/local/cuda/include"
 #endif
-void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) {
+CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
     std::string cuda_filename = filename + ".cu";
     std::ifstream src_file(std::string(KERNEL_DIR) + cuda_filename);
     if (!src_file.is_open())
@@ -438,13 +451,13 @@ void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit
     err = nvrtcDestroyProgram(&program);
     checkErrNvrtc(err, "nvrtcDestroyProgram()");
 
-    create_module(dev, filename, target_cc, ptx.c_str());
+    return create_module(dev, filename, target_cc, ptx.c_str());
 }
 #else
 #ifndef NVCC_BIN
 #define NVCC_BIN "nvcc"
 #endif
-void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) {
+CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
     target_cc = target_cc == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : target_cc; // compute_21 does not exist for nvcc
     std::string cuda_filename = std::string(filename) + ".cu";
     std::string ptx_filename = std::string(cuda_filename) + ".ptx";
@@ -469,11 +482,11 @@ void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit
         error("Cannot run NVCC");
     }
 
-    create_module(dev, filename, target_cc, load_ptx(cuda_filename).c_str());
+    return create_module(dev, filename, target_cc, load_ptx(cuda_filename).c_str());
 }
 #endif
 
-void CudaPlatform::create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) {
+CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const {
     const unsigned opt_level = 3;
     const int error_log_size = 10240;
     const int num_options = 4;
@@ -487,5 +500,5 @@ void CudaPlatform::create_module(DeviceId dev, const std::string& filename, CUji
     CUresult err = cuModuleLoadDataEx(&mod, ptx, num_options, options, option_values);
     checkErrDrv(err, "cuModuleLoadDataEx()");
 
-    devices_[dev].modules[filename] = mod;
+    return mod;
 }

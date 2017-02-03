@@ -7,7 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <mutex>
+#include <atomic>
 
 #include <cuda.h>
 #include <nvvm.h>
@@ -56,7 +56,7 @@ protected:
         CUcontext ctx;
         int compute_minor;
         int compute_major;
-        std::mutex mutex;
+        std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
 
@@ -70,20 +70,30 @@ protected:
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
         {}
+
+        void lock() {
+            while (locked.test_and_set(std::memory_order_acquire)) ;
+        }
+
+        void unlock() {
+            locked.clear(std::memory_order_release);
+        }
     };
 
     std::vector<DeviceData> devices_;
 
-    void checkCudaErrors(CUresult err, const char*, const char*, const int);
-    void checkNvvmErrors(nvvmResult err, const char*, const char*, const int);
+    void checkCudaErrors(CUresult err, const char*, const char*, const int) const;
+    void checkNvvmErrors(nvvmResult err, const char*, const char*, const int) const;
     #ifdef CUDA_NVRTC
-    void checkNvrtcErrors(nvrtcResult err, const char*, const char*, const int);
+    void checkNvrtcErrors(nvrtcResult err, const char*, const char*, const int) const;
     #endif
 
+    CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernel);
+
     std::string load_ptx(const std::string& filename);
-    void compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc);
-    void compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc);
-    void create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx);
+    CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
+    CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
+    CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;
 };
 
 #endif
