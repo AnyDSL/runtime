@@ -20,6 +20,7 @@ if(CUDA_FOUND)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_CUDA)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DLIBDEVICE_DIR=\"${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/\"")
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DNVCC_BIN=\"${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc\"")
+    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DNVCC_INC=\"${CUDA_INCLUDE_DIRS}\"")
     list(APPEND CONF_RUNTIME_LIBRARIES "${CUDA_LIBRARY}" "${CUDA_NVVM_LIBRARY}" "${CUDA_NVRTC_LIBRARY}")
 else()
     set(CUDA_PLATFORM "")
@@ -66,7 +67,9 @@ add_library(runtime
             ${OPENCL_PLATFORM})
 
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
-set_target_properties(runtime PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
 
 # generate the Runtime.cmake file from the template
 configure_file(${CMAKE_SOURCE_DIR}/cmake/Runtime.cmake.in "${CMAKE_BINARY_DIR}/cmake/Runtime.cmake" @ONLY)
+
+# TODO: move majority of dependency management into first-level CMakeLists.txt as well as the generation of the anydsl_runtime-config.cmake
+CONFIGURE_FILE ( "${CMAKE_SOURCE_DIR}/cmake/anydsl_runtime-config.cmake.in" "${CMAKE_BINARY_DIR}/share/AnyDSL_runtime/cmake/anydsl_runtime-config.cmake" @ONLY)

@@ -392,6 +392,9 @@ void CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, CUjit
 }
 
 #ifdef CUDA_NVRTC
+#ifndef NVCC_INC
+#define NVCC_INC "/usr/local/cuda/include"
+#endif
 void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) {
     std::string cuda_filename = filename + ".cu";
     std::ifstream src_file(std::string(KERNEL_DIR) + cuda_filename);
@@ -405,11 +408,13 @@ void CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit
     checkErrNvrtc(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
-    int num_options = 1;
-    const char* options[3];
-    options[0] = compute_arch.c_str();
-    options[1] = "-G";
-    options[2] = "-lineinfo";
+    int num_options = 3;
+    const char* options[] = {
+        compute_arch.c_str(),
+        "-I",
+        NVCC_INC,
+        "-G",
+        "-lineinfo" };
 
     debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     err = nvrtcCompileProgram(program, num_options, options);

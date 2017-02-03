@@ -1,14 +1,14 @@
 extern "C" {
     fn "anydsl_info" runtime_info() -> ();
 
-    fn "anydsl_alloc"          runtime_alloc(i32, i64) -> &i8;
-    fn "anydsl_alloc_host"     runtime_alloc_host(i32, i64) -> &i8;
-    fn "anydsl_alloc_unified"  runtime_alloc_unified(i32, i64) -> &i8;
-    fn "anydsl_get_device_ptr" runtime_get_device_ptr(i32, &i8) -> &i8;
-    fn "anydsl_release"        runtime_release(i32, &i8) -> ();
-    fn "anydsl_release_host"   runtime_release_host(i32, &i8) -> ();
+    fn "anydsl_alloc"          runtime_alloc(i32, i64) -> &[i8];
+    fn "anydsl_alloc_host"     runtime_alloc_host(i32, i64) -> &[i8];
+    fn "anydsl_alloc_unified"  runtime_alloc_unified(i32, i64) -> &[i8];
+    fn "anydsl_get_device_ptr" runtime_get_device_ptr(i32, &[i8]) -> &[i8];
+    fn "anydsl_release"        runtime_release(i32, &[i8]) -> ();
+    fn "anydsl_release_host"   runtime_release_host(i32, &[i8]) -> ();
 
-    fn "anydsl_copy" runtime_copy(i32, &i8, i64, i32, &i8, i64, i64) -> ();
+    fn "anydsl_copy" runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
 
     fn "anydsl_random_val"  random_val() -> f32;
     fn "anydsl_random_seed" random_seed(u32) -> ();
@@ -35,22 +35,22 @@ struct Buffer {
 fn alloc(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc(dev, size as i64) as &[i8]
+        data: runtime_alloc(dev, size as i64)
     }
 }
 fn alloc_host(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc_host(dev, size as i64) as &[i8]
+        data: runtime_alloc_host(dev, size as i64)
     }
 }
 fn alloc_unified(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc_unified(dev, size as i64) as &[i8]
+        data: runtime_alloc_unified(dev, size as i64)
     }
 }
-fn release(a: Buffer) -> () { runtime_release(a.device, a.data as &i8) }
+fn release(a: Buffer) -> () { runtime_release(a.device, a.data) }
 
 fn alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
 fn alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }
@@ -60,9 +60,9 @@ fn alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), s
 fn alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
 
 fn copy(a: Buffer, b: Buffer, size: i32) -> () {
-    runtime_copy(a.device, a.data as &i8, 0i64, b.device, b.data as &i8, 0i64, size as i64)
+    runtime_copy(a.device, a.data, 0i64, b.device, b.data, 0i64, size as i64)
 }
 
 fn copy_offset(a: Buffer, off_a: i32, b: Buffer, off_b: i32, size: i32) -> () {
-    runtime_copy(a.device, a.data as &i8, off_a as i64, b.device, b.data as &i8, off_b as i64, size as i64)
+    runtime_copy(a.device, a.data, off_a as i64, b.device, b.data, off_b as i64, size as i64)
 }
