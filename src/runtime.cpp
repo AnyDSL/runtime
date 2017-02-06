@@ -184,7 +184,7 @@ void anydsl_print_string(char* s)   { std::cout << s; }
 #ifndef __has_feature
 #define __has_feature(x) 0
 #endif
-#if (defined (__clang__) && !__has_feature(cxx_thread_local)) || defined(_MSC_VER)
+#if (defined (__clang__) && !__has_feature(cxx_thread_local))
 #pragma message("Runtime random function is not thread-safe")
 static std::mt19937 std_gen;
 #else
