@@ -3,7 +3,7 @@
 #
 # AnyDSL_runtime_DIR
 # AnyDSL_runtime_LIBRARY
-# AnyDSL_runtime_INCLUDE_DIR
+# AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
 
 CMAKE_MINIMUM_REQUIRED ( VERSION 3.1 )
@@ -39,6 +39,7 @@ FIND_PATH ( AnyDSL_runtime_INCLUDE_DIR
     PATHS
         ${AnyDSL_runtime_ROOT_DIR}/src
 )
+SET ( AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR} )
 
 SET (AnyDSL_runtime_LIBS_DIR
     "${AnyDSL_runtime_DIR}/../../../@PROJ_LIBRARY_DIR@"
@@ -96,6 +97,6 @@ MACRO ( AnyDSL_runtime_files outfiles )
 ENDMACRO ()
 
 INCLUDE ( FindPackageHandleStandardArgs )
-find_package_handle_standard_args( AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIR )
+find_package_handle_standard_args( AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS )
 
 MARK_AS_ADVANCED ( AnyDSL_runtime_LIBRARY AnyDSL_runtime_LIBRARY_DEBUG AnyDSL_runtime_LIBRARY_RELEASE AnyDSL_runtime_LIBS_DIR AnyDSL_runtime_LIBNAME AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR )
