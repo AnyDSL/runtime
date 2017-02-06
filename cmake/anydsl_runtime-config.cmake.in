@@ -85,24 +85,24 @@ MACRO ( AnyDSL_runtime_files outfiles )
         MESSAGE ( FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}" )
     ENDIF ()
 
-	STRING ( TOLOWER ${PARGS_FRONTEND} _frontend )
-	STRING ( TOLOWER ${PARGS_BACKEND} _backend )
+    STRING ( TOLOWER ${PARGS_FRONTEND} _frontend )
+    STRING ( TOLOWER ${PARGS_BACKEND} _backend )
 
-	IF ( NOT _frontend STREQUAL "impala" )
-		MESSAGE ( ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)" )
-	ENDIF ()
+    IF ( NOT _frontend STREQUAL "impala" )
+        MESSAGE ( ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)" )
+    ENDIF ()
 
     SET ( _backend_instrinsics ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_${_backend}.impala )
 
-	IF (NOT EXISTS ${_backend_instrinsics})
-		MESSAGE ( WARNING "Unsupported backend ${_backend} for frontend ${_frontend}")
-		SET ( _backend_instrinsics )
-	ENDIF ()
+    IF (NOT EXISTS ${_backend_instrinsics})
+        MESSAGE ( WARNING "Unsupported backend ${_backend} for frontend ${_frontend}")
+        SET ( _backend_instrinsics )
+    ENDIF ()
 
     SET ( ${outfiles} ${${outfiles}}
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala
-		${_backend_instrinsics} )
+        ${_backend_instrinsics} )
 ENDMACRO ()
 
 INCLUDE ( FindPackageHandleStandardArgs )
