@@ -75,6 +75,9 @@ ELSE ()
 ENDIF ()
 
 SET ( AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARY} "@CONF_RUNTIME_LIBRARIES@" )
+IF (MSVC)
+    SET ( AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd )
+ENDIF ()
 
 MACRO ( AnyDSL_runtime_files outfiles )
     cmake_parse_arguments("PARGS" "" "BACKEND;FRONTEND" "" ${ARGN})
