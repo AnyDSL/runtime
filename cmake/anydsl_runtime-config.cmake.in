@@ -2,7 +2,7 @@
 # Once done this will define
 #
 # AnyDSL_runtime_DIR
-# AnyDSL_runtime_LIBRARY
+# AnyDSL_runtime_LIBRARIES
 # AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
 
