@@ -11,11 +11,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 #ifdef ENABLE_TBB
 #include <tbb/tbb.h>
 #include <tbb/parallel_for.h>
