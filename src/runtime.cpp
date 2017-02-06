@@ -234,7 +234,7 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
         id = free_ids.back();
         free_ids.pop_back();
     } else {
-        id = thread_pool.size();
+        id = static_cast<int32_t>(thread_pool.size());
     }
 
     auto spawned = std::make_pair(id, std::thread([=](){ fun_ptr(args); }));
