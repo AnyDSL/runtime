@@ -150,14 +150,7 @@ void anydsl_aligned_free(void* ptr) { ::_aligned_free(ptr); }
 #endif
 
 long long anydsl_get_micro_time() {
-#if defined(_WIN32) || defined(__CYGWIN__) // Use QueryPerformanceCounter on Windows
-    LARGE_INTEGER counter, freq;
-    QueryPerformanceCounter(&counter);
-    QueryPerformanceFrequency(&freq);
-    return counter.QuadPart * 1000000LL / freq.QuadPart;
-#else
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-#endif
 }
 
 std::atomic<long long> anydsl_kernel_time(0);
