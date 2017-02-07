@@ -50,7 +50,7 @@ fn alloc_unified(dev: i32, size: i32) -> Buffer {
         data: runtime_alloc_unified(dev, size as i64)
     }
 }
-fn release(a: Buffer) -> () { runtime_release(a.device, a.data) }
+fn release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
 
 fn alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
 fn alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }
@@ -59,10 +59,10 @@ fn alloc_cuda_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_dev
 fn alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), size) }
 fn alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
 
-fn copy(a: Buffer, b: Buffer, size: i32) -> () {
-    runtime_copy(a.device, a.data, 0i64, b.device, b.data, 0i64, size as i64)
+fn copy(src: Buffer, dst: Buffer, size: i32) -> () {
+    runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, size as i64)
 }
 
-fn copy_offset(a: Buffer, off_a: i32, b: Buffer, off_b: i32, size: i32) -> () {
-    runtime_copy(a.device, a.data, off_a as i64, b.device, b.data, off_b as i64, size as i64)
+fn copy_offset(src: Buffer, off_src: i32, dst: Buffer, off_dst: i32, size: i32) -> () {
+    runtime_copy(src.device, src.data, off_src as i64, dst.device, dst.data, off_dst as i64, size as i64)
 }
