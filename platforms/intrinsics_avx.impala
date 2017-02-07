@@ -80,8 +80,8 @@ extern "device" {
     fn "llvm.x86.avx.blendv.ps.256" blendvps256(simd[f32 * 8], simd[f32 * 8], simd[f32 * 8]) -> simd[f32 * 8];
 }
 
-fn ldg_f32(a: &[1]f32) -> f32 { *a }
-fn ldg_i32(a: &[1]i32) -> i32 { *a }
+fn ldg_f32(a: &f32) -> f32 { *a }
+fn ldg_i32(a: &i32) -> i32 { *a }
 
 fn bitcast_mem_f32(ptr: &[i8]) -> &[f32] { bitcast[&[f32]](ptr) }
 fn bitcast_mem_i16(ptr: &[i8]) -> &[i16] { bitcast[&[i16]](ptr) }
