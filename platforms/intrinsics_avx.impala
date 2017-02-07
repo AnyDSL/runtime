@@ -85,6 +85,8 @@ fn ldg_i32(a: &i32) -> i32 { *a }
 
 fn bitcast_mem_f32(ptr: &[i8]) -> &[f32] { bitcast[&[f32]](ptr) }
 fn bitcast_mem_i16(ptr: &[i8]) -> &[i16] { bitcast[&[i16]](ptr) }
+fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[f32] { bitcast[&mut[f32]](ptr) }
+fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[i16] { bitcast[&mut[i16]](ptr) }
 
 fn get_vector_length() -> int { 8 }
 fn get_alignment() -> int { 32 }

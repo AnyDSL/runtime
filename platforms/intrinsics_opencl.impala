@@ -95,3 +95,5 @@ fn ldg_i32(a: &[1]i32) -> i32 { *a }
 
 fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
 fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
+fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[1][f32] { bitcast[&mut[1][f32]](ptr) }
+fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[1][i16] { bitcast[&mut[1][i16]](ptr) }
