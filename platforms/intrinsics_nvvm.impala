@@ -353,6 +353,9 @@ fn atomic_add_local (a: &[3]i32, b: i32) -> i32 { atomic_local (1u, a, b) }
 fn atomic_min_global(a: &[1]i32, b: i32) -> i32 { atomic_global(8u, a, b) }
 fn atomic_min_local (a: &[3]i32, b: i32) -> i32 { atomic_local (8u, a, b) }
 
+fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
+fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
+
 fn fminf(a: f32, b: f32) -> f32 { nvvm_fmin_f(a, b) }
 fn fmaxf(a: f32, b: f32) -> f32 { nvvm_fmax_f(a, b) }
 fn fmin(a: f64, b: f64) -> f64 { nvvm_fmin_d(a, b) }
