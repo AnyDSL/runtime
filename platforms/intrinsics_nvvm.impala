@@ -337,21 +337,21 @@ fn acc_use_tex() -> bool { true }
 fn acc_dev() -> i32      { 0 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn atomic_xchg(a: &i32, b: i32) -> i32 { atomic(0u, a, b) }
-fn atomic_add(a: &i32, b: i32) -> i32 { atomic(1u, a, b) }
-fn atomic_sub(a: &i32, b: i32) -> i32 { atomic(2u, a, b) }
-fn atomic_max(a: &i32, b: i32) -> i32 { atomic(7u, a, b) }
-fn atomic_min(a: &i32, b: i32) -> i32 { atomic(8u, a, b) }
+fn atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
+fn atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
+fn atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
+fn atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
+fn atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 
 extern "thorin" {
-    fn "atomic" atomic_global(u32, &[1]i32, i32) -> i32;
-    fn "atomic" atomic_local (u32, &[3]i32, i32) -> i32;
+    fn "atomic" atomic_global(u32, &mut [1]i32, i32) -> i32;
+    fn "atomic" atomic_local (u32, &mut [3]i32, i32) -> i32;
 }
 
-fn atomic_add_global(a: &[1]i32, b: i32) -> i32 { atomic_global(1u, a, b) }
-fn atomic_add_local (a: &[3]i32, b: i32) -> i32 { atomic_local (1u, a, b) }
-fn atomic_min_global(a: &[1]i32, b: i32) -> i32 { atomic_global(8u, a, b) }
-fn atomic_min_local (a: &[3]i32, b: i32) -> i32 { atomic_local (8u, a, b) }
+fn atomic_add_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(1u, a, b) }
+fn atomic_add_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (1u, a, b) }
+fn atomic_min_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(8u, a, b) }
+fn atomic_min_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (8u, a, b) }
 
 fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
 fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
