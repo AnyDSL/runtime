@@ -16,30 +16,28 @@
 #define KERNEL_DIR ""
 #endif
 
-#define checkErrNvvm(err, name)  checkNvvmErrors  (err, name, __FILE__, __LINE__)
-#define checkErrNvrtc(err, name) checkNvrtcErrors (err, name, __FILE__, __LINE__)
-#define checkErrDrv(err, name)   checkCudaErrors  (err, name, __FILE__, __LINE__)
+#define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
+#define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
+#define CHECK_CUDA(err, name)  check_cuda_errors  (err, name, __FILE__, __LINE__)
 
-inline std::string cudaErrorString(CUresult errorCode) {
-    const char* error_name;
-    const char* error_string;
-    cuGetErrorName(errorCode, &error_name);
-    cuGetErrorString(errorCode, &error_string);
-    return std::string(error_name) + ": " + std::string(error_string);
+inline void check_cuda_errors(CUresult err, const char* name, const char* file, const int line) {
+    if (CUDA_SUCCESS != err) {
+        const char* error_name;
+        const char* error_string;
+        cuGetErrorName(err, &error_name);
+        cuGetErrorString(err, &error_string);
+        auto msg = std::string(error_name) + ": " + std::string(error_string);
+        error("Driver API function % (%) [file %, line %]: %", name, err, file, line, msg);
+    }
 }
 
-void CudaPlatform::checkCudaErrors(CUresult err, const char* name, const char* file, const int line) const {
-    if (CUDA_SUCCESS != err)
-        error("Driver API function % (%) [file %, line %]: %", name, err, file, line, cudaErrorString(err));
-}
-
-void CudaPlatform::checkNvvmErrors(nvvmResult err, const char* name, const char* file, const int line) const {
+inline void check_nvvm_errors(nvvmResult err, const char* name, const char* file, const int line) {
     if (NVVM_SUCCESS != err)
         error("NVVM API function % (%) [file %, line %]: %", name, err, file, line, nvvmGetErrorString(err));
 }
 
 #ifdef CUDA_NVRTC
-void CudaPlatform::checkNvrtcErrors(nvrtcResult err, const char* name, const char* file, const int line) const {
+inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* file, const int line) {
     if (NVRTC_SUCCESS != err)
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
@@ -59,22 +57,22 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     #endif
 
     CUresult err = cuInit(0);
-    checkErrDrv(err, "cuInit()");
+    CHECK_CUDA(err, "cuInit()");
 
     err = cuDeviceGetCount(&device_count);
-    checkErrDrv(err, "cuDeviceGetCount()");
+    CHECK_CUDA(err, "cuDeviceGetCount()");
 
     err = cuDriverGetVersion(&driver_version);
-    checkErrDrv(err, "cuDriverGetVersion()");
+    CHECK_CUDA(err, "cuDriverGetVersion()");
 
     nvvmResult errNvvm = nvvmVersion(&nvvm_major, &nvvm_minor);
-    checkErrNvvm(errNvvm, "nvvmVersion()");
+    CHECK_NVVM(errNvvm, "nvvmVersion()");
 
     debug("CUDA Driver Version %.%", driver_version/1000, (driver_version%100)/10);
     #ifdef CUDA_NVRTC
     int nvrtc_major = 0, nvrtc_minor = 0;
     nvrtcResult errNvrtc = nvrtcVersion(&nvrtc_major, &nvrtc_minor);
-    checkErrNvrtc(errNvrtc, "nvrtcVersion()");
+    CHECK_NVRTC(errNvrtc, "nvrtcVersion()");
     debug("NVRTC Version %.%", nvrtc_major, nvrtc_minor);
     #endif
     debug("NVVM Version %.%", nvvm_major, nvvm_minor);
@@ -86,18 +84,18 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
         char name[128];
 
         err = cuDeviceGet(&devices_[i].dev, i);
-        checkErrDrv(err, "cuDeviceGet()");
+        CHECK_CUDA(err, "cuDeviceGet()");
         err = cuDeviceGetName(name, 128, devices_[i].dev);
-        checkErrDrv(err, "cuDeviceGetName()");
+        CHECK_CUDA(err, "cuDeviceGetName()");
         err = cuDeviceGetAttribute(&devices_[i].compute_major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, devices_[i].dev);
-        checkErrDrv(err, "cuDeviceGetAttribute()");
+        CHECK_CUDA(err, "cuDeviceGetAttribute()");
         err = cuDeviceGetAttribute(&devices_[i].compute_minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, devices_[i].dev);
-        checkErrDrv(err, "cuDeviceGetAttribute()");
+        CHECK_CUDA(err, "cuDeviceGetAttribute()");
 
         debug("  (%) %, Compute capability: %.%", i, name, devices_[i].compute_major, devices_[i].compute_minor);
 
         err = cuCtxCreate(&devices_[i].ctx, CU_CTX_MAP_HOST, devices_[i].dev);
-        checkErrDrv(err, "cuCtxCreate()");
+        CHECK_CUDA(err, "cuCtxCreate()");
     }
 }
 
@@ -112,7 +110,7 @@ void* CudaPlatform::alloc(DeviceId dev, int64_t size) {
 
     CUdeviceptr mem;
     CUresult err = cuMemAlloc(&mem, size);
-    checkErrDrv(err, "cuMemAlloc()");
+    CHECK_CUDA(err, "cuMemAlloc()");
 
     cuCtxPopCurrent(NULL);
     return (void*)mem;
@@ -123,7 +121,7 @@ void* CudaPlatform::alloc_host(DeviceId dev, int64_t size) {
 
     void* mem;
     CUresult err = cuMemHostAlloc(&mem, size, CU_MEMHOSTALLOC_DEVICEMAP);
-    checkErrDrv(err, "cuMemHostAlloc()");
+    CHECK_CUDA(err, "cuMemHostAlloc()");
 
     cuCtxPopCurrent(NULL);
     return mem;
@@ -134,7 +132,7 @@ void* CudaPlatform::alloc_unified(DeviceId dev, int64_t size) {
 
     CUdeviceptr mem;
     CUresult err = cuMemAllocManaged(&mem, size, CU_MEM_ATTACH_GLOBAL);
-    checkErrDrv(err, "cuMemAllocManaged()");
+    CHECK_CUDA(err, "cuMemAllocManaged()");
 
     cuCtxPopCurrent(NULL);
     return (void*)mem;
@@ -145,7 +143,7 @@ void* CudaPlatform::get_device_ptr(DeviceId dev, void* ptr) {
 
     CUdeviceptr mem;
     CUresult err = cuMemHostGetDevicePointer(&mem, ptr, 0);
-    checkErrDrv(err, "cuMemHostGetDevicePointer()");
+    CHECK_CUDA(err, "cuMemHostGetDevicePointer()");
 
     cuCtxPopCurrent(NULL);
     return (void*)mem;
@@ -154,14 +152,14 @@ void* CudaPlatform::get_device_ptr(DeviceId dev, void* ptr) {
 void CudaPlatform::release(DeviceId dev, void* ptr) {
     cuCtxPushCurrent(devices_[dev].ctx);
     CUresult err = cuMemFree((CUdeviceptr)ptr);
-    checkErrDrv(err, "cuMemFree()");
+    CHECK_CUDA(err, "cuMemFree()");
     cuCtxPopCurrent(NULL);
 }
 
 void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPushCurrent(devices_[dev].ctx);
     CUresult err = cuMemFreeHost(ptr);
-    checkErrDrv(err, "cuMemFreeHost()");
+    CHECK_CUDA(err, "cuMemFreeHost()");
     cuCtxPopCurrent(NULL);
 }
 
@@ -174,10 +172,10 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 
     auto func = load_kernel(dev, file, kernel);
 
-    if (!start_kernel) checkErrDrv(cuEventCreate(&start_kernel, CU_EVENT_DEFAULT), "cuEventCreate()");
-    if (!end_kernel)   checkErrDrv(cuEventCreate(&end_kernel,   CU_EVENT_DEFAULT), "cuEventCreate()");
+    if (!start_kernel) CHECK_CUDA(cuEventCreate(&start_kernel, CU_EVENT_DEFAULT), "cuEventCreate()");
+    if (!end_kernel)   CHECK_CUDA(cuEventCreate(&end_kernel,   CU_EVENT_DEFAULT), "cuEventCreate()");
 
-    checkErrDrv(cuEventRecord(start_kernel, 0), "cuEventRecord()");
+    CHECK_CUDA(cuEventRecord(start_kernel, 0), "cuEventRecord()");
 
     assert(grid[0] > 0 && grid[0] % block[0] == 0 &&
            grid[1] > 0 && grid[1] % block[1] == 0 &&
@@ -190,9 +188,9 @@ void CudaPlatform::launch_kernel(DeviceId dev,
         grid[2] / block[2],
         block[0], block[1], block[2],
         0, nullptr, args, nullptr);
-    checkErrDrv(err, "cuLaunchKernel()");
+    CHECK_CUDA(err, "cuLaunchKernel()");
 
-    checkErrDrv(cuEventRecord(end_kernel, 0), "cuEventRecord()");
+    CHECK_CUDA(cuEventRecord(end_kernel, 0), "cuEventRecord()");
     cuCtxPopCurrent(NULL);
 }
 
@@ -204,17 +202,17 @@ void CudaPlatform::synchronize(DeviceId dev) {
 
     float time;
     CUresult err = cuEventSynchronize(end_kernel);
-    checkErrDrv(err, "cuEventSynchronize()");
+    CHECK_CUDA(err, "cuEventSynchronize()");
 
     cuEventElapsedTime(&time, start_kernel, end_kernel);
     anydsl_kernel_time.fetch_add(time * 1000);
 
     err = cuCtxSynchronize();
-    checkErrDrv(err, "cuCtxSynchronize()");
+    CHECK_CUDA(err, "cuCtxSynchronize()");
     cuCtxPopCurrent(NULL);
 }
 
-void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) {
     assert(dev_src == dev_dst);
 
     cuCtxPushCurrent(devices_[dev_src].ctx);
@@ -222,7 +220,7 @@ void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, D
     CUdeviceptr src_mem = (CUdeviceptr)src;
     CUdeviceptr dst_mem = (CUdeviceptr)dst;
     CUresult err = cuMemcpyDtoD(dst_mem + offset_dst, src_mem + offset_src, size);
-    checkErrDrv(err, "cuMemcpyDtoD()");
+    CHECK_CUDA(err, "cuMemcpyDtoD()");
 
     cuCtxPopCurrent(NULL);
 }
@@ -233,7 +231,7 @@ void CudaPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId 
     CUdeviceptr dst_mem = (CUdeviceptr)dst;
 
     CUresult err = cuMemcpyHtoD(dst_mem + offset_dst, (char*)src + offset_src, size);
-    checkErrDrv(err, "cuMemcpyHtoD()");
+    CHECK_CUDA(err, "cuMemcpyHtoD()");
 
     cuCtxPopCurrent(NULL);
 }
@@ -243,7 +241,7 @@ void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offse
 
     CUdeviceptr src_mem = (CUdeviceptr)src;
     CUresult err = cuMemcpyDtoH((char*)dst + offset_dst, src_mem + offset_src, size);
-    checkErrDrv(err, "cuMemcpyDtoH()");
+    CHECK_CUDA(err, "cuMemcpyDtoH()");
 
     cuCtxPopCurrent(NULL);
 }
@@ -252,7 +250,7 @@ int CudaPlatform::dev_count() {
     return devices_.size();
 }
 
-CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernel) {
+CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernelname) {
     auto& cuda_dev = devices_[dev];
 
     // Lock the device when the function cache is accessed
@@ -288,31 +286,31 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
     // Checks that the function exists
     auto& func_cache = devices_[dev].functions;
     auto& func_map = func_cache[mod];
-    auto func_it = func_map.find(kernel);
+    auto func_it = func_map.find(kernelname);
 
     CUfunction func;
     if (func_it == func_map.end()) {
         cuda_dev.unlock();
 
-        CUresult err = cuModuleGetFunction(&func, mod, kernel.c_str());
+        CUresult err = cuModuleGetFunction(&func, mod, kernelname.c_str());
         if (err != CUDA_SUCCESS)
-            debug("Function '%' is not present in '%'", kernel, file);
-        checkErrDrv(err, "cuModuleGetFunction()");
+            debug("Function '%' is not present in '%'", kernelname, file);
+        CHECK_CUDA(err, "cuModuleGetFunction()");
         int regs, cmem, lmem, smem, threads;
         err = cuFuncGetAttribute(&regs, CU_FUNC_ATTRIBUTE_NUM_REGS, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
+        CHECK_CUDA(err, "cuFuncGetAttribute()");
         err = cuFuncGetAttribute(&smem, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
+        CHECK_CUDA(err, "cuFuncGetAttribute()");
         err = cuFuncGetAttribute(&cmem, CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
+        CHECK_CUDA(err, "cuFuncGetAttribute()");
         err = cuFuncGetAttribute(&lmem, CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
+        CHECK_CUDA(err, "cuFuncGetAttribute()");
         err = cuFuncGetAttribute(&threads, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, func);
-        checkErrDrv(err, "cuFuncGetAttribute()");
-        debug("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", kernel, regs, smem, cmem, lmem, threads);
+        CHECK_CUDA(err, "cuFuncGetAttribute()");
+        debug("Function '%' using % registers, % | % | % bytes shared | constant | local memory allowing up to % threads per block", kernelname, regs, smem, cmem, lmem, threads);
 
         cuda_dev.lock();
-        func_cache[mod][kernel] = func;
+        func_cache[mod][kernelname] = func;
     } else {
         func = func_it->second;
     }
@@ -364,13 +362,13 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
 
     nvvmProgram program;
     nvvmResult err = nvvmCreateProgram(&program);
-    checkErrNvvm(err, "nvvmCreateProgram()");
+    CHECK_NVVM(err, "nvvmCreateProgram()");
 
     err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), libdevice_filename.c_str());
-    checkErrNvvm(err, "nvvmAddModuleToProgram()");
+    CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     err = nvvmAddModuleToProgram(program, src_string.c_str(), src_string.length(), nvvm_filename.c_str());
-    checkErrNvvm(err, "nvvmAddModuleToProgram()");
+    CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
     int num_options = 2;
@@ -388,18 +386,18 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
         nvvmGetProgramLog(program, &error_log[0]);
         error("Compilation error: %", error_log);
     }
-    checkErrNvvm(err, "nvvmCompileProgram()");
+    CHECK_NVVM(err, "nvvmCompileProgram()");
 
     size_t ptx_size;
     err = nvvmGetCompiledResultSize(program, &ptx_size);
-    checkErrNvvm(err, "nvvmGetCompiledResultSize()");
+    CHECK_NVVM(err, "nvvmGetCompiledResultSize()");
 
     std::string ptx(ptx_size, '\0');
     err = nvvmGetCompiledResult(program, &ptx[0]);
-    checkErrNvvm(err, "nvvmGetCompiledResult()");
+    CHECK_NVVM(err, "nvvmGetCompiledResult()");
 
     err = nvvmDestroyProgram(&program);
-    checkErrNvvm(err, "nvvmDestroyProgram()");
+    CHECK_NVVM(err, "nvvmDestroyProgram()");
 
     return create_module(dev, filename, target_cc, ptx.c_str());
 }
@@ -418,7 +416,7 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
 
     nvrtcProgram program;
     nvrtcResult err = nvrtcCreateProgram(&program, src_string.c_str(), cuda_filename.c_str(), 0, NULL, NULL);
-    checkErrNvrtc(err, "nvrtcCreateProgram()");
+    CHECK_NVRTC(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
     int num_options = 3;
@@ -438,18 +436,18 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
         nvrtcGetProgramLog(program, &error_log[0]);
         error("Compilation error: %", error_log);
     }
-    checkErrNvrtc(err, "nvrtcCompileProgram()");
+    CHECK_NVRTC(err, "nvrtcCompileProgram()");
 
     size_t ptx_size;
     err = nvrtcGetPTXSize(program, &ptx_size);
-    checkErrNvrtc(err, "nvrtcGetPTXSize()");
+    CHECK_NVRTC(err, "nvrtcGetPTXSize()");
 
     std::string ptx(ptx_size, '\0');
     err = nvrtcGetPTX(program, &ptx[0]);
-    checkErrNvrtc(err, "nvrtcGetPTX()");
+    CHECK_NVRTC(err, "nvrtcGetPTX()");
 
     err = nvrtcDestroyProgram(&program);
-    checkErrNvrtc(err, "nvrtcDestroyProgram()");
+    CHECK_NVRTC(err, "nvrtcDestroyProgram()");
 
     return create_module(dev, filename, target_cc, ptx.c_str());
 }
@@ -498,7 +496,7 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     debug("Creating module from PTX '%' on CUDA device %", filename, dev);
     CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx, num_options, options, option_values);
-    checkErrDrv(err, "cuModuleLoadDataEx()");
+    CHECK_CUDA(err, "cuModuleLoadDataEx()");
 
     return mod;
 }

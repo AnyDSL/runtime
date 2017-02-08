@@ -37,7 +37,7 @@ protected:
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* size, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const KernelArgType* types,
                        uint32_t num_args) override;
     void synchronize(DeviceId dev) override;
 
@@ -82,13 +82,7 @@ protected:
 
     std::vector<DeviceData> devices_;
 
-    void checkCudaErrors(CUresult err, const char*, const char*, const int) const;
-    void checkNvvmErrors(nvvmResult err, const char*, const char*, const int) const;
-    #ifdef CUDA_NVRTC
-    void checkNvrtcErrors(nvrtcResult err, const char*, const char*, const int) const;
-    #endif
-
-    CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernel);
+    CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
     std::string load_ptx(const std::string& filename);
     CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;

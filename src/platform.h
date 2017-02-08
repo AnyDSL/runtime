@@ -10,7 +10,7 @@ class Runtime;
 enum DeviceId   : uint32_t {};
 enum PlatformId : uint32_t {};
 
-enum class KernelArgType : uint8_t { VAL = 0, PTR, STRUCT };
+enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
 
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.

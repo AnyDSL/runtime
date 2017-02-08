@@ -39,13 +39,13 @@ public:
         return platforms_[plat]->alloc(dev, size);
     }
 
-    /// Allocates page-locked memory on the given platform (and on the given device).
+    /// Allocates page-locked memory on the given platform and device.
     void* alloc_host(PlatformId plat, DeviceId dev, int64_t size) {
         check_device(plat, dev);
         return platforms_[plat]->alloc_host(dev, size);
     }
 
-    /// Allocates unified memory on the given platform (and on the given device).
+    /// Allocates unified memory on the given platform and device.
     void* alloc_unified(PlatformId plat, DeviceId dev, int64_t size) {
         check_device(plat, dev);
         return platforms_[plat]->alloc_unified(dev, size);
@@ -63,11 +63,13 @@ public:
         platforms_[plat]->release(dev, ptr);
     }
 
+    /// Releases previously allocated page-locked memory.
     void release_host(PlatformId plat, DeviceId dev, void* ptr) {
         check_device(plat, dev);
         platforms_[plat]->release_host(dev, ptr);
     }
 
+    /// Launches a kernel on the platform and device.
     void launch_kernel(PlatformId plat, DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -81,6 +83,7 @@ public:
                                         num_args);
     }
 
+    /// Waits for the completion of all kernels on the given platform and device.
     void synchronize(PlatformId plat, DeviceId dev) {
         check_device(plat, dev);
         platforms_[plat]->synchronize(dev);
@@ -114,6 +117,7 @@ public:
 private:
     void check_device(PlatformId plat, DeviceId dev) {
         assert((int)dev < platforms_[plat]->dev_count() && "Invalid device");
+        unused(plat, dev);
     }
 
     std::vector<Platform*> platforms_;

@@ -117,7 +117,7 @@ void anydsl_synchronize(int32_t mask) {
 
 #if _POSIX_VERSION >= 200112L || _XOPEN_SOURCE >= 600
 void* anydsl_aligned_malloc(size_t size, size_t alignment) {
-    void* p;
+    void* p = nullptr;
     posix_memalign(&p, alignment, size);
     return p;
 }

@@ -4,10 +4,10 @@
 #include "platform.h"
 #include "runtime.h"
 
-#include <list>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <atomic>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -29,19 +29,23 @@ protected:
         dim3(int x = 1, int y = 1, int z = 1) : x(x), y(y), z(z) {}
     };
 
-    void* alloc(device_id dev, int64_t size) override;
-    void* alloc_host(device_id, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_unified(device_id, int64_t) override { platform_error(); return nullptr; }
-    void* get_device_ptr(device_id, void*) override { platform_error(); return nullptr; }
-    void release(device_id dev, void* ptr) override;
-    void release_host(device_id, void*) override { platform_error(); }
+    void* alloc(DeviceId dev, int64_t size) override;
+    void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
+    void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
+    void* get_device_ptr(DeviceId, void*) override { platform_error(); return nullptr; }
+    void release(DeviceId dev, void* ptr) override;
+    void release_host(DeviceId, void*) override { platform_error(); }
 
-    void launch_kernel(device_id dev, const char* file, const char* name, const int32_t* grid, const int32_t* block, const void** args) override;
-    void synchronize(device_id dev) override;
+    void launch_kernel(DeviceId dev,
+                       const char* file, const char* kernel,
+                       const uint32_t* grid, const uint32_t* block,
+                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       uint32_t num_args) override;
+    void synchronize(DeviceId dev) override;
 
-    void copy(device_id dev_src, const void* src, int64_t offset_src, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
-    void copy_from_host(const void* src, int64_t offset_src, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
-    void copy_to_host(device_id dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
 
     int dev_count() override;
 
@@ -54,22 +58,33 @@ protected:
         cl_device_id dev;
         cl_command_queue queue;
         cl_context ctx;
-        cl_kernel kernel;
-
-        size_t local_work_size[3], global_work_size[3];
-        cl_ulong start_kernel, end_kernel;
-        std::vector<void*> kernel_args;
-        std::vector<void*> kernel_vals;
-        std::vector<size_t> kernel_arg_sizes;
-        std::list<cl_mem> kernel_structs;
-
+        std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
+
+        DeviceData() {}
+        DeviceData(const DeviceData&) = delete;
+        DeviceData(DeviceData&& data)
+            : platform(data.platform)
+            , dev(data.dev)
+            , queue(data.queue)
+            , ctx(data.ctx)
+            , programs(std::move(data.programs))
+            , kernels(std::move(data.kernels))
+        {}
+
+        void lock() {
+            while (locked.test_and_set(std::memory_order_acquire)) ;
+        }
+
+        void unlock() {
+            locked.clear(std::memory_order_release);
+        }
     };
 
     std::vector<DeviceData> devices_;
 
-    void checkOpenCLErrors(cl_int err, const char*, const char*, const int);
+    cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 };
 
 #endif
