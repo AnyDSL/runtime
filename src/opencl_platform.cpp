@@ -317,8 +317,9 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
 
-void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) {
+void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
     assert(dev_src == dev_dst);
+    unused(dev_dst);
 
     cl_int err = clEnqueueCopyBuffer(devices_[dev_src].queue, (cl_mem)src, (cl_mem)dst, offset_src, offset_dst, size, 0, NULL, NULL);
     err |= clFinish(devices_[dev_src].queue);

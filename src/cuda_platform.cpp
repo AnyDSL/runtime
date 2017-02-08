@@ -212,8 +212,9 @@ void CudaPlatform::synchronize(DeviceId dev) {
     cuCtxPopCurrent(NULL);
 }
 
-void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) {
+void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
     assert(dev_src == dev_dst);
+    unused(dev_dst);
 
     cuCtxPushCurrent(devices_[dev_src].ctx);
 
