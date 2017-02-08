@@ -59,10 +59,10 @@ extern "device" {
     fn "_Z3maxff"       fmaxf(f32, f32) -> f32;
     fn "_Z3mindd"       fmin(f64, f64) -> f64;
     fn "_Z3maxdd"       fmax(f64, f64) -> f64;
-    fn "_Z10atomic_addPVU3AS1ii" atomic_add_global(&[1]i32, i32) -> i32;
-    fn "_Z10atomic_addPVU3AS3ii" atomic_add_local(&[3]i32, i32) -> i32;
-    fn "_Z10atomic_minPVU3AS1ii" atomic_min_global(&[1]i32, i32) -> i32;
-    fn "_Z10atomic_minPVU3AS3ii" atomic_min_local(&[3]i32, i32) -> i32;
+    fn "_Z10atomic_addPVU3AS1ii" atomic_add_global(&mut[1]i32, i32) -> i32;
+    fn "_Z10atomic_addPVU3AS3ii" atomic_add_local(&mut[3]i32, i32) -> i32;
+    fn "_Z10atomic_minPVU3AS1ii" atomic_min_global(&mut[1]i32, i32) -> i32;
+    fn "_Z10atomic_minPVU3AS3ii" atomic_min_local(&mut[3]i32, i32) -> i32;
 }
 
 fn work_dim() -> i32              { _Z12get_work_dimv()}
@@ -93,3 +93,8 @@ fn acc_dev() -> i32      { 1 }
 
 fn ldg_f32(a: &[1]f32) -> f32 { *a }
 fn ldg_i32(a: &[1]i32) -> i32 { *a }
+
+fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
+fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
+fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[1][f32] { bitcast[&mut[1][f32]](ptr) }
+fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[1][i16] { bitcast[&mut[1][i16]](ptr) }

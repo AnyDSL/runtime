@@ -12,11 +12,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 #ifdef ENABLE_TBB
 #include <tbb/tbb.h>
 #include <tbb/parallel_for.h>
@@ -135,14 +130,7 @@ void anydsl_aligned_free(void* ptr) { ::_aligned_free(ptr); }
 #endif
 
 long long anydsl_get_micro_time() {
-#if defined(_WIN32) || defined(__CYGWIN__) // Use QueryPerformanceCounter on Windows
-    LARGE_INTEGER counter, freq;
-    QueryPerformanceCounter(&counter);
-    QueryPerformanceFrequency(&freq);
-    return counter.QuadPart * 1000000LL / freq.QuadPart;
-#else
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-#endif
 }
 
 std::atomic<long long> anydsl_kernel_time(0);
@@ -169,7 +157,7 @@ void anydsl_print_string(char* s)   { std::cout << s; }
 #ifndef __has_feature
 #define __has_feature(x) 0
 #endif
-#if (defined (__clang__) && !__has_feature(cxx_thread_local)) || defined(_MSC_VER)
+#if (defined (__clang__) && !__has_feature(cxx_thread_local))
 #pragma message("Runtime random function is not thread-safe")
 static std::mt19937 std_gen;
 #else
@@ -226,7 +214,7 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
         id = free_ids.back();
         free_ids.pop_back();
     } else {
-        id = thread_pool.size();
+        id = static_cast<int32_t>(thread_pool.size());
     }
 
     auto spawned = std::make_pair(id, std::thread([=](){ fun_ptr(args); }));

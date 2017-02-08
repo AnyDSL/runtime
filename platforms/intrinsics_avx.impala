@@ -26,11 +26,11 @@ extern "C" {
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn atomic_xchg(a: &i32, b: i32) -> i32 { atomic(0u, a, b) }
-fn atomic_add(a: &i32, b: i32) -> i32 { atomic(1u, a, b) }
-fn atomic_sub(a: &i32, b: i32) -> i32 { atomic(2u, a, b) }
-fn atomic_max(a: &i32, b: i32) -> i32 { atomic(7u, a, b) }
-fn atomic_min(a: &i32, b: i32) -> i32 { atomic(8u, a, b) }
+fn atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
+fn atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
+fn atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
+fn atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
+fn atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 
 extern "device" {
     fn "llvm.exp.f32"      expf(f32) -> f32;
@@ -80,8 +80,13 @@ extern "device" {
     fn "llvm.x86.avx.blendv.ps.256" blendvps256(simd[f32 * 8], simd[f32 * 8], simd[f32 * 8]) -> simd[f32 * 8];
 }
 
-fn ldg_f32(a: &[1]f32) -> f32 { *a }
-fn ldg_i32(a: &[1]i32) -> i32 { *a }
+fn ldg_f32(a: &f32) -> f32 { *a }
+fn ldg_i32(a: &i32) -> i32 { *a }
+
+fn bitcast_mem_f32(ptr: &[i8]) -> &[f32] { bitcast[&[f32]](ptr) }
+fn bitcast_mem_i16(ptr: &[i8]) -> &[i16] { bitcast[&[i16]](ptr) }
+fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[f32] { bitcast[&mut[f32]](ptr) }
+fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[i16] { bitcast[&mut[i16]](ptr) }
 
 fn get_vector_length() -> int { 8 }
 fn get_alignment() -> int { 32 }
