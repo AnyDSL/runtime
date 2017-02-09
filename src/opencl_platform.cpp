@@ -267,7 +267,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     auto kernel = load_kernel(dev, file, name);
 
     // set up arguments
-    std::vector<cl_mem> kernel_structs;
+    std::vector<cl_mem> kernel_structs(num_args);
     for (size_t i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
@@ -275,9 +275,8 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
             cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, sizes[i], args[i], &err);
             CHECK_OPENCL(err, "clCreateBuffer()");
-            kernel_structs.emplace_back(struct_buf);
-            cl_mem& buf = kernel_structs.back();
-            clSetKernelArg(kernel, i, sizeof(cl_mem), buf);
+            kernel_structs[i] = struct_buf;
+            clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
         } else {
             cl_int err = clSetKernelArg(kernel, i, types[i] == KernelArgType::Ptr ? sizeof(cl_mem) : sizes[i], args[i]);
             CHECK_OPENCL(err, "clSetKernelArg()");
@@ -292,9 +291,11 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
 
     // release temporary buffers for struct arguments
-    for (cl_mem buf : kernel_structs) {
-        cl_int err = clReleaseMemObject(buf);
-        CHECK_OPENCL(err, "clReleaseMemObject()");
+    for (size_t i = 0; i < num_args; i++) {
+        if (types[i] == KernelArgType::Struct) {
+            cl_int err = clReleaseMemObject(kernel_structs[i]);
+            CHECK_OPENCL(err, "clReleaseMemObject()");
+        }
     }
 }
 
