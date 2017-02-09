@@ -8,9 +8,9 @@
 namespace anydsl {
 
 enum class Platform : int32_t {
-    HOST = ANYDSL_HOST,
-    CUDA = ANYDSL_CUDA,
-    OPENCL = ANYDSL_OPENCL
+    Host = ANYDSL_HOST,
+    Cuda = ANYDSL_CUDA,
+    OpenCL = ANYDSL_OPENCL
 };
 
 struct Device {
@@ -30,7 +30,7 @@ public:
     {}
 
     Array(int64_t size)
-        : Array(Platform::HOST, Device(0), size)
+        : Array(Platform::Host, Device(0), size)
     {}
 
     Array(int32_t dev, T* ptr, int64_t size)

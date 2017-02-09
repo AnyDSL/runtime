@@ -34,83 +34,64 @@ public:
     }
 
     /// Allocates memory on the given device.
-    void* alloc(platform_id plat, device_id dev, int64_t size) {
+    void* alloc(PlatformId plat, DeviceId dev, int64_t size) {
         check_device(plat, dev);
         return platforms_[plat]->alloc(dev, size);
     }
 
-    /// Allocates page-locked memory on the given platform (and on the given device).
-    void* alloc_host(platform_id plat, device_id dev, int64_t size) {
+    /// Allocates page-locked memory on the given platform and device.
+    void* alloc_host(PlatformId plat, DeviceId dev, int64_t size) {
         check_device(plat, dev);
         return platforms_[plat]->alloc_host(dev, size);
     }
 
-    /// Allocates unified memory on the given platform (and on the given device).
-    void* alloc_unified(platform_id plat, device_id dev, int64_t size) {
+    /// Allocates unified memory on the given platform and device.
+    void* alloc_unified(PlatformId plat, DeviceId dev, int64_t size) {
         check_device(plat, dev);
         return platforms_[plat]->alloc_unified(dev, size);
     }
 
     /// Returns the device memory associated with the page-locked memory.
-    void* get_device_ptr(platform_id plat, device_id dev, void* ptr) {
+    void* get_device_ptr(PlatformId plat, DeviceId dev, void* ptr) {
         check_device(plat, dev);
         return platforms_[plat]->get_device_ptr(dev, ptr);
     }
 
     /// Releases memory.
-    void release(platform_id plat, device_id dev, void* ptr) {
+    void release(PlatformId plat, DeviceId dev, void* ptr) {
         check_device(plat, dev);
         platforms_[plat]->release(dev, ptr);
     }
 
-    void release_host(platform_id plat, device_id dev, void* ptr) {
+    /// Releases previously allocated page-locked memory.
+    void release_host(PlatformId plat, DeviceId dev, void* ptr) {
         check_device(plat, dev);
         platforms_[plat]->release_host(dev, ptr);
     }
 
-    void set_block_size(platform_id plat, device_id dev, int32_t x, int32_t y, int32_t z) {
+    /// Launches a kernel on the platform and device.
+    void launch_kernel(PlatformId plat, DeviceId dev,
+                       const char* file, const char* kernel,
+                       const uint32_t* grid, const uint32_t* block,
+                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       uint32_t num_args) {
         check_device(plat, dev);
-        platforms_[plat]->set_block_size(dev, x, y, z);
+        platforms_[plat]->launch_kernel(dev,
+                                        file, kernel,
+                                        grid, block,
+                                        args, sizes, types,
+                                        num_args);
     }
 
-    void set_grid_size(platform_id plat, device_id dev, int32_t x, int32_t y, int32_t z) {
-        check_device(plat, dev);
-        platforms_[plat]->set_grid_size(dev, x, y, z);
-    }
-
-    void set_kernel_arg(platform_id plat, device_id dev, int32_t arg, void* ptr, int32_t size) {
-        check_device(plat, dev);
-        platforms_[plat]->set_kernel_arg(dev, arg, ptr, size);
-    }
-
-    void set_kernel_arg_ptr(platform_id plat, device_id dev, int32_t arg, void* ptr) {
-        check_device(plat, dev);
-        platforms_[plat]->set_kernel_arg_ptr(dev, arg, ptr);
-    }
-
-    void set_kernel_arg_struct(platform_id plat, device_id dev, int32_t arg, void* ptr, int32_t size) {
-        check_device(plat, dev);
-        platforms_[plat]->set_kernel_arg_struct(dev, arg, ptr, size);
-    }
-
-    void load_kernel(platform_id plat, device_id dev, const char* file, const char* name) {
-        check_device(plat, dev);
-        platforms_[plat]->load_kernel(dev, file, name);
-    }
-
-    void launch_kernel(platform_id plat, device_id dev) {
-        check_device(plat, dev);
-        platforms_[plat]->launch_kernel(dev);
-    }
-
-    void synchronize(platform_id plat, device_id dev) {
+    /// Waits for the completion of all kernels on the given platform and device.
+    void synchronize(PlatformId plat, DeviceId dev) {
         check_device(plat, dev);
         platforms_[plat]->synchronize(dev);
     }
 
     /// Copies memory.
-    void copy(platform_id plat_src, device_id dev_src, const void* src, int64_t offset_src,
-              platform_id plat_dst, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+    void copy(PlatformId plat_src, DeviceId dev_src, const void* src, int64_t offset_src,
+              PlatformId plat_dst, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
         check_device(plat_src, dev_src);
         check_device(plat_dst, dev_dst);
         if (plat_src == plat_dst) {
@@ -134,8 +115,9 @@ public:
     }
 
 private:
-    void check_device(platform_id plat, device_id dev) {
+    void check_device(PlatformId plat, DeviceId dev) {
         assert((int)dev < platforms_[plat]->dev_count() && "Invalid device");
+        unused(plat, dev);
     }
 
     std::vector<Platform*> platforms_;

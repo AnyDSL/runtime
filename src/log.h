@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <cstring>
 
+inline void unused() {}
+template <typename T, typename... Args>
+inline void unused(const T& t, Args... args) { (void)t; unused(args...); }
+
 inline void print(std::ostream& os, const char* fmt) {
     assert(!strchr(fmt, '%') && "Not enough arguments to print");
     os << fmt << std::endl;
@@ -36,6 +40,8 @@ template <typename... Args>
 void debug(Args... args) {
 #ifndef NDEBUG
     print(std::cout, args...);
+#else
+    unused(args...);
 #endif
 }
 

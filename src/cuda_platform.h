@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <atomic>
 
 #include <cuda.h>
 #include <nvvm.h>
@@ -26,30 +27,23 @@ public:
     ~CudaPlatform();
 
 protected:
-    struct dim3 {
-        int x, y, z;
-        dim3(int x = 1, int y = 1, int z = 1) : x(x), y(y), z(z) {}
-    };
+    void* alloc(DeviceId dev, int64_t size) override;
+    void* alloc_host(DeviceId dev, int64_t size) override;
+    void* alloc_unified(DeviceId dev, int64_t size) override;
+    void* get_device_ptr(DeviceId, void*) override;
+    void release(DeviceId dev, void* ptr) override;
+    void release_host(DeviceId dev, void* ptr) override;
 
-    void* alloc(device_id dev, int64_t size) override;
-    void* alloc_host(device_id dev, int64_t size) override;
-    void* alloc_unified(device_id dev, int64_t size) override;
-    void* get_device_ptr(device_id, void*) override;
-    void release(device_id dev, void* ptr) override;
-    void release_host(device_id dev, void* ptr) override;
+    void launch_kernel(DeviceId dev,
+                       const char* file, const char* kernel,
+                       const uint32_t* grid, const uint32_t* block,
+                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       uint32_t num_args) override;
+    void synchronize(DeviceId dev) override;
 
-    void set_block_size(device_id dev, int32_t x, int32_t y, int32_t z) override;
-    void set_grid_size(device_id dev, int32_t x, int32_t y, int32_t z) override;
-    void set_kernel_arg(device_id dev, int32_t arg, void* ptr, int32_t size) override;
-    void set_kernel_arg_ptr(device_id dev, int32_t arg, void* ptr) override;
-    void set_kernel_arg_struct(device_id dev, int32_t arg, void* ptr, int32_t size) override;
-    void load_kernel(device_id dev, const char* file, const char* name) override;
-    void launch_kernel(device_id dev) override;
-    void synchronize(device_id dev) override;
-
-    void copy(device_id dev_src, const void* src, int64_t offset_src, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
-    void copy_from_host(const void* src, int64_t offset_src, device_id dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
-    void copy_to_host(device_id dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
 
     int dev_count() override;
 
@@ -62,29 +56,38 @@ protected:
         CUcontext ctx;
         int compute_minor;
         int compute_major;
-
-        dim3 grid, block;
-        CUfunction kernel;
-        CUevent start_kernel, end_kernel;
-        std::vector<void*> kernel_args;
-        std::vector<void*> kernel_vals;
-
+        std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
+
+        DeviceData() {}
+        DeviceData(const DeviceData&) = delete;
+        DeviceData(DeviceData&& data)
+            : dev(data.dev)
+            , ctx(data.ctx)
+            , compute_minor(data.compute_minor)
+            , compute_major(data.compute_major)
+            , modules(std::move(data.modules))
+            , functions(std::move(data.functions))
+        {}
+
+        void lock() {
+            while (locked.test_and_set(std::memory_order_acquire)) ;
+        }
+
+        void unlock() {
+            locked.clear(std::memory_order_release);
+        }
     };
 
     std::vector<DeviceData> devices_;
 
-    void checkCudaErrors(CUresult err, const char*, const char*, const int);
-    void checkNvvmErrors(nvvmResult err, const char*, const char*, const int);
-    #ifdef CUDA_NVRTC
-    void checkNvrtcErrors(nvrtcResult err, const char*, const char*, const int);
-    #endif
+    CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
     std::string load_ptx(const std::string& filename);
-    void compile_nvvm(device_id dev, const std::string& filename, CUjit_target target_cc);
-    void compile_cuda(device_id dev, const std::string& filename, CUjit_target target_cc);
-    void create_module(device_id dev, const std::string& filename, CUjit_target target_cc, const void* ptx);
+    CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
+    CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
+    CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;
 };
 
 #endif
