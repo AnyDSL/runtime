@@ -6,9 +6,9 @@
 # AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
 
-CMAKE_MINIMUM_REQUIRED ( VERSION 3.1 )
+cmake_minimum_required(VERSION 3.1)
 
-FIND_PATH ( AnyDSL_runtime_DIR
+find_path(AnyDSL_runtime_DIR
     NAMES
         anydsl_runtime-config.cmake
     PATHS
@@ -21,7 +21,7 @@ FIND_PATH ( AnyDSL_runtime_DIR
         share/AnyDSL_runtime/cmake
 )
 
-FIND_PATH (AnyDSL_runtime_ROOT_DIR
+find_path(AnyDSL_runtime_ROOT_DIR
     NAMES
         cmake/anydsl_runtime-config.cmake.in
         src/anydsl_runtime.h
@@ -32,80 +32,79 @@ FIND_PATH (AnyDSL_runtime_ROOT_DIR
         "@CMAKE_SOURCE_DIR@"
 )
 
-FIND_PATH ( AnyDSL_runtime_INCLUDE_DIR
+find_path(AnyDSL_runtime_INCLUDE_DIR
     NAMES
         anydsl_runtime.h
         anydsl_runtime.hpp
     PATHS
         ${AnyDSL_runtime_ROOT_DIR}/src
 )
-SET ( AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR} )
+set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
 
-SET (AnyDSL_runtime_LIBS_DIR
+set(AnyDSL_runtime_LIBS_DIR
     "${AnyDSL_runtime_DIR}/../../../@PROJ_LIBRARY_DIR@"
     "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@"
     "@CMAKE_ARCHIVE_OUTPUT_DIRECTORY@"
     # TODO: additionally use install prefix
 )
 # TODO: this should be @ANYDSL_RUNTIME_OUTPUT_NAME@
-SET ( AnyDSL_runtime_LIBNAME runtime )
-FIND_LIBRARY ( AnyDSL_runtime_LIBRARY_RELEASE
+set(AnyDSL_runtime_LIBNAME runtime)
+find_library(AnyDSL_runtime_LIBRARY_RELEASE
     NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_RELEASE_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_RELEASE_POSTFIX@"
     PATHS ${AnyDSL_runtime_LIBS_DIR}
     PATH_SUFFIXES Release
 )
-FIND_LIBRARY ( AnyDSL_runtime_LIBRARY_DEBUG
+find_library(AnyDSL_runtime_LIBRARY_DEBUG
     NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_DEBUG_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_DEBUG_POSTFIX@"
     PATHS ${AnyDSL_runtime_LIBS_DIR}
     PATH_SUFFIXES Debug
 )
-IF ( NOT AnyDSL_runtime_LIBRARY_RELEASE )
-    SET ( AnyDSL_runtime_LIBRARY_RELEASE ${AnyDSL_runtime_LIBRARY_DEBUG} )
-ENDIF ()
-IF ( NOT AnyDSL_runtime_LIBRARY_DEBUG )
-    SET ( AnyDSL_runtime_LIBRARY_DEBUG ${AnyDSL_runtime_LIBRARY_RELEASE} )
-ENDIF ()
-IF ( AnyDSL_runtime_LIBRARY_RELEASE STREQUAL AnyDSL_runtime_LIBRARY_DEBUG )
-    SET ( AnyDSL_runtime_LIBRARY ${AnyDSL_runtime_LIBRARY_RELEASE})
-ELSE ()
-    SET ( AnyDSL_runtime_LIBRARY
+if(NOT AnyDSL_runtime_LIBRARY_RELEASE)
+    set(nyDSL_runtime_LIBRARY_RELEASE ${AnyDSL_runtime_LIBRARY_DEBUG})
+endif()
+if(NOT AnyDSL_runtime_LIBRARY_DEBUG)
+    set(AnyDSL_runtime_LIBRARY_DEBUG ${AnyDSL_runtime_LIBRARY_RELEASE})
+endif()
+if(AnyDSL_runtime_LIBRARY_RELEASE STREQUAL AnyDSL_runtime_LIBRARY_DEBUG)
+    set(AnyDSL_runtime_LIBRARY ${AnyDSL_runtime_LIBRARY_RELEASE})
+else()
+    set(AnyDSL_runtime_LIBRARY
         optimized ${AnyDSL_runtime_LIBRARY_RELEASE}
-        debug ${AnyDSL_runtime_LIBRARY_DEBUG}
-    )
-ENDIF ()
+        debug ${AnyDSL_runtime_LIBRARY_DEBUG})
+endif()
 
-SET ( AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARY} "@CONF_RUNTIME_LIBRARIES@" )
-IF (MSVC)
-    SET ( AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd )
-ENDIF ()
+set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARY} "@CONF_RUNTIME_LIBRARIES@")
+if(MSVC)
+    set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd)
+endif()
 
-MACRO ( AnyDSL_runtime_files outfiles )
+macro(AnyDSL_runtime_files outfiles)
     cmake_parse_arguments("PARGS" "" "BACKEND;FRONTEND" "" ${ARGN})
-    IF ( NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "" )
-        MESSAGE ( FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}" )
-    ENDIF ()
+    if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
+        message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
+    endif()
 
-    STRING ( TOLOWER ${PARGS_FRONTEND} _frontend )
-    STRING ( TOLOWER ${PARGS_BACKEND} _backend )
+    string(TOLOWER ${PARGS_FRONTEND} _frontend)
+    string(TOLOWER ${PARGS_BACKEND} _backend)
 
-    IF ( NOT _frontend STREQUAL "impala" )
-        MESSAGE ( ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)" )
-    ENDIF ()
+    if(NOT _frontend STREQUAL "impala")
+        message(ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)")
+    endif()
 
-    SET ( _backend_instrinsics ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_${_backend}.impala )
+    set(_backend_instrinsics ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_${_backend}.impala)
 
-    IF (NOT EXISTS ${_backend_instrinsics})
-        MESSAGE ( WARNING "Unsupported backend ${_backend} for frontend ${_frontend}")
-        SET ( _backend_instrinsics )
-    ENDIF ()
+    if(NOT EXISTS ${_backend_instrinsics})
+        message(WARNING "Unsupported backend ${_backend} for frontend ${_frontend}")
+        set(_backend_instrinsics)
+    endif()
 
-    SET ( ${outfiles} ${${outfiles}}
+    set(${outfiles} ${${outfiles}}
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala
-        ${_backend_instrinsics} )
-ENDMACRO ()
+        ${_backend_instrinsics})
+endmacro()
 
-INCLUDE ( FindPackageHandleStandardArgs )
-find_package_handle_standard_args( AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS)
 
-MARK_AS_ADVANCED ( AnyDSL_runtime_LIBRARY AnyDSL_runtime_LIBRARY_DEBUG AnyDSL_runtime_LIBRARY_RELEASE AnyDSL_runtime_LIBS_DIR AnyDSL_runtime_LIBNAME AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR )
+mark_as_advanced(AnyDSL_runtime_LIBRARY AnyDSL_runtime_LIBRARY_DEBUG AnyDSL_runtime_LIBRARY_RELEASE AnyDSL_runtime_LIBS_DIR AnyDSL_runtime_LIBNAME AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR)
