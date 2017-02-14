@@ -4,31 +4,23 @@ include(CMakeParseArguments)
 
 list(APPEND ANYDSL_RUNTIME_LIBRARIES "@CONF_RUNTIME_LIBRARIES@")
 
-# find impala
+# find required binaries: impala, clang, llvm-as
 find_program(IMPALA_BIN impala)
+find_program(CLANG_BIN clang)
+find_program(LLVM_AS_BIN llvm-as)
 if(NOT IMPALA_BIN)
     message(FATAL_ERROR "Could not find impala binary, it has to be in the PATH")
 endif()
-
-find_program(LLVM_AS_BIN llvm-as
-    PATHS
-        ${LLVM_TOOLS_BINARY_DIR}
-        ${LLVM_INSTALL_PREFIX}/bin
-    PATH_SUFFIXES
-        ${CMAKE_CONFIGURATION_TYPES}
-)
-find_program(CLANG_BIN clang
-    PATHS
-        ${LLVM_TOOLS_BINARY_DIR}
-        ${LLVM_INSTALL_PREFIX}/bin
-    PATH_SUFFIXES
-        ${CMAKE_CONFIGURATION_TYPES}
-)
-if(NOT LLVM_AS_BIN )
-    message(FATAL_ERROR "Could not find llvm-as binary, it has to be in the PATH")
-endif()
 if(NOT CLANG_BIN)
     message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
+endif()
+if(LLVM_AS_BIN)
+    message(STATUS "Found llvm-as: ${LLVM_AS_BIN}")
+    message(STATUS "Note: llvm-as version needs to match the required LLVM bitcode version from NVVM.")
+else()
+    message(STATUS "Could not find llvm-as binary.")
+    message(STATUS "llvm-as is required to generate LLVM bitcode for NVVM.")
+    message(STATUS "llvm-as version needs to match the required LLVM bitcode version from NVVM.")
 endif()
 
 # find python for post-patcher.py
