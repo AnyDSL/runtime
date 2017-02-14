@@ -28,9 +28,9 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
-set(BACKEND ${BACKEND} CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL, SPIR")
+set(BACKEND ${BACKEND} CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL")
 if(NOT BACKEND)
-    set(BACKEND cpu CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL, SPIR" FORCE)
+    set(BACKEND cpu CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL" FORCE)
 endif()
 
 string(TOLOWER "${BACKEND}" BACKEND)
@@ -84,8 +84,8 @@ macro(anydsl_runtime_wrap outfiles)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
 
-    # generate .bc files for NVVM & SPIR
-    if("${PARGS_BACKEND}" STREQUAL "spir" OR "${PARGS_BACKEND}" STREQUAL "nvvm")
+    # generate .bc files for NVVM
+    if("${PARGS_BACKEND}" STREQUAL "nvvm")
         set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND})
         set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND}.bc)
         add_custom_command(OUTPUT ${_bcfile} COMMAND ${LLVM_AS_BIN} ${_irfile} DEPENDS ${_irfile} VERBATIM)

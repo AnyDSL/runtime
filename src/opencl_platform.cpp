@@ -164,18 +164,6 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             cl_version_minor = std::stoi(version.substr(7 + sz + 1));
             err |= clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, sizeof(buffer), &buffer, NULL);
             debug("      Device Driver Version: %", buffer);
-            err |= clGetDeviceInfo(devices[j], CL_DEVICE_EXTENSIONS, sizeof(buffer), &buffer, NULL);
-            //debug("      Device Extensions: %", buffer);
-            std::string extensions(buffer);
-            bool has_spir = extensions.find("cl_khr_spir") != std::string::npos;
-            std::string spir_version;
-            #ifdef CL_DEVICE_SPIR_VERSIONS
-            if (has_spir) {
-                err |= clGetDeviceInfo(devices[j], CL_DEVICE_SPIR_VERSIONS , sizeof(buffer), &buffer, NULL);
-                spir_version = "(Version: " + std::string(buffer) + ")";
-            }
-            #endif
-            debug("      Device SPIR Support: % %", has_spir ? "yes" : "no", spir_version);
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
@@ -356,16 +344,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         opencl_dev.unlock();
 
         std::string options = "-cl-fast-relaxed-math";
-        if (std::ifstream(filename + ".spir.bc").good()) {
-            std::ifstream src_file(KERNEL_DIR + filename + ".spir.bc");
-            std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-            const size_t program_length = program_string.length();
-            const char* program_c_str = program_string.c_str();
-            options += " -x spir -spir-std=1.2";
-            program = clCreateProgramWithBinary(devices_[dev].ctx, 1, &devices_[dev].dev, &program_length, (const unsigned char**)&program_c_str, NULL, &err);
-            CHECK_OPENCL(err, "clCreateProgramWithBinary()");
-            debug("Compiling '%.spir.bc' on OpenCL device %", filename, dev);
-        } else if (std::ifstream(filename + ".cl").good()) {
+        if (std::ifstream(filename + ".cl").good()) {
             std::ifstream src_file(KERNEL_DIR + filename + ".cl");
             std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
             const size_t program_length = program_string.length();
@@ -375,7 +354,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
             CHECK_OPENCL(err, "clCreateProgramWithSource()");
             debug("Compiling '%.cl' on OpenCL device %", filename, dev);
         } else {
-            error("Could not find kernel file '%'.[spir.bc|cl]", filename);
+            error("Could not find kernel file '%'.cl", filename);
         }
 
         cl_build_status build_status;
