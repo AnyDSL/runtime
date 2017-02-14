@@ -20,6 +20,10 @@ if rttype in ("nvvm", "spir"):
                         result.append('define {0} @{1}({0} %name) {{\n'.format(ty1, fname))
                         result.append('  ret {0} %name\n'.format(ty1))
                         result.append('}\n')
+                    # remove source_filename information
+                    elif 'source_filename = ' in line:
+                        print("Removing 'source_filename' information")
+                        result.append(';{0}'.format(line))
                     # it's a normal line, keep it
                     else:
                         result.append(line)
