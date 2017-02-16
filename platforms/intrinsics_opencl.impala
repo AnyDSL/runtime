@@ -87,13 +87,8 @@ fn acc_gidx() -> i32     { get_global_id(0u) as i32 }
 fn acc_gidy() -> i32     { get_global_id(1u) as i32 }
 fn acc_gidz() -> i32     { get_global_id(2u) as i32 }
 fn acc_barrier() -> ()   { barrier(1u) }  // CLK_LOCAL_MEM_FENCE -> 1 // CLK_GLOBAL_MEM_FENCE -> 2
-fn acc_use_tex() -> bool { false }
+fn acc_use_ldg() -> bool { false }
 fn acc_dev() -> i32      { 1 }
 
 fn ldg_f32(a: &[1]f32) -> f32 { *a }
 fn ldg_i32(a: &[1]i32) -> i32 { *a }
-
-fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
-fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
-fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[1][f32] { bitcast[&mut[1][f32]](ptr) }
-fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[1][i16] { bitcast[&mut[1][i16]](ptr) }

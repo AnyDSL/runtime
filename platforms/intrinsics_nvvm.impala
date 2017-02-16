@@ -333,7 +333,7 @@ fn acc_gidx() -> i32     { acc_tidx() + acc_bdimx() * acc_bidx() }
 fn acc_gidy() -> i32     { acc_tidy() + acc_bdimy() * acc_bidy() }
 fn acc_gidz() -> i32     { acc_tidz() + acc_bdimz() * acc_bidz() }
 fn acc_barrier() -> ()   { nvvm_barrier0() }
-fn acc_use_tex() -> bool { true }
+fn acc_use_ldg() -> bool { true }
 fn acc_dev() -> i32      { 0 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
@@ -352,11 +352,6 @@ fn atomic_add_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(1u, a, b) }
 fn atomic_add_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (1u, a, b) }
 fn atomic_min_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(8u, a, b) }
 fn atomic_min_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (8u, a, b) }
-
-fn bitcast_mem_f32(ptr: &[i8]) -> &[1][f32] { bitcast[&[1][f32]](ptr) }
-fn bitcast_mem_i16(ptr: &[i8]) -> &[1][i16] { bitcast[&[1][i16]](ptr) }
-fn bitcast_mem_mutf32(ptr: &[i8]) -> &mut[1][f32] { bitcast[&mut[1][f32]](ptr) }
-fn bitcast_mem_muti16(ptr: &[i8]) -> &mut[1][i16] { bitcast[&mut[1][i16]](ptr) }
 
 fn fminf(a: f32, b: f32) -> f32 { nvvm_fmin_f(a, b) }
 fn fmaxf(a: f32, b: f32) -> f32 { nvvm_fmax_f(a, b) }
