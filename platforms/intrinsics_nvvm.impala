@@ -12,7 +12,7 @@ extern "device" {
     fn "llvm.nvvm.read.ptx.sreg.tid.y" nvvm_read_ptx_sreg_tid_y() -> i32;
     fn "llvm.nvvm.read.ptx.sreg.tid.z" nvvm_read_ptx_sreg_tid_z() -> i32;
     fn "llvm.nvvm.read.ptx.sreg.warpsize" nvvm_read_ptx_sreg_warpsize() -> i32;
-    fn "llvm.nvvm.barrier0" nvvm_barrier0() -> ();
+    fn "llvm.nvvm.barrier0" nvvm_barrier() -> ();
 
     fn "llvm.nvvm.abs.i" nvvm_abs_i(i32) -> i32;
     fn "llvm.nvvm.abs.ll" nvvm_abs_ll(i64) -> i64;
@@ -139,11 +139,11 @@ extern "device" {
     fn "llvm.nvvm.fma.rz.d" nvvm_fma_rz_d(f64, f64, f64) -> f64;
     fn "llvm.nvvm.fma.rz.f" nvvm_fma_rz_f(f32, f32, f32) -> f32;
     fn "llvm.nvvm.fma.rz.ftz.f" nvvm_fma_rz_ftz_f(f32, f32, f32) -> f32;
-    fn "llvm.nvvm.fmax.d" nvvm_fmax_d(f64, f64) -> f64;
-    fn "llvm.nvvm.fmax.f" nvvm_fmax_f(f32, f32) -> f32;
+    fn "llvm.nvvm.fmax.d" nvvm_fmax(f64, f64) -> f64;
+    fn "llvm.nvvm.fmax.f" nvvm_fmaxf(f32, f32) -> f32;
     fn "llvm.nvvm.fmax.ftz.f" nvvm_fmax_ftz_f(f32, f32) -> f32;
-    fn "llvm.nvvm.fmin.d" nvvm_fmin_d(f64, f64) -> f64;
-    fn "llvm.nvvm.fmin.f" nvvm_fmin_f(f32, f32) -> f32;
+    fn "llvm.nvvm.fmin.d" nvvm_fmin(f64, f64) -> f64;
+    fn "llvm.nvvm.fmin.f" nvvm_fminf(f32, f32) -> f32;
     fn "llvm.nvvm.fmin.ftz.f" nvvm_fmin_ftz_f(f32, f32) -> f32;
     fn "llvm.nvvm.h2f" nvvm_h2f(i16) -> f32;
     fn "llvm.nvvm.i2d.rm" nvvm_i2d_rm(i32) -> f64;
@@ -166,14 +166,14 @@ extern "device" {
     fn "llvm.nvvm.ll2f.rp" nvvm_ll2f_rp(i64) -> f32;
     fn "llvm.nvvm.ll2f.rz" nvvm_ll2f_rz(i64) -> f32;
     fn "llvm.nvvm.lohi.i2d" nvvm_lohi_i2d(i32, i32) -> f64;
-    fn "llvm.nvvm.max.i" nvvm_max_i(i32, i32) -> i32;
+    fn "llvm.nvvm.max.i" nvvm_max(i32, i32) -> i32;
     fn "llvm.nvvm.max.ll" nvvm_max_ll(i64, i64) -> i64;
     fn "llvm.nvvm.max.ui" nvvm_max_ui(i32, i32) -> i32;
     fn "llvm.nvvm.max.ull" nvvm_max_ull(i64, i64) -> i64;
     fn "llvm.nvvm.membar.cta" nvvm_membar_cta() -> ();
     fn "llvm.nvvm.membar.gl" nvvm_membar_gl() -> ();
     fn "llvm.nvvm.membar.sys" nvvm_membar_sys() -> ();
-    fn "llvm.nvvm.min.i" nvvm_min_i(i32, i32) -> i32;
+    fn "llvm.nvvm.min.i" nvvm_min(i32, i32) -> i32;
     fn "llvm.nvvm.min.ll" nvvm_min_ll(i64, i64) -> i64;
     fn "llvm.nvvm.min.ui" nvvm_min_ui(i32, i32) -> i32;
     fn "llvm.nvvm.min.ull" nvvm_min_ull(i64, i64) -> i64;
@@ -267,98 +267,76 @@ extern "device" {
 
 extern "C" {
     // libdevice intrinsics: http://docs.nvidia.com/cuda/libdevice-users-guide
-    fn "__nv_expf"      expf(f32) -> f32;
-    fn "__nv_exp2f"     exp2f(f32) -> f32;
-    fn "__nv_logf"      logf(f32) -> f32;
-    fn "__nv_log2f"     log2f(f32) -> f32;
-    fn "__nv_powf"      powf(f32, f32) -> f32;
-    fn "__nv_rsqrtf"    rsqrtf(f32) -> f32;
-    fn "__nv_sqrtf"     sqrtf(f32) -> f32;
-    fn "__nv_fabsf"     fabsf(f32) -> f32;
-    fn "__nv_sinf"      sinf(f32) -> f32;
-    fn "__nv_cosf"      cosf(f32) -> f32;
-    fn "__nv_tanf"      tanf(f32) -> f32;
-    fn "__nv_asinf"     asinf(f32) -> f32;
-    fn "__nv_acosf"     acosf(f32) -> f32;
-    fn "__nv_atanf"     atanf(f32) -> f32;
-    fn "__nv_erff"      erff(f32) -> f32;
-    fn "__nv_atan2f"    atan2f(f32, f32) -> f32;
-    fn "__nv_fmodf"     fmodf(f32, f32) -> f32;
-    fn "__nv_floorf"    floorf(f32) -> f32;
-    fn "__nv_fmaf"      fmaf(f32, f32, f32) -> f32;
-    fn "__nv_fmaf"      madf(f32, f32, f32) -> f32;
-    fn "__nv_isinff"    isinff(f32) -> i32;
-    fn "__nv_isnanf"    isnanf(f32) -> i32;
-    fn "__nv_finitef"   isfinitef(f32) -> i32;
-    fn "__nv_exp"       exp(f64) -> f64;
-    fn "__nv_pow"       pow(f64, f64) -> f64;
-    fn "__nv_rsqrt"     rsqrt(f64) -> f64;
-    fn "__nv_sqrt"      sqrt(f64) -> f64;
-    fn "__nv_fabs"      fabs(f64) -> f64;
-    fn "__nv_sin"       sin(f64) -> f64;
-    fn "__nv_cos"       cos(f64) -> f64;
-    fn "__nv_tan"       tan(f64) -> f64;
-    fn "__nv_asin"      asin(f64) -> f64;
-    fn "__nv_acos"      acos(f64) -> f64;
-    fn "__nv_atan"      atan(f64) -> f64;
-    fn "__nv_erf"       erf(f64) -> f64;
-    fn "__nv_atan2"     atan2(f64, f64) -> f64;
-    fn "__nv_fmod"      fmod(f64, f64) -> f64;
-    fn "__nv_floor"     floor(f64) -> f64;
-    fn "__nv_fma"       fma(f64, f64, f64) -> f64;
-    fn "__nv_fma"       mad(f64, f64, f64) -> f64;
-    fn "__nv_isinfd"    isinf(f64) -> i32;
-    fn "__nv_isnand"    isnan(f64) -> i32;
-    fn "__nv_isfinited" isfinite(f64) -> i32;
-    fn "__nv_copysignf" copysignf(f32, f32) -> f32;
-    fn "__nv_copysign"  copysign(f64, f64) -> f64;
+    fn "__nv_expf"      nvvm_expf(f32) -> f32;
+    fn "__nv_exp2f"     nvvm_exp2f(f32) -> f32;
+    fn "__nv_logf"      nvvm_logf(f32) -> f32;
+    fn "__nv_log2f"     nvvm_log2f(f32) -> f32;
+    fn "__nv_powf"      nvvm_powf(f32, f32) -> f32;
+    fn "__nv_rsqrtf"    nvvm_rsqrtf(f32) -> f32;
+    fn "__nv_sqrtf"     nvvm_sqrtf(f32) -> f32;
+    fn "__nv_fabsf"     nvvm_fabsf(f32) -> f32;
+    fn "__nv_sinf"      nvvm_sinf(f32) -> f32;
+    fn "__nv_cosf"      nvvm_cosf(f32) -> f32;
+    fn "__nv_tanf"      nvvm_tanf(f32) -> f32;
+    fn "__nv_asinf"     nvvm_asinf(f32) -> f32;
+    fn "__nv_acosf"     nvvm_acosf(f32) -> f32;
+    fn "__nv_atanf"     nvvm_atanf(f32) -> f32;
+    fn "__nv_erff"      nvvm_erff(f32) -> f32;
+    fn "__nv_atan2f"    nvvm_atan2f(f32, f32) -> f32;
+    fn "__nv_fmodf"     nvvm_fmodf(f32, f32) -> f32;
+    fn "__nv_floorf"    nvvm_floorf(f32) -> f32;
+    fn "__nv_fmaf"      nvvm_fmaf(f32, f32, f32) -> f32;
+    fn "__nv_fmaf"      nvvm_madf(f32, f32, f32) -> f32;
+    fn "__nv_isinff"    nvvm_isinff(f32) -> i32;
+    fn "__nv_isnanf"    nvvm_isnanf(f32) -> i32;
+    fn "__nv_finitef"   nvvm_isfinitef(f32) -> i32;
+    fn "__nv_copysignf" nvvm_copysignf(f32, f32) -> f32;
+    fn "__nv_exp"       nvvm_exp(f64) -> f64;
+    fn "__nv_exp2"      nvvm_exp2(f64) -> f64;
+    fn "__nv_log"       nvvm_log(f64) -> f64;
+    fn "__nv_log2"      nvvm_log2(f64) -> f64;
+    fn "__nv_pow"       nvvm_pow(f64, f64) -> f64;
+    fn "__nv_rsqrt"     nvvm_rsqrt(f64) -> f64;
+    fn "__nv_sqrt"      nvvm_sqrt(f64) -> f64;
+    fn "__nv_fabs"      nvvm_fabs(f64) -> f64;
+    fn "__nv_sin"       nvvm_sin(f64) -> f64;
+    fn "__nv_cos"       nvvm_cos(f64) -> f64;
+    fn "__nv_tan"       nvvm_tan(f64) -> f64;
+    fn "__nv_asin"      nvvm_asin(f64) -> f64;
+    fn "__nv_acos"      nvvm_acos(f64) -> f64;
+    fn "__nv_atan"      nvvm_atan(f64) -> f64;
+    fn "__nv_erf"       nvvm_erf(f64) -> f64;
+    fn "__nv_atan2"     nvvm_atan2(f64, f64) -> f64;
+    fn "__nv_fmod"      nvvm_fmod(f64, f64) -> f64;
+    fn "__nv_floor"     nvvm_floor(f64) -> f64;
+    fn "__nv_fma"       nvvm_fma(f64, f64, f64) -> f64;
+    fn "__nv_fma"       nvvm_mad(f64, f64, f64) -> f64;
+    fn "__nv_isinfd"    nvvm_isinf(f64) -> i32;
+    fn "__nv_isnand"    nvvm_isnan(f64) -> i32;
+    fn "__nv_isfinited" nvvm_isfinite(f64) -> i32;
+    fn "__nv_copysign"  nvvm_copysign(f64, f64) -> f64;
 }
-
-fn acc(dev: i32, dim: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) -> () { nvvm(dev, dim, block, body) }
-fn acc_alloc(dev: i32, size: i32) -> Buffer { alloc_cuda(dev, size) }
-fn acc_alloc_unified(dev: i32, size: i32) -> Buffer { alloc_cuda_unified(dev, size) }
-fn acc_tidx() -> i32     { nvvm_read_ptx_sreg_tid_x() }
-fn acc_tidy() -> i32     { nvvm_read_ptx_sreg_tid_y() }
-fn acc_tidz() -> i32     { nvvm_read_ptx_sreg_tid_z() }
-fn acc_bidx() -> i32     { nvvm_read_ptx_sreg_ctaid_x() }
-fn acc_bidy() -> i32     { nvvm_read_ptx_sreg_ctaid_y() }
-fn acc_bidz() -> i32     { nvvm_read_ptx_sreg_ctaid_z() }
-fn acc_bdimx() -> i32    { nvvm_read_ptx_sreg_ntid_x() }
-fn acc_bdimy() -> i32    { nvvm_read_ptx_sreg_ntid_y() }
-fn acc_bdimz() -> i32    { nvvm_read_ptx_sreg_ntid_z() }
-fn acc_gdimx() -> i32    { nvvm_read_ptx_sreg_nctaid_x() }
-fn acc_gdimy() -> i32    { nvvm_read_ptx_sreg_nctaid_y() }
-fn acc_gdimz() -> i32    { nvvm_read_ptx_sreg_nctaid_z() }
-fn acc_gidx() -> i32     { acc_tidx() + acc_bdimx() * acc_bidx() }
-fn acc_gidy() -> i32     { acc_tidy() + acc_bdimy() * acc_bidy() }
-fn acc_gidz() -> i32     { acc_tidz() + acc_bdimz() * acc_bidz() }
-fn acc_barrier() -> ()   { nvvm_barrier0() }
-fn acc_use_ldg() -> bool { true }
-fn acc_dev() -> i32      { 0 }
-
-// kind: Xchg Add Sub And Nand Or Xor Max Min
-fn atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
-fn atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
-fn atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
-fn atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
-fn atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 
 extern "thorin" {
-    fn "atomic" atomic_global(u32, &mut [1]i32, i32) -> i32;
-    fn "atomic" atomic_local (u32, &mut [3]i32, i32) -> i32;
+    fn "atomic"  nvvm_atomic_global[T](u32, &mut[1]T, T) -> T;
+    fn "atomic"  nvvm_atomic_shared[T](u32, &mut[3]T, T) -> T;
+    fn "cmpxchg" nvvm_atomic_cmpxchg_global[T](&mut[1]T, T, T) -> (T, bool);
+    fn "cmpxchg" nvvm_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
 }
 
-fn atomic_add_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(1u, a, b) }
-fn atomic_add_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (1u, a, b) }
-fn atomic_min_global(a: &mut [1]i32, b: i32) -> i32 { atomic_global(8u, a, b) }
-fn atomic_min_local (a: &mut [3]i32, b: i32) -> i32 { atomic_local (8u, a, b) }
+// kind: Xchg Add Sub And Nand Or Xor Max Min
+fn nvvm_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(0u, a, b) }
+fn nvvm_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(0u, a, b) }
+fn nvvm_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(1u, a, b) }
+fn nvvm_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(1u, a, b) }
+fn nvvm_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(2u, a, b) }
+fn nvvm_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(2u, a, b) }
+fn nvvm_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(7u, a, b) }
+fn nvvm_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(7u, a, b) }
+fn nvvm_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(8u, a, b) }
+fn nvvm_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(8u, a, b) }
 
-fn fminf(a: f32, b: f32) -> f32 { nvvm_fmin_f(a, b) }
-fn fmaxf(a: f32, b: f32) -> f32 { nvvm_fmax_f(a, b) }
-fn fmin(a: f64, b: f64) -> f64 { nvvm_fmin_d(a, b) }
-fn fmax(a: f64, b: f64) -> f64 { nvvm_fmax_d(a, b) }
-
-fn minmin(a: i32, b: i32, c: i32) -> i32 {
+fn nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmin.s32.s32.s32.min $0, $1, $2, $3;"
         : "=r"(res)
@@ -367,7 +345,7 @@ fn minmin(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn maxmax(a: i32, b: i32, c: i32) -> i32 {
+fn nvvm_maxmax(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmax.s32.s32.s32.max $0, $1, $2, $3;"
         : "=r"(res)
@@ -376,7 +354,7 @@ fn maxmax(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn minmax(a: i32, b: i32, c: i32) -> i32 {
+fn nvvm_minmax(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmin.s32.s32.s32.max $0, $1, $2, $3;"
         : "=r"(res)
@@ -385,7 +363,7 @@ fn minmax(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn maxmin(a: i32, b: i32, c: i32) -> i32 {
+fn nvvm_maxmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmax.s32.s32.s32.min $0, $1, $2, $3;"
         : "=r"(res)
@@ -394,19 +372,19 @@ fn maxmin(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn ldg_f32(addr: &[1]f32) -> f32 {
+fn nvvm_ldg_f32(addr: &[1]f32) -> f32 {
     let mut res: f32;
     asm("ld.global.nc.f32 $0, [$1];" : "=f"(res) : "l"(addr));
     res
 }
 
-fn ldg_i32(addr: &[1]i32) -> i32 {
+fn nvvm_ldg_i32(addr: &[1]i32) -> i32 {
     let mut res: i32;
     asm("ld.global.nc.i32 $0, [$1];" : "=f"(res) : "l"(addr));
     res
 }
 
-fn ldg4_f32(addr: &simd[f32 * 4]) -> simd[f32 * 4] {
+fn nvvm_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] {
     let mut r1 : f32;
     let mut r2 : f32;
     let mut r3 : f32;
@@ -418,7 +396,7 @@ fn ldg4_f32(addr: &simd[f32 * 4]) -> simd[f32 * 4] {
     simd[r1, r2, r3, r4]
 }
 
-fn ldg4_i32(addr: &simd[i32 * 4]) -> simd[i32 * 4] {
+fn nvvm_ldg4_i32(addr: &[1]simd[i32 * 4]) -> simd[i32 * 4] {
     let mut r1 : i32;
     let mut r2 : i32;
     let mut r3 : i32;
@@ -430,7 +408,7 @@ fn ldg4_i32(addr: &simd[i32 * 4]) -> simd[i32 * 4] {
     simd[r1, r2, r3, r4]
 }
 
-fn ballot(a: i32) -> i32 {
+fn nvvm_ballot(a: i32) -> i32 {
     let mut res: i32;
     asm("{ .reg .pred %p1;"
         "setp.ne.u32 %p1, $1, 0;"
@@ -441,4 +419,83 @@ fn ballot(a: i32) -> i32 {
     res
 }
 
-fn popcount(i: i32) -> i32 { nvvm_popc_i(i) }
+fn nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
+
+static nvvm_accelerator = Accelerator {
+    exec          : nvvm,
+    alloc         : alloc_cuda,
+    alloc_unified : alloc_cuda_unified,
+    tidx          : nvvm_read_ptx_sreg_tid_x,
+    tidy          : nvvm_read_ptx_sreg_tid_y,
+    tidz          : nvvm_read_ptx_sreg_tid_z,
+    bidx          : nvvm_read_ptx_sreg_ctaid_x,
+    bidy          : nvvm_read_ptx_sreg_ctaid_y,
+    bidz          : nvvm_read_ptx_sreg_ctaid_z,
+    bdimx         : nvvm_read_ptx_sreg_ntid_x,
+    bdimy         : nvvm_read_ptx_sreg_ntid_y,
+    bdimz         : nvvm_read_ptx_sreg_ntid_z,
+    gdimx         : nvvm_read_ptx_sreg_nctaid_x,
+    gdimy         : nvvm_read_ptx_sreg_nctaid_y,
+    gdimz         : nvvm_read_ptx_sreg_nctaid_z,
+    gidx          : || nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
+    gidy          : || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
+    gidz          : || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
+    barrier       : nvvm_barrier,
+    has_ldg       : || true,
+    dev           : || 0,
+};
+
+static nvvm_intrinsics = Intrinsics {
+    expf        : nvvm_expf,
+    exp2f       : nvvm_exp2f,
+    logf        : nvvm_logf,
+    log2f       : nvvm_log2f,
+    powf        : nvvm_powf,
+    rsqrtf      : nvvm_rsqrtf,
+    sqrtf       : nvvm_sqrtf,
+    fabsf       : nvvm_fabsf,
+    sinf        : nvvm_sinf,
+    cosf        : nvvm_cosf,
+    tanf        : nvvm_tanf,
+    asinf       : nvvm_asinf,
+    acosf       : nvvm_acosf,
+    atanf       : nvvm_atanf,
+    erff        : nvvm_erff,
+    atan2f      : nvvm_atan2f,
+    copysignf   : nvvm_copysignf,
+    fmaf        : nvvm_fmaf,
+    fmaxf       : nvvm_fmaxf,
+    fminf       : nvvm_fminf,
+    fmodf       : nvvm_fmodf,
+    floorf      : nvvm_floorf,
+    isinff      : nvvm_isinff,
+    isnanf      : nvvm_isnanf,
+    isfinitef   : nvvm_isfinitef,
+    exp         : nvvm_exp,
+    exp2        : nvvm_exp2,
+    log         : nvvm_log,
+    log2        : nvvm_log2,
+    pow         : nvvm_pow,
+    rsqrt       : nvvm_rsqrt,
+    sqrt        : nvvm_sqrt,
+    fabs        : nvvm_fabs,
+    sin         : nvvm_sin,
+    cos         : nvvm_cos,
+    tan         : nvvm_tan,
+    asin        : nvvm_asin,
+    acos        : nvvm_acos,
+    atan        : nvvm_atan,
+    erf         : nvvm_erf,
+    atan2       : nvvm_atan2,
+    copysign    : nvvm_copysign,
+    fma         : nvvm_fma,
+    fmax        : nvvm_fmax,
+    fmin        : nvvm_fmin,
+    fmod        : nvvm_fmod,
+    floor       : nvvm_floor,
+    isinf       : nvvm_isinf,
+    isnan       : nvvm_isnan,
+    isfinite    : nvvm_isfinite,
+    min         : nvvm_min,
+    max         : nvvm_max,
+};

@@ -1,110 +1,163 @@
 extern "device" {
     // no declarations are emitted for "device" functions
-    fn __syncthreads() -> ();
-    fn expf(f32) -> f32;
-    fn exp2f(f32) -> f32;
-    fn logf(f32) -> f32;
-    fn log2f(f32) -> f32;
-    fn powf(f32, f32) -> f32;
-    fn rsqrtf(f32) -> f32;
-    fn sqrtf(f32) -> f32;
-    fn fabsf(f32) -> f32;
-    fn sinf(f32) -> f32;
-    fn cosf(f32) -> f32;
-    fn tanf(f32) -> f32;
-    fn asinf(f32) -> f32;
-    fn acosf(f32) -> f32;
-    fn atanf(f32) -> f32;
-    fn erff(f32) -> f32;
-    fn atan2f(f32, f32) -> f32;
-    fn copysignf(f32, f32) -> f32;
-    fn fmaf(f32, f32, f32) -> f32;
-    fn fmaxf(f32, f32) -> f32;
-    fn fminf(f32, f32) -> f32;
-    fn fmodf(f32, f32) -> f32;
-    fn floorf(f32) -> f32;
-    fn "isinf"    isinff(f32) -> i32;
-    fn "isnan"    isnanf(f32) -> i32;
-    fn "isfinite" isfinitef(f32) -> i32;
-    fn exp(f64) -> f64;
-    fn exp2(f64) -> f64;
-    fn log(f64) -> f64;
-    fn log2(f64) -> f64;
-    fn pow(f64, f64) -> f64;
-    fn rsqrt(f64) -> f64;
-    fn sqrt(f64) -> f64;
-    fn fabs(f64) -> f64;
-    fn sin(f64) -> f64;
-    fn cos(f64) -> f64;
-    fn tan(f64) -> f64;
-    fn asin(f64) -> f64;
-    fn acos(f64) -> f64;
-    fn atan(f64) -> f64;
-    fn erf(f64) -> f64;
-    fn atan2(f64, f64) -> f64;
-    fn copysign(f64, f64) -> f64;
-    fn fma(f64, f64, f64) -> f64;
-    fn fmax(f64, f64) -> f64;
-    fn fmin(f64, f64) -> f64;
-    fn fmod(f64, f64) -> f64;
-    fn floor(f64) -> f64;
-    fn "isinf"     isinf(f64) -> i32;
-    fn "isnan"     isnan(f64) -> i32;
-    fn "isfinite"  isfinite(f64) -> i32;
-    fn "atomicAdd" atomic_add_global(&mut[1]i32, i32) -> i32;
-    fn "atomicAdd" atomic_add_local(&mut[3]i32, i32) -> i32;
-    fn "atomicMin" atomic_min_global(&mut[1]i32, i32) -> i32;
-    fn "atomicMin" atomic_min_local(&mut[3]i32, i32) -> i32;
-    fn "__ldg" __ldg_f32(&[1]f32) -> f32;
-    fn "__ldg" __ldg_i32(&[1]i32) -> i32;
-    fn "__ldg" __ldg4_f32(&simd[f32 * 4]) -> simd[f32 * 4];
-    fn "__ldg" __ldg4_i32(&simd[i32 * 4]) -> simd[i32 * 4];
-    fn min(a: i32, b: i32) -> i32;
-    fn max(a: i32, b: i32) -> i32;
+    fn "__syncthreads" cuda_syncthreads() -> ();
+    fn "expf"          cuda_expf(f32) -> f32;
+    fn "exp2f"         cuda_exp2f(f32) -> f32;
+    fn "logf"          cuda_logf(f32) -> f32;
+    fn "log2f"         cuda_log2f(f32) -> f32;
+    fn "powf"          cuda_powf(f32, f32) -> f32;
+    fn "rsqrtf"        cuda_rsqrtf(f32) -> f32;
+    fn "sqrtf"         cuda_sqrtf(f32) -> f32;
+    fn "fabsf"         cuda_fabsf(f32) -> f32;
+    fn "sinf"          cuda_sinf(f32) -> f32;
+    fn "cosf"          cuda_cosf(f32) -> f32;
+    fn "tanf"          cuda_tanf(f32) -> f32;
+    fn "asinf"         cuda_asinf(f32) -> f32;
+    fn "acosf"         cuda_acosf(f32) -> f32;
+    fn "atanf"         cuda_atanf(f32) -> f32;
+    fn "erff"          cuda_erff(f32) -> f32;
+    fn "atan2f"        cuda_atan2f(f32, f32) -> f32;
+    fn "copysignf"     cuda_copysignf(f32, f32) -> f32;
+    fn "fmaf"          cuda_fmaf(f32, f32, f32) -> f32;
+    fn "fmaxf"         cuda_fmaxf(f32, f32) -> f32;
+    fn "fminf"         cuda_fminf(f32, f32) -> f32;
+    fn "fmodf"         cuda_fmodf(f32, f32) -> f32;
+    fn "floorf"        cuda_floorf(f32) -> f32;
+    fn "isinf"         cuda_isinff(f32) -> i32;
+    fn "isnan"         cuda_isnanf(f32) -> i32;
+    fn "isfinite"      cuda_isfinitef(f32) -> i32;
+    fn "exp"           cuda_exp(f64) -> f64;
+    fn "exp2"          cuda_exp2(f64) -> f64;
+    fn "log"           cuda_log(f64) -> f64;
+    fn "log2"          cuda_log2(f64) -> f64;
+    fn "pow"           cuda_pow(f64, f64) -> f64;
+    fn "rsqrt"         cuda_rsqrt(f64) -> f64;
+    fn "sqrt"          cuda_sqrt(f64) -> f64;
+    fn "fabs"          cuda_fabs(f64) -> f64;
+    fn "sin"           cuda_sin(f64) -> f64;
+    fn "cos"           cuda_cos(f64) -> f64;
+    fn "tan"           cuda_tan(f64) -> f64;
+    fn "asin"          cuda_asin(f64) -> f64;
+    fn "acos"          cuda_acos(f64) -> f64;
+    fn "atan"          cuda_atan(f64) -> f64;
+    fn "erf"           cuda_erf(f64) -> f64;
+    fn "atan2"         cuda_atan2(f64, f64) -> f64;
+    fn "copysign"      cuda_copysign(f64, f64) -> f64;
+    fn "fma"           cuda_fma(f64, f64, f64) -> f64;
+    fn "fmax"          cuda_fmax(f64, f64) -> f64;
+    fn "fmin"          cuda_fmin(f64, f64) -> f64;
+    fn "fmod"          cuda_fmod(f64, f64) -> f64;
+    fn "floor"         cuda_floor(f64) -> f64;
+    fn "isinf"         cuda_isinf(f64) -> i32;
+    fn "isnan"         cuda_isnan(f64) -> i32;
+    fn "isfinite"      cuda_isfinite(f64) -> i32;
+    fn "atomicAdd"     cuda_atomic_add_global(&mut[1]i32, i32) -> i32;
+    fn "atomicAdd"     cuda_atomic_add_local(&mut[3]i32, i32) -> i32;
+    fn "atomicMin"     cuda_atomic_min_global(&mut[1]i32, i32) -> i32;
+    fn "atomicMin"     cuda_atomic_min_local(&mut[3]i32, i32) -> i32;
+    fn "__ldg"         cuda_ldg_f32(&[1]f32) -> f32;
+    fn "__ldg"         cuda_ldg_i32(&[1]i32) -> i32;
+    fn "__ldg"         cuda_ldg4_f32(&[1]simd[f32 * 4]) -> simd[f32 * 4];
+    fn "__ldg"         cuda_ldg4_i32(&[1]simd[i32 * 4]) -> simd[i32 * 4];
+    fn "min"           cuda_min(a: i32, b: i32) -> i32;
+    fn "max"           cuda_max(a: i32, b: i32) -> i32;
     // wrappers for threadIdx.x etc. are provided
-    fn threadIdx_x() -> i32;
-    fn threadIdx_y() -> i32;
-    fn threadIdx_z() -> i32;
-    fn blockIdx_x() -> i32;
-    fn blockIdx_y() -> i32;
-    fn blockIdx_z() -> i32;
-    fn blockDim_x() -> i32;
-    fn blockDim_y() -> i32;
-    fn blockDim_z() -> i32;
-    fn gridDim_x() -> i32;
-    fn gridDim_y() -> i32;
-    fn gridDim_z() -> i32;
+    fn "threadIdx_x"   cuda_threadIdx_x() -> i32;
+    fn "threadIdx_y"   cuda_threadIdx_y() -> i32;
+    fn "threadIdx_z"   cuda_threadIdx_z() -> i32;
+    fn "blockIdx_x"    cuda_blockIdx_x() -> i32;
+    fn "blockIdx_y"    cuda_blockIdx_y() -> i32;
+    fn "blockIdx_z"    cuda_blockIdx_z() -> i32;
+    fn "blockDim_x"    cuda_blockDim_x() -> i32;
+    fn "blockDim_y"    cuda_blockDim_y() -> i32;
+    fn "blockDim_z"    cuda_blockDim_z() -> i32;
+    fn "gridDim_x"     cuda_gridDim_x() -> i32;
+    fn "gridDim_y"     cuda_gridDim_y() -> i32;
+    fn "gridDim_z"     cuda_gridDim_z() -> i32;
 }
 
-fn acc(dev: i32, dim: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) -> () { cuda(dev, dim, block, body) }
-fn acc_alloc(dev: i32, size: i32) -> Buffer { alloc_cuda(dev, size) }
-fn acc_alloc_unified(dev: i32, size: i32) -> Buffer { alloc_cuda_unified(dev, size) }
-fn acc_tidx() -> i32     { threadIdx_x() }
-fn acc_tidy() -> i32     { threadIdx_y() }
-fn acc_tidz() -> i32     { threadIdx_z() }
-fn acc_bidx() -> i32     { blockIdx_x() }
-fn acc_bidy() -> i32     { blockIdx_y() }
-fn acc_bidz() -> i32     { blockIdx_z() }
-fn acc_bdimx() -> i32    { blockDim_x() }
-fn acc_bdimy() -> i32    { blockDim_y() }
-fn acc_bdimz() -> i32    { blockDim_z() }
-fn acc_gdimx() -> i32    { gridDim_x() }
-fn acc_gdimy() -> i32    { gridDim_y() }
-fn acc_gdimz() -> i32    { gridDim_z() }
-fn acc_gidx() -> i32     { acc_tidx() + acc_bdimx() * acc_bidx() }
-fn acc_gidy() -> i32     { acc_tidy() + acc_bdimy() * acc_bidy() }
-fn acc_gidz() -> i32     { acc_tidz() + acc_bdimz() * acc_bidz() }
-fn acc_barrier() -> ()   { __syncthreads() }
-fn acc_use_ldg() -> bool { true }
-fn acc_dev() -> i32      { 0 }
+fn cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
+fn cuda_maxmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_max(a, b), c) }
+fn cuda_minmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_min(a, b), c) }
+fn cuda_maxmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_max(a, b), c) }
+fn cuda_madf(a: f32, b: f32, c: f32) -> f32 { cuda_fmaf(a, b, c) }
+fn cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 
-fn ldg_f32(a: &[1]f32) -> f32 { __ldg_f32(a) }
-fn ldg_i32(a: &[1]i32) -> i32 { __ldg_i32(a) }
-fn ldg4_f32(a: &simd[f32 * 4]) -> simd[f32 * 4] { __ldg4_f32(a) }
-fn ldg4_i32(a: &simd[i32 * 4]) -> simd[i32 * 4] { __ldg4_i32(a) }
-fn minmin(a: i32, b: i32, c: i32) -> i32 { min(min(a, b), c) }
-fn maxmax(a: i32, b: i32, c: i32) -> i32 { max(max(a, b), c) }
-fn minmax(a: i32, b: i32, c: i32) -> i32 { max(min(a, b), c) }
-fn maxmin(a: i32, b: i32, c: i32) -> i32 { min(max(a, b), c) }
-fn madf(a: f32, b: f32, c: f32) -> f32 { fmaf(a, b, c) }
-fn mad(a: f64, b: f64, c: f64) -> f64 { fma(a, b, c) }
+static cuda_accelerator = Accelerator {
+    exec          : cuda,
+    alloc         : alloc_cuda,
+    alloc_unified : alloc_cuda_unified,
+    tidx          : cuda_threadIdx_x,
+    tidy          : cuda_threadIdx_y,
+    tidz          : cuda_threadIdx_z,
+    bidx          : cuda_blockIdx_x, 
+    bidy          : cuda_blockIdx_y, 
+    bidz          : cuda_blockIdx_z, 
+    bdimx         : cuda_blockDim_x, 
+    bdimy         : cuda_blockDim_y, 
+    bdimz         : cuda_blockDim_z, 
+    gdimx         : cuda_gridDim_x,
+    gdimy         : cuda_gridDim_y,
+    gdimz         : cuda_gridDim_z,
+    gidx          : || cuda_threadIdx_x() + cuda_blockDim_x() * cuda_blockIdx_x(),
+    gidy          : || cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
+    gidz          : || cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z(),
+    barrier       : cuda_syncthreads,
+    has_ldg       : || true,
+    dev           : || 0,
+};
+
+static cuda_intrinsics = Intrinsics {
+    expf        : cuda_expf,
+    exp2f       : cuda_exp2f,
+    logf        : cuda_logf,
+    log2f       : cuda_log2f,
+    powf        : cuda_powf,
+    rsqrtf      : cuda_rsqrtf,
+    sqrtf       : cuda_sqrtf,
+    fabsf       : cuda_fabsf,
+    sinf        : cuda_sinf,
+    cosf        : cuda_cosf,
+    tanf        : cuda_tanf,
+    asinf       : cuda_asinf,
+    acosf       : cuda_acosf,
+    atanf       : cuda_atanf,
+    erff        : cuda_erff,
+    atan2f      : cuda_atan2f,
+    copysignf   : cuda_copysignf,
+    fmaf        : cuda_fmaf,
+    fmaxf       : cuda_fmaxf,
+    fminf       : cuda_fminf,
+    fmodf       : cuda_fmodf,
+    floorf      : cuda_floorf,
+    isinff      : cuda_isinff,
+    isnanf      : cuda_isnanf,
+    isfinitef   : cuda_isfinitef,
+    exp         : cuda_exp,
+    exp2        : cuda_exp2,
+    log         : cuda_log,
+    log2        : cuda_log2,
+    pow         : cuda_pow,
+    rsqrt       : cuda_rsqrt,
+    sqrt        : cuda_sqrt,
+    fabs        : cuda_fabs,
+    sin         : cuda_sin,
+    cos         : cuda_cos,
+    tan         : cuda_tan,
+    asin        : cuda_asin,
+    acos        : cuda_acos,
+    atan        : cuda_atan,
+    erf         : cuda_erf,
+    atan2       : cuda_atan2,
+    copysign    : cuda_copysign,
+    fma         : cuda_fma,
+    fmax        : cuda_fmax,
+    fmin        : cuda_fmin,
+    fmod        : cuda_fmod,
+    floor       : cuda_floor,
+    isinf       : cuda_isinf,
+    isnan       : cuda_isnan,
+    isfinite    : cuda_isfinite,
+    min         : cuda_min,
+    max         : cuda_max,
+};
