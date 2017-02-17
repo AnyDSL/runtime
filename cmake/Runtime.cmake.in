@@ -28,14 +28,6 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
-set(BACKEND ${BACKEND} CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL")
-if(NOT BACKEND)
-    set(BACKEND cpu CACHE STRING "select the backend from the following: CPU, AVX, NVVM, CUDA, OPENCL" FORCE)
-endif()
-
-string(TOLOWER "${BACKEND}" BACKEND)
-message(STATUS "Selected backend: ${BACKEND}")
-
 string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE)
 if("${BUILD_TYPE}" STREQUAL "debug")
     set(OPT_FLAGS "-g")
@@ -44,7 +36,7 @@ else()
 endif()
 
 macro(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "BACKEND" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
+    cmake_parse_arguments("PARGS" "" "" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -64,8 +56,12 @@ macro(anydsl_runtime_wrap outfiles)
 
     set(_impala_platform
         ${ANYDSL_RUNTIME_DIR}/src/runtime.impala
-        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_thorin.impala
-        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_${PARGS_BACKEND}.impala)
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_cpu.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_cuda.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_nvvm.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_opencl.impala
+        ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_thorin.impala)
 
     set(_impala_flags -emit-llvm ${OPT_FLAGS})
     if(PARGS_IMPALA_FLAGS)
@@ -78,25 +74,19 @@ macro(anydsl_runtime_wrap outfiles)
     endif()
 
     # generate .ll file and patch it
+    set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.nvvm)
     add_custom_command(OUTPUT ${_llfile}
         COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} ${_impala_flags}
-        COMMAND ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${PARGS_BACKEND} ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        COMMAND ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_llvmir.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
 
-    # generate .bc files for NVVM
-    if("${PARGS_BACKEND}" STREQUAL "nvvm")
-        set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND})
-        set(_bcfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.${PARGS_BACKEND}.bc)
-        add_custom_command(OUTPUT ${_bcfile} COMMAND ${LLVM_AS_BIN} ${_irfile} DEPENDS ${_irfile} VERBATIM)
-        set_source_files_properties(${_irfile} $_bcfile} PROPERTIES GENERATED true)
-    endif()
-
-    # run clang on the patched .ll file to get the .o
+    # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
         COMMAND ${CLANG_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
         DEPENDS ${_llfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
-    set(${outfiles} ${${outfiles}} ${_objfile} ${_bcfile} ${_irfile})
+    set(${outfiles} ${${outfiles}} ${_objfile})
 endmacro()

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import sys, re, os
-rttype, basename = sys.argv[1:]
+basename = sys.argv[1]
 
-if rttype in ("nvvm"):
+def patch_llvmir(rttype):
     # we need to patch
     result = []
     filename = basename+"."+rttype
     if os.path.isfile(filename):
+        print("Patching {0}".format(filename))
         with open(filename) as f:
             for line in f:
                 if rttype=="nvvm":
@@ -31,8 +32,9 @@ if rttype in ("nvvm"):
         with open(filename, "w") as f:
             for line in result:
                 f.write(line)
+    return
 
-if rttype in ("cuda", "opencl"):
+def patch_cfiles(rttype):
     # we need to patch
     result = []
     if rttype == "cuda":
@@ -55,30 +57,36 @@ if rttype in ("cuda", "opencl"):
         with open(filename, "w") as f:
             for line in result:
                 f.write(line)
+    return
 
-# another pass to add the ldg, minmax and consorts to the nvvm file
-nvvm_defs = {
-}
+def patch_defs(rttype):
+    nvvm_defs = {
+    }
 
-if rttype == "nvvm":
-    result = []
-    filename = basename+".nvvm"
-    if os.path.isfile(filename):
-        with open(filename) as f:
-            for line in f:
-                matched = False
+    if rttype == "nvvm":
+        result = []
+        filename = basename+".nvvm"
+        if os.path.isfile(filename):
+            with open(filename) as f:
+                for line in f:
+                    matched = False
 
-                for (func, code) in nvvm_defs.iteritems():
-                    m = re.match('^declare (.*) (@' + func + ')\((.*)\)\n$', line)
-                    if m is not None:
-                        result.append(code)
-                        matched = True
-                        break
+                    for (func, code) in nvvm_defs.iteritems():
+                        m = re.match('^declare (.*) (@' + func + ')\((.*)\)\n$', line)
+                        if m is not None:
+                            result.append(code)
+                            matched = True
+                            break
 
-                if not matched:
-                    result.append(line)
+                    if not matched:
+                        result.append(line)
 
-        with open(filename, "w") as f:
-            for line in result:
-                f.write(line)
+            with open(filename, "w") as f:
+                for line in result:
+                    f.write(line)
+    return
 
+patch_llvmir("nvvm")
+patch_cfiles("cuda")
+patch_cfiles("opencl")
+patch_defs("nvvm")

@@ -52,9 +52,9 @@ extern "device" {
     fn "isnan"         cuda_isnan(f64) -> i32;
     fn "isfinite"      cuda_isfinite(f64) -> i32;
     fn "atomicAdd"     cuda_atomic_add_global(&mut[1]i32, i32) -> i32;
-    fn "atomicAdd"     cuda_atomic_add_local(&mut[3]i32, i32) -> i32;
+    fn "atomicAdd"     cuda_atomic_add_shared(&mut[3]i32, i32) -> i32;
     fn "atomicMin"     cuda_atomic_min_global(&mut[1]i32, i32) -> i32;
-    fn "atomicMin"     cuda_atomic_min_local(&mut[3]i32, i32) -> i32;
+    fn "atomicMin"     cuda_atomic_min_shared(&mut[3]i32, i32) -> i32;
     fn "__ldg"         cuda_ldg_f32(&[1]f32) -> f32;
     fn "__ldg"         cuda_ldg_i32(&[1]i32) -> i32;
     fn "__ldg"         cuda_ldg4_f32(&[1]simd[f32 * 4]) -> simd[f32 * 4];
