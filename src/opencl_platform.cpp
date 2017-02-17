@@ -344,17 +344,17 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         opencl_dev.unlock();
 
         std::string options = "-cl-fast-relaxed-math";
-        if (std::ifstream(filename + ".cl").good()) {
-            std::ifstream src_file(KERNEL_DIR + filename + ".cl");
+        if (std::ifstream(filename).good()) {
+            std::ifstream src_file(KERNEL_DIR + filename);
             std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
             const size_t program_length = program_string.length();
             const char* program_c_str = program_string.c_str();
             options += " -cl-std=CL1.2";
             program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
             CHECK_OPENCL(err, "clCreateProgramWithSource()");
-            debug("Compiling '%.cl' on OpenCL device %", filename, dev);
+            debug("Compiling '%' on OpenCL device %", filename, dev);
         } else {
-            error("Could not find kernel file '%'.cl", filename);
+            error("Could not find kernel file '%'", filename);
         }
 
         cl_build_status build_status;

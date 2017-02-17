@@ -267,15 +267,21 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
             (CUjit_target)(cuda_dev.compute_major * 10 +
                            cuda_dev.compute_minor);
 
+        // Find the file extension
+        auto ext_pos = file.rfind('.');
+        std::string ext = ext_pos != std::string::npos ? file.substr(ext_pos + 1) : "";
+        if (ext != "cu" && ext != "nvvm")
+            error("Incorrect extension for kernel file '%' (should be '.nvvm' or '.cu')", file);
+
         // Compile the given file
-        if (std::ifstream(file + ".nvvm.bc").good()) {
-            mod = compile_nvvm(dev, file, target_cc);
-        } else if (std::ifstream(file + ".ptx").good()) {
-            mod = create_module(dev, file, target_cc, load_ptx(file).c_str());
-        } else if (std::ifstream(file + ".cu").good()) {
+        if (std::ifstream(file + ".ptx").good()) {
+            mod = create_module(dev, file, target_cc, load_ptx(file + ".ptx").c_str());
+        } else if (ext == "cu" && std::ifstream(file).good()) {
             mod = compile_cuda(dev, file, target_cc);
+        } else if (ext == "nvvm" && std::ifstream(file + ".bc").good()) {
+            mod = compile_nvvm(dev, file + ".bc", target_cc);
         } else {
-            error("Could not find kernel file '%'.[nvvm.bc|ptx|cu]", file);
+            error("Cannot find kernel file '%'", file);
         }
 
         cuda_dev.lock();
@@ -354,10 +360,9 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
 
     std::string libdevice_string = std::string(std::istreambuf_iterator<char>(libdevice_file), (std::istreambuf_iterator<char>()));
 
-    std::string nvvm_filename = filename + ".nvvm.bc";
-    std::ifstream src_file(std::string(KERNEL_DIR) + nvvm_filename);
+    std::ifstream src_file(std::string(KERNEL_DIR) + filename);
     if (!src_file.is_open())
-        error("Can't open NVVM source file '%/%'", KERNEL_DIR, nvvm_filename);
+        error("Can't open NVVM source file '%/%'", KERNEL_DIR, filename);
 
     std::string src_string = std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 
@@ -368,7 +373,7 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
     err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), libdevice_filename.c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
-    err = nvvmAddModuleToProgram(program, src_string.c_str(), src_string.length(), nvvm_filename.c_str());
+    err = nvvmAddModuleToProgram(program, src_string.c_str(), src_string.length(), filename.c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
@@ -408,15 +413,14 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
 #define NVCC_INC "/usr/local/cuda/include"
 #endif
 CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
-    std::string cuda_filename = filename + ".cu";
-    std::ifstream src_file(std::string(KERNEL_DIR) + cuda_filename);
+    std::ifstream src_file(std::string(KERNEL_DIR) + filename);
     if (!src_file.is_open())
-        error("Can't open CUDA source file '%/%'", KERNEL_DIR, cuda_filename);
+        error("Can't open CUDA source file '%/%'", KERNEL_DIR, filename);
 
     std::string src_string = std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 
     nvrtcProgram program;
-    nvrtcResult err = nvrtcCreateProgram(&program, src_string.c_str(), cuda_filename.c_str(), 0, NULL, NULL);
+    nvrtcResult err = nvrtcCreateProgram(&program, src_string.c_str(), filename.c_str(), 0, NULL, NULL);
     CHECK_NVRTC(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
@@ -458,10 +462,9 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
 #endif
 CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
     target_cc = target_cc == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : target_cc; // compute_21 does not exist for nvcc
-    std::string cuda_filename = std::string(filename) + ".cu";
-    std::string ptx_filename = std::string(cuda_filename) + ".ptx";
+    std::string ptx_filename = std::string(filename) + ".ptx";
     std::string command = (NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(target_cc) + " ";
-    command += std::string(KERNEL_DIR) + cuda_filename + " -o " + ptx_filename + " 2>&1";
+    command += std::string(KERNEL_DIR) + filename + " -o " + ptx_filename + " 2>&1";
 
     debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {
@@ -481,7 +484,7 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
         error("Cannot run NVCC");
     }
 
-    return create_module(dev, filename, target_cc, load_ptx(cuda_filename).c_str());
+    return create_module(dev, filename, target_cc, load_ptx(filename).c_str());
 }
 #endif
 
