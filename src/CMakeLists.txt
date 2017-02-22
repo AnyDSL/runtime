@@ -7,14 +7,20 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 # Look for CUDA
 find_package(CUDA QUIET)
 if(CUDA_FOUND)
-    find_library(CUDA_NVVM_LIBRARY nvvm HINTS ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/lib64)
-    find_library(CUDA_NVRTC_LIBRARY nvrtc HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+    find_library(CUDA_NVVM_LIBRARY nvvm
+        HINTS ${CUDA_TOOLKIT_ROOT_DIR}/nvvm
+        PATH_SUFFIXES lib lib64 lib/x64)
+    find_library(CUDA_NVRTC_LIBRARY nvrtc
+        HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES lib lib64 lib/x64)
     if(CUDA_NVRTC_LIBRARY)
         set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DCUDA_NVRTC)
     else()
         set(CUDA_NVRTC_LIBRARY "")
     endif()
-    find_library(CUDA_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+    find_library(CUDA_LIBRARY cuda
+        HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES lib lib64 lib/x64)
     include_directories(${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
     set(CUDA_PLATFORM cuda_platform.cpp cuda_platform.h)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_CUDA)
