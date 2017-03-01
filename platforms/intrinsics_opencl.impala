@@ -63,7 +63,7 @@ extern "device" {
     fn "get_global_size"   opencl_get_global_size(u32) -> u64;
     fn "get_global_id"     opencl_get_global_id(u32) -> u64;
     fn "get_local_size"    opencl_get_local_size(u32) -> u64;
-    fn "get_local_id "     opencl_get_local_id(u32) -> u64;
+    fn "get_local_id"      opencl_get_local_id(u32) -> u64;
     fn "get_num_groups"    opencl_get_num_groups(u32) -> u64;
     fn "get_group_id"      opencl_get_group_id(u32) -> u64;
     fn "get_global_offset" opencl_get_global_offset(u32) -> u64;
