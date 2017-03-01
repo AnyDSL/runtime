@@ -79,27 +79,26 @@ if(MSVC)
 endif()
 
 macro(AnyDSL_runtime_files outfiles)
-    cmake_parse_arguments("PARGS" "" "BACKEND;FRONTEND" "" ${ARGN})
+    cmake_parse_arguments("PARGS" "" "FRONTEND" "" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
 
     string(TOLOWER ${PARGS_FRONTEND} _frontend)
-    string(TOLOWER ${PARGS_BACKEND} _backend)
 
     if(NOT _frontend STREQUAL "impala")
         message(ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)")
     endif()
 
-    set(_backend_instrinsics ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_${_backend}.impala)
-
-    if(NOT EXISTS ${_backend_instrinsics})
-        message(WARNING "Unsupported backend ${_backend} for frontend ${_frontend}")
-        set(_backend_instrinsics)
-    endif()
+    set(_backend_instrinsics
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cpu.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cuda.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_nvvm.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala)
 
     set(${outfiles} ${${outfiles}}
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala
         ${_backend_instrinsics})
 endmacro()
