@@ -28,15 +28,8 @@ find_package(PythonInterp REQUIRED)
 message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
-string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE)
-if("${BUILD_TYPE}" STREQUAL "debug")
-    set(OPT_FLAGS "-g")
-else()
-    set(OPT_FLAGS "-O3")
-endif()
-
 macro(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "" "CLANG_FLAGS;IMPALA_FLAGS;FILES;NAME" ${ARGN})
+    cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -67,12 +60,19 @@ macro(anydsl_runtime_wrap outfiles)
         ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_opencl.impala
         ${ANYDSL_RUNTIME_DIR}/platforms/intrinsics_thorin.impala)
 
-    set(_impala_flags -emit-llvm ${OPT_FLAGS})
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" _build_type)
+    if("${_build_type}" STREQUAL "debug")
+        set(_opt_flags "-g")
+    else()
+        set(_opt_flags "-O3")
+    endif()
+
+    set(_impala_flags -emit-llvm ${_opt_flags})
     if(PARGS_IMPALA_FLAGS)
         set(_impala_flags ${_impala_flags} ${PARGS_IMPALA_FLAGS})
     endif()
 
-    set(_clang_flags ${OPT_FLAGS})
+    set(_clang_flags ${_opt_flags})
     if(PARGS_CLANG_FLAGS)
         set(_clang_flags ${_clang_flags} ${PARGS_CLANG_FLAGS})
     endif()
@@ -85,6 +85,15 @@ macro(anydsl_runtime_wrap outfiles)
         COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_llvmir.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
+
+    # generate C interface on request
+    if(NOT ${PARGS_INTERFACE} STREQUAL "")
+        add_custom_command(OUTPUT "${PARGS_INTERFACE}.h"
+                           COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                           DEPENDS ${IMPALA_BIN} ${_impala_platform} ${_infiles})
+        set_source_files_properties("${PARGS_INTERFACE}.h" PROPERTIES GENERATED TRUE)
+    endif()
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
