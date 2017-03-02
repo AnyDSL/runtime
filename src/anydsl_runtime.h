@@ -37,8 +37,8 @@ void anydsl_synchronize(int32_t);
 float anydsl_random_val();
 void anydsl_random_seed(uint32_t);
 
-long long anydsl_get_micro_time();
-long long anydsl_get_kernel_time();
+uint64_t anydsl_get_micro_time();
+uint64_t anydsl_get_kernel_time();
 
 int32_t anydsl_isinff(float);
 int32_t anydsl_isnanf(float);

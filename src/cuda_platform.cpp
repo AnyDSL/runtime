@@ -45,7 +45,7 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 
 static thread_local CUevent start_kernel = nullptr;
 static thread_local CUevent end_kernel = nullptr;
-extern std::atomic_llong anydsl_kernel_time;
+extern std::atomic<uint64_t> anydsl_kernel_time;
 
 CudaPlatform::CudaPlatform(Runtime* runtime)
     : Platform(runtime)

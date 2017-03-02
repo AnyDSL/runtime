@@ -129,13 +129,13 @@ void anydsl_aligned_free(void* ptr) { ::_aligned_free(ptr); }
 #error "There is no way to allocate aligned memory on this system"
 #endif
 
-long long anydsl_get_micro_time() {
+uint64_t anydsl_get_micro_time() {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-std::atomic<long long> anydsl_kernel_time(0);
+std::atomic<uint64_t> anydsl_kernel_time(0);
 
-long long anydsl_get_kernel_time() {
+uint64_t anydsl_get_kernel_time() {
     return anydsl_kernel_time;
 }
 

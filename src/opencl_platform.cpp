@@ -245,7 +245,7 @@ void OpenCLPlatform::release(DeviceId, void* ptr) {
 }
 
 static thread_local cl_event end_kernel;
-extern std::atomic_llong anydsl_kernel_time;
+extern std::atomic<uint64_t> anydsl_kernel_time;
 
 void OpenCLPlatform::launch_kernel(DeviceId dev,
                                    const char* file, const char* name,
