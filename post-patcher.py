@@ -71,7 +71,7 @@ def patch_defs(rttype):
                 for line in f:
                     matched = False
 
-                    for (func, code) in nvvm_defs.iteritems():
+                    for (func, code) in iter(nvvm_defs.items()):
                         m = re.match('^declare (.*) (@' + func + ')\((.*)\)\n$', line)
                         if m is not None:
                             result.append(code)
