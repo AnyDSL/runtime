@@ -42,7 +42,6 @@ find_path(AnyDSL_runtime_INCLUDE_DIR
 set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
 
 set(AnyDSL_runtime_LIBS_DIR
-    "${AnyDSL_runtime_DIR}/../../../@PROJ_LIBRARY_DIR@"
     "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@"
     "@CMAKE_ARCHIVE_OUTPUT_DIRECTORY@"
     # TODO: additionally use install prefix
