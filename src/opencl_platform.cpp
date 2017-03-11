@@ -174,7 +174,6 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
                 if (svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)   svm_caps_str += " CL_DEVICE_SVM_FINE_GRAIN_BUFFER";
                 if (svm_caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM)   svm_caps_str += " CL_DEVICE_SVM_FINE_GRAIN_SYSTEM";
                 if (svm_caps & CL_DEVICE_SVM_ATOMICS)             svm_caps_str += " CL_DEVICE_SVM_ATOMICS";
-                CHECK_OPENCL(err, "clGetDeviceInfo()");
             }
             #endif
             debug("      Device SVM capabilities: %", svm_caps_str);
