@@ -441,7 +441,6 @@ static nvvm_accelerator = Accelerator {
     gidy          : || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
     gidz          : || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
     barrier       : nvvm_barrier,
-    has_ldg       : || true,
     dev           : || 0,
 };
 

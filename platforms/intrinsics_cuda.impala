@@ -103,7 +103,6 @@ static cuda_accelerator = Accelerator {
     gidy          : || cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
     gidz          : || cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z(),
     barrier       : cuda_syncthreads,
-    has_ldg       : || true,
     dev           : || 0,
 };
 

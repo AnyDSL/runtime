@@ -18,7 +18,6 @@ struct Accelerator {
     gidy    : fn() -> i32,
     gidz    : fn() -> i32,
     barrier : fn() -> (),
-    has_ldg : fn() -> bool,
     dev     : fn() -> i32,
 }
 

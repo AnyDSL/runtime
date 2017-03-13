@@ -89,7 +89,6 @@ static opencl_accelerator = Accelerator {
     gidy          : || opencl_get_global_id(1u) as i32,
     gidz          : || opencl_get_global_id(2u) as i32,
     barrier       : || opencl_barrier(1u), // CLK_LOCAL_MEM_FENCE -> 1 // CLK_GLOBAL_MEM_FENCE -> 2
-    has_ldg       : || false,
     dev           : || 0,
 };
 
