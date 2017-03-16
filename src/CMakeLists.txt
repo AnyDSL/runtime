@@ -72,4 +72,4 @@ add_library(runtime
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
 
 # generate the Runtime.cmake file from the template
-configure_file(${CMAKE_SOURCE_DIR}/cmake/Runtime.cmake.in "${CMAKE_BINARY_DIR}/cmake/Runtime.cmake" @ONLY)
+configure_file(../cmake/Runtime.cmake.in ${CMAKE_BINARY_DIR}/cmake/Runtime.cmake @ONLY)
