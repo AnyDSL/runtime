@@ -72,6 +72,4 @@ add_library(runtime
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
 
 # generate the Runtime.cmake file from the template
-# TODO: move majority of dependency management into first-level CMakeLists.txt as well as the generation of the anydsl_runtime-config.cmake
 configure_file(${CMAKE_SOURCE_DIR}/cmake/Runtime.cmake.in "${CMAKE_BINARY_DIR}/cmake/Runtime.cmake" @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/cmake/anydsl_runtime-config.cmake.in "${CMAKE_BINARY_DIR}/share/AnyDSL_runtime/cmake/anydsl_runtime-config.cmake" @ONLY)

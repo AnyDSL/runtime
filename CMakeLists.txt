@@ -27,3 +27,5 @@ message(STATUS "Using Release flags: ${CMAKE_CXX_FLAGS_RELEASE}")
 if(DEFINED CMAKE_BUILD_TYPE)
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 endif()
+
+configure_file(cmake/anydsl_runtime-config.cmake.in ${CMAKE_BINARY_DIR}/share/AnyDSL_runtime/cmake/anydsl_runtime-config.cmake @ONLY)
