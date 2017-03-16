@@ -22,4 +22,6 @@ add_subdirectory(src)
 
 message(STATUS "Using Debug flags: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "Using Release flags: ${CMAKE_CXX_FLAGS_RELEASE}")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+if(DEFINED CMAKE_BUILD_TYPE)
+    message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+endif()
