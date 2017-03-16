@@ -1,9 +1,6 @@
 set(RUNTIME_DEFINITIONS)
 set(CONF_RUNTIME_LIBRARIES)
 
-# add path for custom modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-
 # Look for CUDA
 find_package(CUDA QUIET)
 if(CUDA_FOUND)
