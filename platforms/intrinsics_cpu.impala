@@ -39,6 +39,8 @@ extern "device" {
     fn "llvm.fma.f32"      cpu_fmaf(f32, f32, f32) -> f32;
     fn "llvm.fmuladd.f32"  cpu_madf(f32, f32, f32) -> f32;
     fn "llvm.copysign.f32" cpu_copysignf(f32, f32) -> f32;
+    fn "llvm.minnum.f32"   cpu_fminf(f32, f32) -> f32;
+    fn "llvm.maxnum.f32"   cpu_fmaxf(f32, f32) -> f32;
     fn "llvm.exp.f64"      cpu_exp(f64) -> f64;
     fn "llvm.exp2.f64"     cpu_exp2(f64) -> f64;
     fn "llvm.log.f64"      cpu_log(f64) -> f64;
@@ -52,6 +54,8 @@ extern "device" {
     fn "llvm.fma.f64"      cpu_fma(f64, f64, f64) -> f64;
     fn "llvm.fmuladd.f64"  cpu_mad(f64, f64, f64) -> f64;
     fn "llvm.copysign.f64" cpu_copysign(f64, f64) -> f64;
+    fn "llvm.minnum.f64"   cpu_fmin(f64, f64) -> f64;
+    fn "llvm.maxnum.f64"   cpu_fmax(f64, f64) -> f64;
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
@@ -64,10 +68,6 @@ fn cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 fn cpu_rsqrtf(a: f32) -> f32 { 1.0f / cpu_sqrtf(a) }
 fn cpu_rsqrt(a: f64) -> f64 { 1.0 / cpu_sqrt(a) }
 
-fn cpu_fminf(a: f32, b: f32) -> f32 { if a < b { a } else { b } }
-fn cpu_fmaxf(a: f32, b: f32) -> f32 { if a > b { a } else { b } }
-fn cpu_fmin(a: f64, b: f64) -> f64 { if a < b { a } else { b } }
-fn cpu_fmax(a: f64, b: f64) -> f64 { if a > b { a } else { b } }
 fn cpu_min(a: i32, b: i32) -> i32 { if a < b { a } else { b } }
 fn cpu_max(a: i32, b: i32) -> i32 { if a > b { a } else { b } }
 
