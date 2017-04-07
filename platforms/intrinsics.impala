@@ -1,7 +1,7 @@
 struct Accelerator {
-    exec    : fn(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> (),
-    alloc   : fn(i32, i32) -> Buffer,
-    alloc_unified : fn(i32, i32) -> Buffer,
+    exec    : fn((i32, i32, i32), (i32, i32, i32), fn() -> ()) -> (),
+    alloc   : fn(i32) -> Buffer,
+    alloc_unified : fn(i32) -> Buffer,
     tidx    : fn() -> i32,
     tidy    : fn() -> i32,
     tidz    : fn() -> i32,
@@ -17,8 +17,7 @@ struct Accelerator {
     gidx    : fn() -> i32,
     gidy    : fn() -> i32,
     gidz    : fn() -> i32,
-    barrier : fn() -> (),
-    dev     : fn() -> i32,
+    barrier : fn() -> ()
 }
 
 struct Intrinsics {

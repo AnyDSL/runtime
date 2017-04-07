@@ -421,27 +421,28 @@ fn nvvm_ballot(a: i32) -> i32 {
 
 fn nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
-static nvvm_accelerator = Accelerator {
-    exec          : nvvm,
-    alloc         : alloc_cuda,
-    alloc_unified : alloc_cuda_unified,
-    tidx          : nvvm_read_ptx_sreg_tid_x,
-    tidy          : nvvm_read_ptx_sreg_tid_y,
-    tidz          : nvvm_read_ptx_sreg_tid_z,
-    bidx          : nvvm_read_ptx_sreg_ctaid_x,
-    bidy          : nvvm_read_ptx_sreg_ctaid_y,
-    bidz          : nvvm_read_ptx_sreg_ctaid_z,
-    bdimx         : nvvm_read_ptx_sreg_ntid_x,
-    bdimy         : nvvm_read_ptx_sreg_ntid_y,
-    bdimz         : nvvm_read_ptx_sreg_ntid_z,
-    gdimx         : nvvm_read_ptx_sreg_nctaid_x,
-    gdimy         : nvvm_read_ptx_sreg_nctaid_y,
-    gdimz         : nvvm_read_ptx_sreg_nctaid_z,
-    gidx          : || nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
-    gidy          : || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
-    gidz          : || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
-    barrier       : nvvm_barrier,
-    dev           : || 0,
+fn nvvm_accelerator(dev: i32) -> Accelerator {
+    Accelerator {
+        exec          : |grid, block, body| nvvm(dev, grid, block, body),
+        alloc         : |size| alloc_cuda(dev, size),
+        alloc_unified : |size| alloc_cuda_unified(dev, size),
+        tidx          : nvvm_read_ptx_sreg_tid_x,
+        tidy          : nvvm_read_ptx_sreg_tid_y,
+        tidz          : nvvm_read_ptx_sreg_tid_z,
+        bidx          : nvvm_read_ptx_sreg_ctaid_x,
+        bidy          : nvvm_read_ptx_sreg_ctaid_y,
+        bidz          : nvvm_read_ptx_sreg_ctaid_z,
+        bdimx         : nvvm_read_ptx_sreg_ntid_x,
+        bdimy         : nvvm_read_ptx_sreg_ntid_y,
+        bdimz         : nvvm_read_ptx_sreg_ntid_z,
+        gdimx         : nvvm_read_ptx_sreg_nctaid_x,
+        gdimy         : nvvm_read_ptx_sreg_nctaid_y,
+        gdimz         : nvvm_read_ptx_sreg_nctaid_z,
+        gidx          : || nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
+        gidy          : || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
+        gidz          : || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
+        barrier       : nvvm_barrier
+    }
 };
 
 static nvvm_intrinsics = Intrinsics {
