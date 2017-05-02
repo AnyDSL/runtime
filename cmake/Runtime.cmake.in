@@ -92,9 +92,9 @@ macro(anydsl_runtime_wrap outfiles)
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
         add_custom_command(OUTPUT "${PARGS_INTERFACE}.h"
-                           COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
-                           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                           DEPENDS ${IMPALA_BIN} ${_impala_platform} ${_infiles})
+           COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+           DEPENDS ${IMPALA_BIN} ${_impala_platform} ${_infiles})
         set_source_files_properties("${PARGS_INTERFACE}.h" PROPERTIES GENERATED TRUE)
     endif()
 
