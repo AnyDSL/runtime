@@ -1,5 +1,6 @@
 extern "thorin" {
     fn pe_info[T](&[u8], T) -> ();
+    fn pe_known[T](T) -> bool;
 
     fn sizeof[T]() -> i32;
 
