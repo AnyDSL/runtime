@@ -9,21 +9,21 @@
 #  OpenCL_LIBRARIES     - where to find OpenCL libs
 #  OpenCL_FOUND         - True if OpenCL is found
 
-SET(OpenCL_INC_DIR $ENV{OpenCL_INC_DIR} CACHE PATH "OpenCL header files directory.")
-SET(OpenCL_LIB_DIR $ENV{OpenCL_LIB_DIR} CACHE PATH "OpenCL library files directory.")
+set(OpenCL_INC_DIR $ENV{OpenCL_INC_DIR} CACHE PATH "OpenCL header files directory.")
+set(OpenCL_LIB_DIR $ENV{OpenCL_LIB_DIR} CACHE PATH "OpenCL library files directory.")
 
-IF(APPLE)
-    FIND_PATH(OpenCL_INCLUDE_DIR OpenCL/cl.h)
-    FIND_LIBRARY(OpenCL_LIBRARY OpenCL)
-ELSE(APPLE)
-    FIND_PATH(OpenCL_INCLUDE_DIR CL/cl.h HINTS ${OpenCL_INC_DIR})
-    FIND_LIBRARY(OpenCL_LIBRARY OpenCL HINTS ${OpenCL_LIB_DIR})
-ENDIF(APPLE)
+if(APPLE)
+    find_path(OpenCL_INCLUDE_DIR OpenCL/cl.h)
+    find_library(OpenCL_LIBRARY OpenCL)
+else()
+    find_path(OpenCL_INCLUDE_DIR CL/cl.h HINTS ${OpenCL_INC_DIR})
+    find_library(OpenCL_LIBRARY OpenCL HINTS ${OpenCL_LIB_DIR})
+endif()
 
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(OpenCL DEFAULT_MSG OpenCL_INCLUDE_DIR OpenCL_LIBRARY)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(OpenCL DEFAULT_MSG OpenCL_INCLUDE_DIR OpenCL_LIBRARY)
 
-SET(OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
-SET(OpenCL_LIBRARIES ${OpenCL_LIBRARY})
+set(OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
+set(OpenCL_LIBRARIES ${OpenCL_LIBRARY})
 
-MARK_AS_ADVANCED(OpenCL_INCLUDE_DIR OpenCL_LIBRARY)
+mark_as_advanced(OpenCL_INCLUDE_DIR OpenCL_LIBRARY)
