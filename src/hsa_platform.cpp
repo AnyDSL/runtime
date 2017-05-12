@@ -144,7 +144,7 @@ HSAPlatform::HSAPlatform(Runtime* runtime)
 }
 
 HSAPlatform::~HSAPlatform() {
-    info("hsa: shutdown");
+    // TODO
     hsa_shut_down();
 }
 
