@@ -40,6 +40,17 @@ else()
     set(OPENCL_PLATFORM "")
 endif()
 
+# look for HSA
+find_package(HSA)
+if(HSA_FOUND)
+    include_directories(${HSA_INCLUDE_DIRS})
+    set(HSA_PLATFORM hsa_platform.cpp hsa_platform.h)
+    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_HSA)
+    list(APPEND CONF_RUNTIME_LIBRARIES "${HSA_LIBRARIES}")
+else()
+    set(HSA_PLATFORM "")
+endif()
+
 # look for TBB
 find_package(Threads REQUIRED)
 find_package(TBB)
@@ -67,7 +78,8 @@ add_library(runtime
             dummy_platform.h
             log.h
             ${CUDA_PLATFORM}
-            ${OPENCL_PLATFORM})
+            ${OPENCL_PLATFORM}
+            ${HSA_PLATFORM})
 
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
 

@@ -10,7 +10,8 @@ namespace anydsl {
 enum class Platform : int32_t {
     Host = ANYDSL_HOST,
     Cuda = ANYDSL_CUDA,
-    OpenCL = ANYDSL_OPENCL
+    OpenCL = ANYDSL_OPENCL,
+    HSA = ANYDSL_HSA
 };
 
 struct Device {

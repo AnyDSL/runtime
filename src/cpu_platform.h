@@ -6,7 +6,7 @@
 
 #include <cstring>
 
-/// CPU platform, allocation is guaranteed to be aligned to 64 bytes.
+/// CPU platform, allocation is guaranteed to be aligned to page size: 4096 bytes.
 class CpuPlatform : public Platform {
 public:
     CpuPlatform(Runtime* runtime)
@@ -15,7 +15,7 @@ public:
 
 protected:
     void* alloc(DeviceId, int64_t size) override {
-        return anydsl_aligned_malloc(size, 64);
+        return anydsl_aligned_malloc(size, 4096);
     }
 
     void* alloc_host(DeviceId dev, int64_t size) override {

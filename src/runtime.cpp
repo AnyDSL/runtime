@@ -32,6 +32,9 @@
 #ifdef ENABLE_OPENCL
 #include "opencl_platform.h"
 #endif
+#ifdef ENABLE_HSA
+#include "hsa_platform.h"
+#endif
 
 Runtime& runtime() {
     static std::unique_ptr<Runtime> runtime(new Runtime());
@@ -49,6 +52,11 @@ Runtime::Runtime() {
     register_platform<OpenCLPlatform>();
 #else
     register_platform<DummyPlatform>("OpenCL");
+#endif
+#ifdef ENABLE_HSA
+    register_platform<HSAPlatform>();
+#else
+    register_platform<DummyPlatform>("HSA");
 #endif
 }
 

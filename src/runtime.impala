@@ -58,6 +58,9 @@ fn alloc_cuda_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(1,
 fn alloc_cuda_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(1, dev), size) }
 fn alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), size) }
 fn alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
+fn alloc_hsa(dev: i32, size: i32) -> Buffer { alloc(runtime_device(3, dev), size) }
+fn alloc_hsa_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(3, dev), size) }
+fn alloc_hsa_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
 
 fn copy(src: Buffer, dst: Buffer, size: i32) -> () {
     runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, size as i64)

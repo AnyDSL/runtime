@@ -13,7 +13,8 @@ extern "C" {
 enum {
     ANYDSL_HOST = 0,
     ANYDSL_CUDA = 1,
-    ANYDSL_OPENCL = 2
+    ANYDSL_OPENCL = 2,
+    ANYDSL_HSA = 3
 };
 
 void anydsl_info(void);
