@@ -87,6 +87,7 @@ macro(anydsl_runtime_wrap outfiles)
         COMMAND ${IMPALA_BIN} ${_impala_platform} ${_infiles} ${_impala_flags} -o ${_basename}
         COMMAND ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
         COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_llvmir.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_opencl.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
 
