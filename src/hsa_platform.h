@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -18,11 +19,6 @@ public:
     ~HSAPlatform();
 
 protected:
-    struct dim3 {
-        int x, y, z;
-        dim3(int x = 1, int y = 1, int z = 1) : x(x), y(y), z(z) {}
-    };
-
     void* alloc(DeviceId dev, int64_t size) override;
     void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
     void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
@@ -46,24 +42,32 @@ protected:
 
     std::string name() override { return "HSA"; }
 
-    typedef std::unordered_map<std::string, hsa_agent_t> KernelMap;
+    typedef std::unordered_map<std::string, std::tuple<uint64_t, uint32_t, uint32_t, uint32_t>> KernelMap;
 
     struct DeviceData {
         hsa_agent_t agent;
+        hsa_profile_t profile;
+        hsa_default_float_rounding_mode_t float_mode;
         hsa_queue_t* queue;
-        hsa_region_t region;
+        hsa_signal_t signal;
+        hsa_region_t kernarg_region, finegrained_region, coarsegrained_region;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
-        //std::unordered_map<std::string, cl_program> programs;
-        //std::unordered_map<cl_program, KernelMap> kernels;
+        std::unordered_map<std::string, hsa_executable_t> programs;
+        std::unordered_map<uint64_t, KernelMap> kernels;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
         DeviceData(DeviceData&& data)
             : agent(data.agent)
+            , profile(data.profile)
+            , float_mode(data.float_mode)
             , queue(data.queue)
-            , region(data.region)
-            //, programs(std::move(data.programs))
-            //, kernels(std::move(data.kernels))
+            , signal(data.signal)
+            , kernarg_region(data.kernarg_region)
+            , finegrained_region(data.finegrained_region)
+            , coarsegrained_region(data.coarsegrained_region)
+            , programs(std::move(data.programs))
+            , kernels(std::move(data.kernels))
         {}
 
         void lock() {
@@ -79,7 +83,7 @@ protected:
 
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
-    hsa_agent_t load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+    std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 };
 
 #endif
