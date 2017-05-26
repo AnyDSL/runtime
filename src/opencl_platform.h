@@ -24,11 +24,6 @@ public:
     ~OpenCLPlatform();
 
 protected:
-    struct dim3 {
-        int x, y, z;
-        dim3(int x = 1, int y = 1, int z = 1) : x(x), y(y), z(z) {}
-    };
-
     void* alloc(DeviceId dev, int64_t size) override;
     void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
     void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
