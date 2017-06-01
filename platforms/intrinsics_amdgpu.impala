@@ -1,0 +1,118 @@
+extern "device" {
+    fn "llvm.amdgcn.dispatch.id"    amdgcn_dispatch_id() -> i64;
+    fn "llvm.amdgcn.dispatch.ptr"   amdgcn_dispatch_ptr() -> &[2]i8;
+    fn "llvm.amdgcn.s.barrier"      amdgcn_s_barrier() -> ();
+    fn "llvm.amdgcn.wave.barrier"   amdgcn_wave_barrier() -> ();
+    fn "llvm.amdgcn.workgroup.id.x" amdgcn_workgroup_id_x() -> i32;
+    fn "llvm.amdgcn.workgroup.id.y" amdgcn_workgroup_id_y() -> i32;
+    fn "llvm.amdgcn.workgroup.id.z" amdgcn_workgroup_id_z() -> i32;
+    fn "llvm.amdgcn.workitem.id.x"  amdgcn_workitem_id_x() -> i32;
+    fn "llvm.amdgcn.workitem.id.y"  amdgcn_workitem_id_y() -> i32;
+    fn "llvm.amdgcn.workitem.id.z"  amdgcn_workitem_id_z() -> i32;
+    fn __llvm_fence_rel_wg() -> ();
+    fn __llvm_fence_acq_wg() -> ();
+}
+
+struct hsa_signal_t {
+    handle : u64
+}
+
+struct hsa_dispatch_packet_t {
+    header : u16,
+    setup  : u16,
+    workgroup_size_x : u16,
+    workgroup_size_y : u16,
+    workgroup_size_z : u16,
+    reserved0   : u16,
+    grid_size_x : u32,
+    grid_size_y : u32,
+    grid_size_z : u32,
+    private_segment_size : u32,
+    group_segment_size   : u32,
+    kernel_object : u64,
+    kernarg_address : &[i8], // HSA_LARGE_MODEL
+    reserved2 : u64,
+    completion_signal : hsa_signal_t
+}
+
+fn amdgpu_accelerator(dev: i32) -> Accelerator {
+    Accelerator {
+        exec          : |grid, block, body| amdgpu(dev, grid, block, body),
+        alloc         : |size| alloc_hsa(dev, size),
+        alloc_unified : |size| alloc_hsa_unified(dev, size),
+        tidx          : amdgcn_workitem_id_x,
+        tidy          : amdgcn_workitem_id_y,
+        tidz          : amdgcn_workitem_id_z,
+        bidx          : amdgcn_workgroup_id_x,
+        bidy          : amdgcn_workgroup_id_y,
+        bidz          : amdgcn_workgroup_id_z,
+        bdimx         : || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32,
+        bdimy         : || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32,
+        bdimz         : || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(5) as i32,
+        gdimx         : || bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32,
+        gdimy         : || bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32,
+        gdimz         : || bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32,
+        gidx          : || amdgcn_workitem_id_x() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_x(),
+        gidy          : || amdgcn_workitem_id_y() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_y(),
+        gidz          : || amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(5) as i32 * amdgcn_workgroup_id_z(),
+        barrier       : || { __llvm_fence_rel_wg(); amdgcn_s_barrier(); __llvm_fence_acq_wg() },
+    }
+}
+
+static amdgpu_intrinsics = opencl_intrinsics;
+/*
+static amdgpu_intrinsics = Intrinsics {
+    expf        : opencl_expf,
+    exp2f       : opencl_exp2f,
+    logf        : opencl_logf,
+    log2f       : opencl_log2f,
+    powf        : opencl_powf,
+    rsqrtf      : opencl_rsqrtf,
+    sqrtf       : opencl_sqrtf,
+    fabsf       : opencl_fabsf,
+    sinf        : opencl_sinf,
+    cosf        : opencl_cosf,
+    tanf        : opencl_tanf,
+    asinf       : opencl_asinf,
+    acosf       : opencl_acosf,
+    atanf       : opencl_atanf,
+    erff        : opencl_erff,
+    atan2f      : opencl_atan2f,
+    copysignf   : opencl_copysignf,
+    fmaf        : opencl_fmaf,
+    fmaxf       : opencl_fmaxf,
+    fminf       : opencl_fminf,
+    fmodf       : opencl_fmodf,
+    floorf      : opencl_floorf,
+    isinff      : opencl_isinff,
+    isnanf      : opencl_isnanf,
+    isfinitef   : opencl_isfinitef,
+    exp         : opencl_exp,
+    exp2        : opencl_exp2,
+    log         : opencl_log,
+    log2        : opencl_log2,
+    pow         : opencl_pow,
+    rsqrt       : opencl_rsqrt,
+    sqrt        : opencl_sqrt,
+    fabs        : opencl_fabs,
+    sin         : opencl_sin,
+    cos         : opencl_cos,
+    tan         : opencl_tan,
+    asin        : opencl_asin,
+    acos        : opencl_acos,
+    atan        : opencl_atan,
+    erf         : opencl_erf,
+    atan2       : opencl_atan2,
+    copysign    : opencl_copysign,
+    fma         : opencl_fma,
+    fmax        : opencl_fmax,
+    fmin        : opencl_fmin,
+    fmod        : opencl_fmod,
+    floor       : opencl_floor,
+    isinf       : opencl_isinf,
+    isnan       : opencl_isnan,
+    isfinite    : opencl_isfinite,
+    min         : opencl_min,
+    max         : opencl_max,
+};
+*/

@@ -94,7 +94,7 @@ macro(AnyDSL_runtime_files outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cuda.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_nvvm.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_hsa.impala)
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_amdgpu.impala)
 
     set(${outfiles} ${${outfiles}}
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
