@@ -5,6 +5,6 @@ endif()
 
 # .amdgpu -> .gcn
 if(EXISTS ${_basename}.amdgpu)
-    execute_process(COMMAND llc -mtriple=amdgcn-amd-amdhsa -mcpu=fiji -filetype=obj ${_basename}.amdgpu -o ${_basename}.gcn.rel
-                    COMMAND /opt/rocm/hcc/compiler/bin/ld.lld -shared ${_basename}.gcn.rel -o ${_basename}.gcn)
+    execute_process(COMMAND llc -mtriple=amdgcn-amd-amdhsa -mcpu=fiji -filetype=obj ${_basename}.amdgpu -o ${_basename}.gcn.rel)
+    execute_process(COMMAND /opt/rocm/hcc/compiler/bin/ld.lld -shared ${_basename}.gcn.rel -o ${_basename}.gcn)
 endif()
