@@ -148,9 +148,10 @@ hsa_status_t HSAPlatform::iterate_regions_callback(hsa_region_t region, void* da
     CHECK_HSA(status, "hsa_region_get_info()");
 
     std::string global_flags;
-    if (flags & HSA_REGION_GLOBAL_FLAG_KERNARG)
+    if (flags & HSA_REGION_GLOBAL_FLAG_KERNARG) {
         global_flags += "HSA_REGION_GLOBAL_FLAG_KERNARG ";
         device->kernarg_region = region;
+    }
     if (flags & HSA_REGION_GLOBAL_FLAG_FINE_GRAINED) {
         global_flags += "HSA_REGION_GLOBAL_FLAG_FINE_GRAINED ";
         device->finegrained_region = region;
@@ -206,7 +207,8 @@ HSAPlatform::~HSAPlatform() {
 }
 
 void* HSAPlatform::alloc(DeviceId dev, int64_t size) {
-    if (!size) return 0;
+    if (!size)
+        return nullptr;
 
     char* mem;
     hsa_status_t status = hsa_memory_allocate(devices_[dev].finegrained_region, size, (void**) &mem);

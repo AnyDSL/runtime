@@ -20,11 +20,11 @@ public:
 
 protected:
     void* alloc(DeviceId dev, int64_t size) override;
-    void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* get_device_ptr(DeviceId, void*) override { platform_error(); return nullptr; }
+    void* alloc_host(DeviceId dev, int64_t size) override { return alloc(dev, size); }
+    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc(dev, size); }
+    void* get_device_ptr(DeviceId, void* ptr) override { return ptr; }
     void release(DeviceId dev, void* ptr) override;
-    void release_host(DeviceId, void*) override { platform_error(); }
+    void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
