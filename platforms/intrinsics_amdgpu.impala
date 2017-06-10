@@ -9,8 +9,68 @@ extern "device" {
     fn "llvm.amdgcn.workitem.id.x"  amdgcn_workitem_id_x() -> i32;
     fn "llvm.amdgcn.workitem.id.y"  amdgcn_workitem_id_y() -> i32;
     fn "llvm.amdgcn.workitem.id.z"  amdgcn_workitem_id_z() -> i32;
+    fn "llvm.amdgcn.sin.f32"        amdgcn_sinf(f32) -> f32;
+    fn "llvm.amdgcn.cos.f32"        amdgcn_cosf(f32) -> f32;
+    fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
+    fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
     fn __llvm_fence_rel_wg() -> ();
     fn __llvm_fence_acq_wg() -> ();
+}
+
+extern "C" {
+    // https://github.com/RadeonOpenCompute/ROCm-Device-Libs/blob/master/doc/OCML.md
+    fn "__ocml_exp_f32"         ocml_expf(f32) -> f32;
+    fn "__ocml_exp2_f32"        ocml_exp2f(f32) -> f32;
+    fn "__ocml_log_f32"         ocml_logf(f32) -> f32;
+    fn "__ocml_log2_f32"        ocml_log2f(f32) -> f32;
+    fn "__ocml_pow_f32"         ocml_powf(f32, f32) -> f32;
+    fn "__ocml_rsqrt_f32"       ocml_rsqrtf(f32) -> f32;
+    fn "__ocml_sqrt_f32"        ocml_sqrtf(f32) -> f32;
+    fn "__ocml_fabs_f32"        ocml_fabsf(f32) -> f32;
+    fn "__ocml_sin_f32"         ocml_sinf(f32) -> f32;
+    fn "__ocml_cos_f32"         ocml_cosf(f32) -> f32;
+    fn "__ocml_tan_f32"         ocml_tanf(f32) -> f32;
+    fn "__ocml_asin_f32"        ocml_asinf(f32) -> f32;
+    fn "__ocml_acos_f32"        ocml_acosf(f32) -> f32;
+    fn "__ocml_atan_f32"        ocml_atanf(f32) -> f32;
+    fn "__ocml_erf_f32"         ocml_erff(f32) -> f32;
+    fn "__ocml_atan2_f32"       ocml_atan2f(f32, f32) -> f32;
+    fn "__ocml_copysign_f32"    ocml_copysignf(f32, f32) -> f32;
+    fn "__ocml_fma_f32"         ocml_fmaf(f32, f32, f32) -> f32;
+    fn "__ocml_fmax_f32"        ocml_fmaxf(f32, f32) -> f32;
+    fn "__ocml_fmin_f32"        ocml_fminf(f32, f32) -> f32;
+    fn "__ocml_fmod_f32"        ocml_fmodf(f32, f32) -> f32;
+    fn "__ocml_floor_f32"       ocml_floorf(f32) -> f32;
+    fn "__ocml_isinf_f32"       ocml_isinff(f32) -> i32;
+    fn "__ocml_isnan_f32"       ocml_isnanf(f32) -> i32;
+    fn "__ocml_finite_f32"      ocml_isfinitef(f32) -> i32;
+    fn "__ocml_mad_f32"         ocml_madf(f32, f32, f32) -> f32;
+    fn "__ocml_exp_f64"         ocml_exp(f64) -> f64;
+    fn "__ocml_exp2_f64"        ocml_exp2(f64) -> f64;
+    fn "__ocml_log_f64"         ocml_log(f64) -> f64;
+    fn "__ocml_log2_f64"        ocml_log2(f64) -> f64;
+    fn "__ocml_pow_f64"         ocml_pow(f64, f64) -> f64;
+    fn "__ocml_rsqrt_f64"       ocml_rsqrt(f64) -> f64;
+    fn "__ocml_sqrt_f64"        ocml_sqrt(f64) -> f64;
+    fn "__ocml_fabs_f64"        ocml_fabs(f64) -> f64;
+    fn "__ocml_sin_f64"         ocml_sin(f64) -> f64;
+    fn "__ocml_cos_f64"         ocml_cos(f64) -> f64;
+    fn "__ocml_tan_f64"         ocml_tan(f64) -> f64;
+    fn "__ocml_asin_f64"        ocml_asin(f64) -> f64;
+    fn "__ocml_acos_f64"        ocml_acos(f64) -> f64;
+    fn "__ocml_atan_f64"        ocml_atan(f64) -> f64;
+    fn "__ocml_erf_f64"         ocml_erf(f64) -> f64;
+    fn "__ocml_atan2_f64"       ocml_atan2(f64, f64) -> f64;
+    fn "__ocml_copysign_f64"    ocml_copysign(f64, f64) -> f64;
+    fn "__ocml_fma_f64"         ocml_fma(f64, f64, f64) -> f64;
+    fn "__ocml_fmax_f64"        ocml_fmax(f64, f64) -> f64;
+    fn "__ocml_fmin_f64"        ocml_fmin(f64, f64) -> f64;
+    fn "__ocml_fmod_f64"        ocml_fmod(f64, f64) -> f64;
+    fn "__ocml_floor_f64"       ocml_floor(f64) -> f64;
+    fn "__ocml_isinf_f64"       ocml_isinf(f64) -> i32;
+    fn "__ocml_isnan_f64"       ocml_isnan(f64) -> i32;
+    fn "__ocml_finite_f64"      ocml_isfinite(f64) -> i32;
+    fn "__ocml_mad_f64"         ocml_mad(f64, f64, f64) -> f64;
 }
 
 struct hsa_signal_t {
@@ -59,60 +119,57 @@ fn amdgpu_accelerator(dev: i32) -> Accelerator {
     }
 }
 
-static amdgpu_intrinsics = opencl_intrinsics;
-/*
 static amdgpu_intrinsics = Intrinsics {
-    expf        : opencl_expf,
-    exp2f       : opencl_exp2f,
-    logf        : opencl_logf,
-    log2f       : opencl_log2f,
-    powf        : opencl_powf,
-    rsqrtf      : opencl_rsqrtf,
-    sqrtf       : opencl_sqrtf,
-    fabsf       : opencl_fabsf,
-    sinf        : opencl_sinf,
-    cosf        : opencl_cosf,
-    tanf        : opencl_tanf,
-    asinf       : opencl_asinf,
-    acosf       : opencl_acosf,
-    atanf       : opencl_atanf,
-    erff        : opencl_erff,
-    atan2f      : opencl_atan2f,
-    copysignf   : opencl_copysignf,
-    fmaf        : opencl_fmaf,
-    fmaxf       : opencl_fmaxf,
-    fminf       : opencl_fminf,
-    fmodf       : opencl_fmodf,
-    floorf      : opencl_floorf,
-    isinff      : opencl_isinff,
-    isnanf      : opencl_isnanf,
-    isfinitef   : opencl_isfinitef,
-    exp         : opencl_exp,
-    exp2        : opencl_exp2,
-    log         : opencl_log,
-    log2        : opencl_log2,
-    pow         : opencl_pow,
-    rsqrt       : opencl_rsqrt,
-    sqrt        : opencl_sqrt,
-    fabs        : opencl_fabs,
-    sin         : opencl_sin,
-    cos         : opencl_cos,
-    tan         : opencl_tan,
-    asin        : opencl_asin,
-    acos        : opencl_acos,
-    atan        : opencl_atan,
-    erf         : opencl_erf,
-    atan2       : opencl_atan2,
-    copysign    : opencl_copysign,
-    fma         : opencl_fma,
-    fmax        : opencl_fmax,
-    fmin        : opencl_fmin,
-    fmod        : opencl_fmod,
-    floor       : opencl_floor,
-    isinf       : opencl_isinf,
-    isnan       : opencl_isnan,
-    isfinite    : opencl_isfinite,
-    min         : opencl_min,
-    max         : opencl_max,
+    expf        : ocml_sinf,
+    exp2f       : ocml_exp2f,
+    logf        : ocml_logf,
+    log2f       : ocml_log2f,
+    powf        : ocml_powf,
+    rsqrtf      : ocml_rsqrtf,
+    sqrtf       : ocml_sqrtf,
+    fabsf       : ocml_fabsf,
+    sinf        : amdgcn_sinf,
+    cosf        : amdgcn_cosf,
+    tanf        : ocml_tanf,
+    asinf       : ocml_asinf,
+    acosf       : ocml_acosf,
+    atanf       : ocml_atanf,
+    erff        : ocml_erff,
+    atan2f      : ocml_atan2f,
+    copysignf   : ocml_copysignf,
+    fmaf        : ocml_fmaf,
+    fmaxf       : ocml_fmaxf,
+    fminf       : ocml_fminf,
+    fmodf       : ocml_fmodf,
+    floorf      : ocml_floorf,
+    isinff      : ocml_isinff,
+    isnanf      : ocml_isnanf,
+    isfinitef   : ocml_isfinitef,
+    exp         : ocml_exp,
+    exp2        : ocml_exp2,
+    log         : ocml_log,
+    log2        : ocml_log2,
+    pow         : ocml_pow,
+    rsqrt       : ocml_rsqrt,
+    sqrt        : ocml_sqrt,
+    fabs        : ocml_fabs,
+    sin         : amdgcn_sin,
+    cos         : amdgcn_cos,
+    tan         : ocml_tan,
+    asin        : ocml_asin,
+    acos        : ocml_acos,
+    atan        : ocml_atan,
+    erf         : ocml_erf,
+    atan2       : ocml_atan2,
+    copysign    : ocml_copysign,
+    fma         : ocml_fma,
+    fmax        : ocml_fmax,
+    fmin        : ocml_fmin,
+    fmod        : ocml_fmod,
+    floor       : ocml_floor,
+    isinf       : ocml_isinf,
+    isnan       : ocml_isnan,
+    isfinite    : ocml_isfinite,
+    min         : |a: i32, b: i32| -> i32 { if a < b { a } else { b } },
+    max         : |a: i32, b: i32| -> i32 { if a > b { a } else { b } },
 };
-*/
