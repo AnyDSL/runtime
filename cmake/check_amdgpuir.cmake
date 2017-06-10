@@ -5,6 +5,8 @@ endif()
 
 # .amdgpu -> .gcn
 if(EXISTS ${_basename}.amdgpu)
-    execute_process(COMMAND llc -mtriple=amdgcn-amd-amdhsa -mcpu=fiji -filetype=obj ${_basename}.amdgpu -o ${_basename}.gcn.rel)
+    execute_process(COMMAND echo "define i32 @__oclc_finite_only_opt() { ret i32 0 } define i32 @__oclc_unsafe_math_opt() { ret i32 0 } define i32 @__oclc_daz_opt() { ret i32 0 } define i32 @__oclc_amd_opt() { ret i32 1 } define i32 @__oclc_correctly_rounded_sqrt32() { ret i32 1 } define i32 @__oclc_ISA_version() { ret i32 803 }" OUTPUT_FILE ${_basename}.ocml.ll)
+    execute_process(COMMAND llvm-link ${_basename}.amdgpu ${_basename}.ocml.ll /opt/rocm/lib/ocml.amdgcn.bc -o ${_basename}.amdgpu.linked)
+    execute_process(COMMAND llc -mtriple=amdgcn-amd-amdhsa -mcpu=fiji -filetype=obj ${_basename}.amdgpu.linked -o ${_basename}.gcn.rel)
     execute_process(COMMAND /opt/rocm/hcc/compiler/bin/ld.lld -shared ${_basename}.gcn.rel -o ${_basename}.gcn)
 endif()
