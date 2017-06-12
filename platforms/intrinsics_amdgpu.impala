@@ -115,7 +115,7 @@ fn amdgpu_accelerator(dev: i32) -> Accelerator {
         gidx          : || amdgcn_workitem_id_x() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
         gidy          : || amdgcn_workitem_id_y() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
         gidz          : || amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
-        barrier       : || { __llvm_fence_rel_wg(); amdgcn_s_barrier(); __llvm_fence_acq_wg() },
+        barrier       : amdgcn_s_barrier,
     }
 }
 
@@ -128,8 +128,8 @@ static amdgpu_intrinsics = Intrinsics {
     rsqrtf      : ocml_rsqrtf,
     sqrtf       : ocml_sqrtf,
     fabsf       : ocml_fabsf,
-    sinf        : amdgcn_sinf,
-    cosf        : amdgcn_cosf,
+    sinf        : ocml_sinf,
+    cosf        : ocml_cosf,
     tanf        : ocml_tanf,
     asinf       : ocml_asinf,
     acosf       : ocml_acosf,
@@ -153,8 +153,8 @@ static amdgpu_intrinsics = Intrinsics {
     rsqrt       : ocml_rsqrt,
     sqrt        : ocml_sqrt,
     fabs        : ocml_fabs,
-    sin         : amdgcn_sin,
-    cos         : amdgcn_cos,
+    sin         : ocml_sin,
+    cos         : ocml_cos,
     tan         : ocml_tan,
     asin        : ocml_asin,
     acos        : ocml_acos,
