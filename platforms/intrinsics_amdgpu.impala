@@ -73,6 +73,25 @@ extern "C" {
     fn "__ocml_mad_f64"         ocml_mad(f64, f64, f64) -> f64;
 }
 
+extern "thorin" {
+    fn "atomic"  amdgcn_atomic_global[T](u32, &mut[1]T, T) -> T;
+    fn "atomic"  amdgcn_atomic_shared[T](u32, &mut[3]T, T) -> T;
+    fn "cmpxchg" amdgcn_atomic_cmpxchg_global[T](&mut[1]T, T, T) -> (T, bool);
+    fn "cmpxchg" amdgcn_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
+}
+
+// kind: Xchg Add Sub And Nand Or Xor Max Min
+fn amdgcn_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(0u, a, b) }
+fn amdgcn_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(0u, a, b) }
+fn amdgcn_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, b) }
+fn amdgcn_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(1u, a, b) }
+fn amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(2u, a, b) }
+fn amdgcn_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(2u, a, b) }
+fn amdgcn_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(7u, a, b) }
+fn amdgcn_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(7u, a, b) }
+fn amdgcn_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(8u, a, b) }
+fn amdgcn_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(8u, a, b) }
+
 struct hsa_signal_t {
     handle : u64
 }
