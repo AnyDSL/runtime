@@ -247,7 +247,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         offset += sizes[i];
     }
     if (offset != kernarg_segment_size)
-        debug("HSA kernarg segment size differs from argument size: % vs. %", kernarg_segment_size, offset);
+        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernarg_segment_size, offset);
 
     auto queue = devices_[dev].queue;
     auto signal = devices_[dev].signal;
