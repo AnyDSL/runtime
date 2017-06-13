@@ -475,11 +475,10 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
             log += buffer;
 
         int exit_status = pclose(stream);
-        if (!WEXITSTATUS(exit_status)) {
+        if (!WEXITSTATUS(exit_status))
             info("%", log);
-        } else {
+        else
             error("Compilation error: %", log);
-        }
     } else {
         error("Cannot run NVCC");
     }
