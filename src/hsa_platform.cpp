@@ -242,7 +242,12 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     status = hsa_memory_allocate(devices_[dev].kernarg_region, kernarg_segment_size, &kernarg_address);
     CHECK_HSA(status, "hsa_memory_allocate()");
     size_t offset = 0;
+    auto align_address = [] (size_t base, size_t align) {
+        return ((base + align - 1) / align) * align;
+    };
     for (uint32_t i = 0; i < num_args; i++) {
+        // align base address for next kernel argument
+        offset = align_address(offset, sizes[i]);
         std::memcpy((void*)((char*)kernarg_address + offset), args[i], sizes[i]);
         offset += sizes[i];
     }
