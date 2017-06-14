@@ -13,8 +13,6 @@ extern "device" {
     fn "llvm.amdgcn.cos.f32"        amdgcn_cosf(f32) -> f32;
     fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
     fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
-    fn __llvm_fence_rel_wg() -> ();
-    fn __llvm_fence_acq_wg() -> ();
 }
 
 extern "C" {
