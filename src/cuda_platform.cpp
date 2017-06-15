@@ -378,10 +378,10 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));
     int num_options = 2;
-    const char* options[3];
-    options[0] = compute_arch.c_str();
-    options[1] = "-opt=3";
-    options[2] = "-g";
+    const char* options[] = {
+        compute_arch.c_str(),
+        "-opt=3",
+        "-g" };
 
     debug("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
     err = nvvmCompileProgram(program, num_options, options);
@@ -488,13 +488,13 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
 #endif
 
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const {
-    const unsigned opt_level = 3;
-    const int error_log_size = 10240;
-    const int num_options = 4;
+    const unsigned int opt_level = 4;
+    const unsigned int error_log_size = 10240;
+    const unsigned int num_options = 4;
     char error_log_buffer[error_log_size] = { 0 };
 
     CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
-    void* option_values[]  = { (void*)error_log_buffer, (void*)(size_t)error_log_size, (void*)target_cc, (void*)(size_t)opt_level };
+    void* option_values[]  = { (void*)error_log_buffer, (void*)error_log_size, (void*)target_cc, (void*)opt_level };
 
     debug("Creating module from PTX '%' on CUDA device %", filename, dev);
     CUmodule mod;
