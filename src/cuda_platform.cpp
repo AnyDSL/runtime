@@ -327,7 +327,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
     return func;
 }
 
-std::string CudaPlatform::load_ptx(const std::string& filename) {
+std::string CudaPlatform::load_ptx(const std::string& filename) const {
     std::string ptx_filename = filename + ".ptx";
     std::ifstream src_file(ptx_filename);
     if (!src_file.is_open())
