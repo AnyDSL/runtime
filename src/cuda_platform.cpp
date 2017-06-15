@@ -301,7 +301,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
 
         CUresult err = cuModuleGetFunction(&func, mod, kernelname.c_str());
         if (err != CUDA_SUCCESS)
-            debug("Function '%' is not present in '%'", kernelname, file);
+            info("Function '%' is not present in '%'", kernelname, file);
         CHECK_CUDA(err, "cuModuleGetFunction()");
         int regs, cmem, lmem, smem, threads;
         err = cuFuncGetAttribute(&regs, CU_FUNC_ATTRIBUTE_NUM_REGS, func);
@@ -390,7 +390,7 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
         nvvmGetProgramLogSize(program, &log_size);
         std::string error_log(log_size, '\0');
         nvvmGetProgramLog(program, &error_log[0]);
-        error("Compilation error: %", error_log);
+        info("Compilation error: %", error_log);
     }
     CHECK_NVVM(err, "nvvmCompileProgram()");
 
@@ -439,7 +439,7 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
         nvrtcGetProgramLogSize(program, &log_size);
         std::string error_log(log_size, '\0');
         nvrtcGetProgramLog(program, &error_log[0]);
-        error("Compilation error: %", error_log);
+        info("Compilation error: %", error_log);
     }
     CHECK_NVRTC(err, "nvrtcCompileProgram()");
 
@@ -499,6 +499,8 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     debug("Creating module from PTX '%' on CUDA device %", filename, dev);
     CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx, num_options, options, option_values);
+    if (err != CUDA_SUCCESS)
+        info("Compilation error: %", error_log_buffer);
     CHECK_CUDA(err, "cuModuleLoadDataEx()");
 
     return mod;
