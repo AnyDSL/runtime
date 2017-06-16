@@ -84,7 +84,7 @@ protected:
 
     CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
-    std::string load_ptx(const std::string& filename);
+    std::string load_ptx(const std::string& filename) const;
     CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;

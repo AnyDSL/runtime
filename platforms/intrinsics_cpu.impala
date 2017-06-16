@@ -59,6 +59,10 @@ extern "device" {
 
     fn "llvm.ctpop.i32"    cpu_popcount32(i32) -> i32;
     fn "llvm.ctpop.i64"    cpu_popcount64(i64) -> i64;
+    fn "llvm.ctlz.i32"     cpu_clz32(i32, bool) -> i32;
+    fn "llvm.ctlz.i64"     cpu_clz64(i64, bool) -> i64;
+    fn "llvm.cttz.i32"     cpu_ctz32(i32, bool) -> i32;
+    fn "llvm.cttz.i64"     cpu_ctz64(i64, bool) -> i64;
     fn "llvm.prefetch"     cpu_prefetch(&u8, i32, i32, i32) -> ();
 }
 
