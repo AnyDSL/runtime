@@ -206,12 +206,12 @@ HSAPlatform::~HSAPlatform() {
     hsa_shut_down();
 }
 
-void* HSAPlatform::alloc(DeviceId dev, int64_t size) {
+void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
     if (!size)
         return nullptr;
 
     char* mem;
-    hsa_status_t status = hsa_memory_allocate(devices_[dev].finegrained_region, size, (void**) &mem);
+    hsa_status_t status = hsa_memory_allocate(region, size, (void**) &mem);
     CHECK_HSA(status, "hsa_memory_allocate()");
 
     return (void*)mem;
