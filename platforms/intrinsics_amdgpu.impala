@@ -88,7 +88,7 @@ fn amdgcn_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared
 // global atomics are mapped to PCIe atomics: CAS, FetchADD, Swap
 fn amdgcn_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(0u, a, b) }
 fn amdgcn_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, b) }
-fn amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { x - y }) }
+fn amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, -b) }
 fn amdgcn_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x > y { x } else { y } }) }
 fn amdgcn_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x < y { x } else { y } }) }
 
