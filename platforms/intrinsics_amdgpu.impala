@@ -105,6 +105,24 @@ fn atomic_op_global(a: &mut[1]i32, b: i32, cmpxchg: fn(&mut[1]i32, i32, i32) -> 
     old
 }
 
+fn amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_min3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
+}
+
+fn amdgcn_maxmax(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_max3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
+}
+
 struct hsa_signal_t {
     handle : u64
 }
