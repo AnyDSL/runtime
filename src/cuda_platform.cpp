@@ -328,10 +328,9 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
 }
 
 std::string CudaPlatform::load_ptx(const std::string& filename) const {
-    std::string ptx_filename = filename + ".ptx";
-    std::ifstream src_file(ptx_filename);
+    std::ifstream src_file(filename);
     if (!src_file.is_open())
-        error("Can't open PTX source file '%'", ptx_filename);
+        error("Can't open PTX source file '%'", filename);
 
     return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 }
