@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <hsa.h>
+#include <hsa_ext_amd.h>
 
 /// HSA platform. Has the same number of devices as that of the HSA implementation.
 class HSAPlatform : public Platform {
@@ -79,6 +80,7 @@ protected:
         }
     };
 
+    uint64_t frequency_;
     std::vector<DeviceData> devices_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
