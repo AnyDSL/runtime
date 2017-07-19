@@ -235,6 +235,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
                                 const uint32_t* grid, const uint32_t* block,
                                 void** args, const uint32_t* sizes, const KernelArgType*,
                                 uint32_t num_args) {
+    auto queue = devices_[dev].queue;
+    if (!queue)
+        error("The selected HSA device '%' cannot execute kernels", dev);
+
     uint64_t kernel;
     uint32_t kernarg_segment_size;
     uint32_t group_segment_size;
@@ -261,7 +265,6 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     if (offset != kernarg_segment_size)
         debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernarg_segment_size, offset);
 
-    auto queue = devices_[dev].queue;
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
 
