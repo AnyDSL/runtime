@@ -41,7 +41,7 @@ extern "C" {
     fn "__ocml_floor_f32"       ocml_floorf(f32) -> f32;
     fn "__ocml_isinf_f32"       ocml_isinff(f32) -> i32;
     fn "__ocml_isnan_f32"       ocml_isnanf(f32) -> i32;
-    fn "__ocml_finite_f32"      ocml_isfinitef(f32) -> i32;
+    fn "__ocml_isfinite_f32"    ocml_isfinitef(f32) -> i32;
     fn "__ocml_mad_f32"         ocml_madf(f32, f32, f32) -> f32;
     fn "__ocml_exp_f64"         ocml_exp(f64) -> f64;
     fn "__ocml_exp2_f64"        ocml_exp2(f64) -> f64;
@@ -67,7 +67,7 @@ extern "C" {
     fn "__ocml_floor_f64"       ocml_floor(f64) -> f64;
     fn "__ocml_isinf_f64"       ocml_isinf(f64) -> i32;
     fn "__ocml_isnan_f64"       ocml_isnan(f64) -> i32;
-    fn "__ocml_finite_f64"      ocml_isfinite(f64) -> i32;
+    fn "__ocml_isfinite_f64"    ocml_isfinite(f64) -> i32;
     fn "__ocml_mad_f64"         ocml_mad(f64, f64, f64) -> f64;
 }
 
