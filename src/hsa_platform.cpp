@@ -248,6 +248,8 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     CHECK_HSA(status, "hsa_memory_allocate()");
     size_t offset = 0;
     auto align_address = [] (size_t base, size_t align) {
+        if (align > 8)
+            align = 8;
         return ((base + align - 1) / align) * align;
     };
     for (uint32_t i = 0; i < num_args; i++) {
