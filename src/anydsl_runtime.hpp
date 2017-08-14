@@ -66,7 +66,7 @@ public:
 
     T* begin() { return data_; }
     const T* begin() const { return data_; }
-    
+
     T* end() { return data_ + size_; }
     const T* end() const { return data_ + size_; }
 
@@ -118,8 +118,8 @@ void copy(const Array<T>& a, Array<T>& b, int64_t size) {
 
 template <typename T>
 void copy(const Array<T>& a, int64_t offset_a, Array<T>& b, int64_t offset_b, int64_t size) {
-    anydsl_copy(a.device(), (const void*)a.data(), offset_a,
-                b.device(), (void*)b.data(), offset_b,
+    anydsl_copy(a.device(), (const void*)a.data(), offset_a * sizeof(T),
+                b.device(), (void*)b.data(), offset_b * sizeof(T),
                 size * sizeof(T));
 }
 
