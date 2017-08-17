@@ -76,7 +76,7 @@ macro(anydsl_runtime_wrap outfiles)
         set(_impala_flags ${_impala_flags} ${PARGS_IMPALA_FLAGS})
     endif()
 
-    set(_clang_flags -fPIC ${_opt_flags})
+    set(_clang_flags ${_opt_flags})
     if(PARGS_CLANG_FLAGS)
         set(_clang_flags ${_clang_flags} ${PARGS_CLANG_FLAGS})
     endif()
