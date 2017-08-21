@@ -171,14 +171,19 @@ static std::mt19937 std_gen;
 #else
 static thread_local std::mt19937 std_gen;
 #endif
-static std::uniform_real_distribution<float> std_dist(0.0f, 1.0f);
+static std::uniform_real_distribution<float>   std_dist_f32;
+static std::uniform_int_distribution<uint64_t> std_dist_u64;
 
 void anydsl_random_seed(uint32_t seed) {
     std_gen.seed(seed);
 }
 
-float anydsl_random_val() {
-    return std_dist(std_gen);
+float anydsl_random_val_f32() {
+    return std_dist_f32(std_gen);
+}
+
+uint64_t anydsl_random_val_u64() {
+    return std_dist_u64(std_gen);
 }
 
 #ifndef ENABLE_TBB // C++11 threads version

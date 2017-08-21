@@ -10,8 +10,9 @@ extern "C" {
 
     fn "anydsl_copy" runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
 
-    fn "anydsl_random_val"  random_val() -> f32;
-    fn "anydsl_random_seed" random_seed(u32) -> ();
+    fn "anydsl_random_seed"     random_seed(u32) -> ();
+    fn "anydsl_random_val_f32"  random_val_f32() -> f32;
+    fn "anydsl_random_val_u64"  random_val_u64() -> u64;
 
     fn "anydsl_get_micro_time"  get_micro_time() -> i64;
     fn "anydsl_get_kernel_time" get_kernel_time() -> i64;
