@@ -330,49 +330,98 @@ int OpenCLPlatform::dev_count() {
     return devices_.size();
 }
 
-cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
-    auto& opencl_dev = devices_[dev];
-
+cl_program OpenCLPlatform::try_find_program(DeviceData& opencl_dev, const std::string& filename) {
     opencl_dev.lock();
-
-    cl_int err = CL_SUCCESS;
-    cl_program program;
     auto& prog_cache = opencl_dev.programs;
     auto prog_it = prog_cache.find(filename);
-    if (prog_it == prog_cache.end()) {
-        opencl_dev.unlock();
+	auto program = prog_it != prog_cache.end() ? prog_it->second : nullptr;
+	opencl_dev.unlock();
+	return program;
+}
 
-        std::string options = "-cl-fast-relaxed-math";
-        if (std::ifstream(filename).good()) {
-            std::ifstream src_file(KERNEL_DIR + filename);
-            std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-            const size_t program_length = program_string.length();
-            const char* program_c_str = program_string.c_str();
-            options += " -cl-std=CL1.2";
-            program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
-            CHECK_OPENCL(err, "clCreateProgramWithSource()");
-            debug("Compiling '%' on OpenCL device %", filename, dev);
-        } else {
-            error("Could not find kernel file '%'", filename);
-        }
+void OpenCLPlatform::insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program) { 
+	opencl_dev.lock();
+    auto& prog_cache = opencl_dev.programs;
+	prog_cache[filename] = program;
+	opencl_dev.unlock();
+}
 
+cl_kernel OpenCLPlatform::try_find_kernel(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program) {
+    opencl_dev.lock();
+    auto& kernel_cache = opencl_dev.kernels;
+    auto& kernel_map = kernel_cache[program];
+    auto kernel_it = kernel_map.find(kernelname);
+    auto kernel = kernel_it != kernel_map.end() ? kernel_it->second : nullptr;
+	opencl_dev.unlock();
+	return kernel;
+}
+
+void OpenCLPlatform::insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel) { 
+	opencl_dev.lock();
+    auto& kernel_cache = opencl_dev.kernels;
+    kernel_cache[program].emplace(kernelname, kernel);
+	opencl_dev.unlock();
+}
+
+cl_program OpenCLPlatform::create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options) {
+    options += "-cl-fast-relaxed-math";
+    cl_program program = nullptr;
+    if (std::ifstream(filename).good()) {
+        std::ifstream src_file(KERNEL_DIR + filename);
+        std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
+        const size_t program_length = program_string.length();
+        const char* program_c_str = program_string.c_str();
+
+		cl_int err = CL_SUCCESS;
+        options += " -cl-std=CL1.2";
+        program = clCreateProgramWithSource(opencl_dev.ctx, 1, (const char**)&program_c_str, &program_length, &err);
+        CHECK_OPENCL(err, "clCreateProgramWithSource()");
+        //debug("Compiling '%' on OpenCL device %", filename, opencl_dev.dev);
+        debug("Compiling '%'", filename);
+
+		insert_program_into_cache(opencl_dev, filename, program);
+    } else {
+        error("Could not find kernel file '%'", filename);
+	}
+	return program;
+}
+
+cl_kernel OpenCLPlatform::create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname) {
+	cl_int err = CL_SUCCESS;
+	cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
+	CHECK_OPENCL(err, "clCreateKernel()");
+    insert_kernel_into_cache(opencl_dev, kernelname, program, kernel);
+	return kernel;
+}
+
+cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
+    auto& opencl_dev = devices_[dev];
+    cl_int err = CL_SUCCESS;
+
+    // create and build program if not exist
+	auto program = try_find_program(opencl_dev, filename);
+	if(program == nullptr){
+	    std::string options = "";
+        program = create_program(opencl_dev, filename, options);
+
+        debug("Target OpenCL device is %", dev);
         cl_build_status build_status;
         err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
-        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
+        err |= clGetProgramBuildInfo(program, opencl_dev.dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
 
         if (build_status == CL_BUILD_ERROR || err != CL_SUCCESS) {
             // determine the size of the options and log
             size_t log_size, options_size;
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, 0, NULL, &options_size);
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+            err |= clGetProgramBuildInfo(program, opencl_dev.dev, CL_PROGRAM_BUILD_OPTIONS, 0, NULL, &options_size);
+            err |= clGetProgramBuildInfo(program, opencl_dev.dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 
             // allocate memory for the options and log
             char* program_build_options = new char[options_size];
             char* program_build_log = new char[log_size];
 
             // get the options and log
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, options_size, program_build_options, NULL);
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, log_size, program_build_log, NULL);
+            err |= clGetProgramBuildInfo(program, opencl_dev.dev, CL_PROGRAM_BUILD_OPTIONS, options_size, program_build_options, NULL);
+            err |= clGetProgramBuildInfo(program, opencl_dev.dev, CL_PROGRAM_BUILD_LOG, log_size, program_build_log, NULL);
             info("OpenCL build options : %", program_build_options);
             info("OpenCL build log : %", program_build_log);
 
@@ -381,31 +430,12 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
             delete[] program_build_log;
         }
         CHECK_OPENCL(err, "clBuildProgram(), clGetProgramBuildInfo()");
+	}
 
-        opencl_dev.lock();
-        prog_cache[filename] = program;
-    } else {
-        program = prog_it->second;
+    // create kernel if not exist
+    auto kernel = try_find_kernel(opencl_dev, kernelname, program);
+	if(kernel == nullptr){
+	    kernel = create_kernel(opencl_dev, program, kernelname);
     }
-
-    // checks that the kernel exists
-    auto& kernel_cache = opencl_dev.kernels;
-    auto& kernel_map = kernel_cache[program];
-    auto kernel_it = kernel_map.find(kernelname);
-    cl_kernel kernel;
-    if (kernel_it == kernel_map.end()) {
-        opencl_dev.unlock();
-
-        kernel = clCreateKernel(program, kernelname.c_str(), &err);
-        CHECK_OPENCL(err, "clCreateKernel()");
-
-        opencl_dev.lock();
-        kernel_cache[program].emplace(kernelname, kernel);
-    } else {
-        kernel = kernel_it->second;
-    }
-
-    opencl_dev.unlock();
-
     return kernel;
 }
