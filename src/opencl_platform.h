@@ -57,6 +57,7 @@ protected:
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
+        std::unordered_map<cl_kernel, cl_command_queue> kernels_queue; //FPGA, ordered
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -85,11 +86,16 @@ protected:
     void insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program);
     cl_kernel try_find_kernel(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program);
     void insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel);
+    void insert_kernelqueue_into_cache(DeviceData& opencl_dev, cl_kernel& kernel, cl_command_queue& kernel_queue);
 
     cl_program create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options);
     cl_program create_programFPGA(DeviceData& opencl_dev, const std::string& filename, std::string& options);
     cl_kernel create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
+    cl_kernel create_kernelFPGA(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+
+    void finish(DeviceData& opencl_dev);
+    void finishFPGA(DeviceData& opencl_dev);
 };
 
 #endif
