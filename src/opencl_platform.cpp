@@ -120,6 +120,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
         char buffer[1024];
         err  = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(buffer), &buffer, NULL);
         debug("  Platform Name: %", buffer);
+        std::string platform_name(buffer);
         err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, sizeof(buffer), &buffer, NULL);
         debug("  Platform Vendor: %", buffer);
         err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VERSION, sizeof(buffer), &buffer, NULL);
@@ -187,6 +188,9 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_.resize(dev + 1);
             devices_[dev].platform = platform;
             devices_[dev].dev = device;
+            if(platform_name.find("FPGA") != std::string::npos ){
+                devices_[dev].ifIntelFPGA = true;
+            }
 
             // create context
             cl_context_properties ctx_props[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
@@ -386,6 +390,46 @@ cl_program OpenCLPlatform::create_program(DeviceData& opencl_dev, const std::str
 	return program;
 }
 
+cl_program OpenCLPlatform::create_programFPGA(DeviceData& opencl_dev, const std::string& filename, std::string& options) {
+    debug("Target Platform is an FPGA\n");
+    std::string file_name = filename.substr(0, filename.size()-3);
+    file_name += ".aocx";
+    cl_program program = nullptr;
+    if (std::ifstream(file_name).good()) {
+        FILE* srcFile;
+        srcFile = fopen (file_name.c_str(), "rb");
+        if (srcFile == NULL){
+        error("Could not open binary file '%'", file_name);
+        }
+        // Calculate the size of the file
+        fseek(srcFile, 0, SEEK_END);
+        const size_t binary_length = ftell(srcFile);
+        unsigned char* binary = new unsigned char[binary_length];
+        rewind(srcFile);
+        if(fread((void*)binary, binary_length, 1, srcFile) == 0) {
+          delete[] binary;
+          fclose(srcFile);
+        }
+        if(binary == NULL) {
+          error("Could not read binary file '%'", file_name);
+        }
+
+		cl_int err = CL_SUCCESS;
+        cl_int binary_status;
+        program = clCreateProgramWithBinary(opencl_dev.ctx, 1, &(opencl_dev.dev), &binary_length,
+                                            (const unsigned char**)&binary, &binary_status, &err);
+        CHECK_OPENCL(err, "clCreateProgramWithBinary()");
+        CHECK_OPENCL(binary_status, "clCreateProgramWithBinary()");
+        debug("Loading binary of '%'", file_name);
+
+		insert_program_into_cache(opencl_dev, filename, program);
+    } else {
+        error("Could not find binary file '%'", file_name);
+    }
+    options = "";
+	return program;
+}
+
 cl_kernel OpenCLPlatform::create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname) {
 	cl_int err = CL_SUCCESS;
 	cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
@@ -402,7 +446,11 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 	auto program = try_find_program(opencl_dev, filename);
 	if(program == nullptr){
 	    std::string options = "";
-        program = create_program(opencl_dev, filename, options);
+	    if(opencl_dev.ifIntelFPGA) {
+            program = create_programFPGA(opencl_dev, filename, options);
+	    } else{
+            program = create_program(opencl_dev, filename, options);
+	    }
 
         debug("Target OpenCL device is %", dev);
         cl_build_status build_status;

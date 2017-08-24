@@ -51,6 +51,7 @@ protected:
     struct DeviceData {
         cl_platform_id platform;
         cl_device_id dev;
+        bool ifIntelFPGA = false;
         cl_command_queue queue;
         cl_context ctx;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
@@ -62,6 +63,7 @@ protected:
         DeviceData(DeviceData&& data)
             : platform(data.platform)
             , dev(data.dev)
+            , ifIntelFPGA(data.ifIntelFPGA)
             , queue(data.queue)
             , ctx(data.ctx)
             , programs(std::move(data.programs))
@@ -85,6 +87,7 @@ protected:
     void insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel);
 
     cl_program create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options);
+    cl_program create_programFPGA(DeviceData& opencl_dev, const std::string& filename, std::string& options);
     cl_kernel create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 };
