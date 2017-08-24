@@ -218,6 +218,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
 OpenCLPlatform::~OpenCLPlatform() {
     for (size_t i = 0; i < devices_.size(); i++) {
+        if(devices_[i].ifIntelFPGA) continue;
         for (auto& map : devices_[i].kernels) {
             for (auto& it : map.second) {
                 cl_int err = clReleaseKernel(it.second);
@@ -278,8 +279,15 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     size_t local_work_size[]  = {block[0], block[1], block[2]};
 
     // launch the kernel
-    cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &end_kernel);
-    CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+	if(devices_[dev].ifIntelFPGA) {
+        auto& kernel_queue = devices_[dev].kernels_queue[kernel];
+        cl_int err = clEnqueueNDRangeKernel(kernel_queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+        CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+    }
+    else{
+        cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &end_kernel);
+        CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+    }
 
     // release temporary buffers for struct arguments
     for (size_t i = 0; i < num_args; i++) {
@@ -291,22 +299,34 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 }
 
 void OpenCLPlatform::synchronize(DeviceId dev) {
-    cl_int err = clFinish(devices_[dev].queue);
-    CHECK_OPENCL(err, "clFinish()");
 
-    cl_ulong end, start;
-    float time;
+	if(devices_[dev].ifIntelFPGA) {
+        auto& kernels_queue = devices_[dev].kernels_queue;
+        for (auto& it : kernels_queue) {
+            cl_command_queue& queue = it.second;
+            cl_int err = clFinish(queue);
+            CHECK_OPENCL(err, "clFinish()");
+        }
+        // Note that the device queue is not released
+        // clEvent Timing is not supported
+	} else{
+        cl_int err = clFinish(devices_[dev].queue);
+        CHECK_OPENCL(err, "clFinish()");
 
-    err = clWaitForEvents(1, &end_kernel);
-    CHECK_OPENCL(err, "clWaitForEvents()");
-    err = clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
-    err |= clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
-    CHECK_OPENCL(err, "clGetEventProfilingInfo()");
-    time = (end-start)*1.0e-6f;
-    anydsl_kernel_time.fetch_add(time * 1000);
+        cl_ulong end, start;
+        float time;
 
-    err = clReleaseEvent(end_kernel);
-    CHECK_OPENCL(err, "clReleaseEvent()");
+        err = clWaitForEvents(1, &end_kernel);
+        CHECK_OPENCL(err, "clWaitForEvents()");
+        err = clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
+        err |= clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
+        CHECK_OPENCL(err, "clGetEventProfilingInfo()");
+        time = (end-start)*1.0e-6f;
+        anydsl_kernel_time.fetch_add(time * 1000);
+
+        err = clReleaseEvent(end_kernel);
+        CHECK_OPENCL(err, "clReleaseEvent()");
+    }
 }
 
 void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
@@ -364,6 +384,13 @@ void OpenCLPlatform::insert_kernel_into_cache(DeviceData& opencl_dev, const std:
 	opencl_dev.lock();
     auto& kernel_cache = opencl_dev.kernels;
     kernel_cache[program].emplace(kernelname, kernel);
+	opencl_dev.unlock();
+}
+
+void OpenCLPlatform::insert_kernelqueue_into_cache(DeviceData& opencl_dev, cl_kernel& kernel, cl_command_queue& kernel_queue) { 
+	opencl_dev.lock();
+	auto& kernels_queue = opencl_dev.kernels_queue;
+    kernels_queue[kernel] = kernel_queue;
 	opencl_dev.unlock();
 }
 
@@ -438,6 +465,20 @@ cl_kernel OpenCLPlatform::create_kernel(DeviceData& opencl_dev, cl_program& prog
 	return kernel;
 }
 
+cl_kernel OpenCLPlatform::create_kernelFPGA(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname) {
+	cl_int err = CL_SUCCESS;
+	cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
+	CHECK_OPENCL(err, "clCreateKernel()");
+	cl_command_queue kernel_queue = clCreateCommandQueue(opencl_dev.ctx, opencl_dev.dev, CL_QUEUE_PROFILING_ENABLE, &err);
+    CHECK_OPENCL(err, "clCreateCommandQueue()");
+
+    // TODO: check if this is the right approach regarding multithreading
+    insert_kernel_into_cache(opencl_dev, kernelname, program, kernel);
+	// Intel SDK for FPGA needs a new queue for each kernel
+    insert_kernelqueue_into_cache(opencl_dev, kernel, kernel_queue);
+	return kernel;
+}
+
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
     cl_int err = CL_SUCCESS;
@@ -483,7 +524,11 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     // create kernel if not exist
     auto kernel = try_find_kernel(opencl_dev, kernelname, program);
 	if(kernel == nullptr){
-	    kernel = create_kernel(opencl_dev, program, kernelname);
+		if(opencl_dev.ifIntelFPGA) {
+			kernel = create_kernelFPGA(opencl_dev, program, kernelname);
+		}else{
+	        kernel = create_kernel(opencl_dev, program, kernelname);
+		}
     }
     return kernel;
 }
