@@ -79,6 +79,13 @@ protected:
 
     std::vector<DeviceData> devices_;
 
+    cl_program try_find_program(DeviceData& opencl_dev, const std::string& filename);
+    void insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program);
+    cl_kernel try_find_kernel(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program);
+    void insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel);
+
+    cl_program create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options);
+    cl_kernel create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 };
 
