@@ -10,18 +10,19 @@ extern "C" {
 
     fn "anydsl_copy" runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
 
-    fn "anydsl_random_val"  random_val() -> f32;
-    fn "anydsl_random_seed" random_seed(u32) -> ();
+    fn "anydsl_random_seed"     random_seed(u32) -> ();
+    fn "anydsl_random_val_f32"  random_val_f32() -> f32;
+    fn "anydsl_random_val_u64"  random_val_u64() -> u64;
 
     fn "anydsl_get_micro_time"  get_micro_time() -> i64;
     fn "anydsl_get_kernel_time" get_kernel_time() -> i64;
 
+    fn "anydsl_print_i16"    print_i16(i16) -> ();
+    fn "anydsl_print_i32"    print_i32(i32) -> ();
+    fn "anydsl_print_i64"    print_i64(i64) -> ();
+    fn "anydsl_print_f32"    print_f32(f32) -> ();
+    fn "anydsl_print_f64"    print_f64(f64) -> ();
     fn "anydsl_print_char"   print_char(u8) -> ();
-    fn "anydsl_print_short"  print_short(i16) -> ();
-    fn "anydsl_print_int"    print_int(i32) -> ();
-    fn "anydsl_print_long"   print_long(i64) -> ();
-    fn "anydsl_print_float"  print_float(f32) -> ();
-    fn "anydsl_print_double" print_double(f64) -> ();
     fn "anydsl_print_string" print_string(&[u8]) -> ();
 }
 

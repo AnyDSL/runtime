@@ -336,8 +336,10 @@ std::string CudaPlatform::load_ptx(const std::string& filename) const {
 }
 
 CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
+    std::string libdevice_filename = "libdevice.10.bc";
+
+    #if CUDA_VERSION < 9000
     // Select libdevice module according to documentation
-    std::string libdevice_filename;
     if (target_cc < 30)
         libdevice_filename = "libdevice.compute_20.10.bc";
     else if (target_cc == 30)
@@ -352,6 +354,7 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
         libdevice_filename = "libdevice.compute_50.10.bc";
     else
         libdevice_filename = "libdevice.compute_30.10.bc";
+    #endif
 
     std::ifstream libdevice_file(std::string(LIBDEVICE_DIR) + libdevice_filename);
     if (!libdevice_file.is_open())
@@ -380,7 +383,8 @@ CUmodule CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, C
     const char* options[] = {
         compute_arch.c_str(),
         "-opt=3",
-        "-g" };
+        "-g",
+        "-generate-line-info" };
 
     debug("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
     err = nvvmCompileProgram(program, num_options, options);
@@ -460,7 +464,9 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
 #define NVCC_BIN "nvcc"
 #endif
 CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const {
+    #if CUDA_VERSION < 9000
     target_cc = target_cc == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : target_cc; // compute_21 does not exist for nvcc
+    #endif
     std::string ptx_filename = std::string(filename) + ".ptx";
     std::string command = (NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(target_cc) + " ";
     command += std::string(KERNEL_DIR) + filename + " -o " + ptx_filename + " 2>&1";

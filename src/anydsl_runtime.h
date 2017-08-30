@@ -35,8 +35,9 @@ void anydsl_launch_kernel(int32_t,
                           uint32_t);
 void anydsl_synchronize(int32_t);
 
-float anydsl_random_val();
 void anydsl_random_seed(uint32_t);
+float    anydsl_random_val_f32();
+uint64_t anydsl_random_val_u64();
 
 uint64_t anydsl_get_micro_time();
 uint64_t anydsl_get_kernel_time();
@@ -48,12 +49,12 @@ int32_t anydsl_isinf(double);
 int32_t anydsl_isnan(double);
 int32_t anydsl_isfinite(double);
 
+void anydsl_print_i16(int16_t);
+void anydsl_print_i32(int32_t);
+void anydsl_print_i64(int64_t);
+void anydsl_print_f32(float);
+void anydsl_print_f64(double);
 void anydsl_print_char(char);
-void anydsl_print_short(int16_t);
-void anydsl_print_int(int32_t);
-void anydsl_print_long(int64_t);
-void anydsl_print_float(float);
-void anydsl_print_double(double);
 void anydsl_print_string(char*);
 
 void* anydsl_aligned_malloc(size_t, size_t);
