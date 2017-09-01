@@ -154,13 +154,13 @@ int32_t anydsl_isinf(double x)    { return std::isinf(x); }
 int32_t anydsl_isnan(double x)    { return std::isnan(x); }
 int32_t anydsl_isfinite(double x) { return std::isfinite(x); }
 
-void anydsl_print_char(char c)      { std::cout << c; }
-void anydsl_print_short(int16_t s)  { std::cout << s; }
-void anydsl_print_int(int32_t i)    { std::cout << i; }
-void anydsl_print_long(int64_t l)   { std::cout << l; }
-void anydsl_print_float(float f)    { std::cout << f; }
-void anydsl_print_double(double d)  { std::cout << d; }
-void anydsl_print_string(char* s)   { std::cout << s; }
+void anydsl_print_i16(int16_t s)  { std::cout << s; }
+void anydsl_print_i32(int32_t i)  { std::cout << i; }
+void anydsl_print_i64(int64_t l)  { std::cout << l; }
+void anydsl_print_f32(float f)    { std::cout << f; }
+void anydsl_print_f64(double d)   { std::cout << d; }
+void anydsl_print_char(char c)    { std::cout << c; }
+void anydsl_print_string(char* s) { std::cout << s; }
 
 #ifndef __has_feature
 #define __has_feature(x) 0
@@ -171,14 +171,19 @@ static std::mt19937 std_gen;
 #else
 static thread_local std::mt19937 std_gen;
 #endif
-static std::uniform_real_distribution<float> std_dist(0.0f, 1.0f);
+static std::uniform_real_distribution<float>   std_dist_f32;
+static std::uniform_int_distribution<uint64_t> std_dist_u64;
 
 void anydsl_random_seed(uint32_t seed) {
     std_gen.seed(seed);
 }
 
-float anydsl_random_val() {
-    return std_dist(std_gen);
+float anydsl_random_val_f32() {
+    return std_dist_f32(std_gen);
+}
+
+uint64_t anydsl_random_val_u64() {
+    return std_dist_u64(std_gen);
 }
 
 #ifndef ENABLE_TBB // C++11 threads version
