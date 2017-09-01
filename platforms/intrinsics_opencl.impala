@@ -123,6 +123,12 @@ fn opencl_intel_fpga_accelerator(dev: i32) -> Accelerator {
     }
 }
 
+struct channel {};
+extern "device" {
+    fn "read_channel_intel_float"  read_channel_intel_f32(&mut channel) -> f32;
+    fn "write_channel_intel_float" write_channel_intel_f32(&mut channel, f32) -> ();
+}
+
 static opencl_intrinsics = Intrinsics {
     expf        : opencl_expf,
     exp2f       : opencl_exp2f,
