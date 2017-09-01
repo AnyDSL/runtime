@@ -36,6 +36,8 @@ def patch_llvmir(rttype):
 
 def patch_cfiles(rttype):
     # we need to patch
+    channel_line = {}
+    channel_type = {}
     result = []
     if rttype == "cuda":
         filename = basename+"."+"cu"
@@ -44,6 +46,23 @@ def patch_cfiles(rttype):
     if os.path.isfile(filename):
         with open(filename) as f:
             for line in f:
+                # patch channel declarations and read/write functions
+                m = re.match('^__device__ struct_channel_.* \*(.*) =.*', line)
+                if m is not None:
+                    channel_name = m.groups()[0]
+                    result.append('//dummy channel\n')
+                    channel_line[channel_name] = len(result)-1
+                    continue
+                m = re.match('^__device__ struct_channel_.*slot.*', line)
+                if m is not None:
+                    continue
+                m = re.match('(.*)channel_intel_(.*)\((.*)\);', line)
+                if m is not None:
+                    prefix, ctype, channel_name = m.groups()
+                    channel_type[channel_name] = ctype
+                    result.append('{0}channel_intel({1});\n'.format(prefix, channel_name))
+                    continue
+
                 # patch to opaque identity functions
                 m = re.match('^(.*) = (magic_.*_id)\((.*)\);\n$', line)
                 if m is not None:
@@ -53,6 +72,9 @@ def patch_cfiles(rttype):
                     result.append('{0} = {1};\n'.format(lhs, arg))
                 else:
                     result.append(line)
+        # replace channel placeholder with channel declaration
+        for name, line in channel_line.items():
+            result[line] = 'channel {0} {1};\n'.format(channel_type[name], name)
         # we have the patched thing, write it
         with open(filename, "w") as f:
             for line in result:
