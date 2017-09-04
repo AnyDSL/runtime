@@ -172,8 +172,9 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 
     auto func = load_kernel(dev, file, kernel);
 
-    if (!start_kernel) CHECK_CUDA(cuEventCreate(&start_kernel, CU_EVENT_DEFAULT), "cuEventCreate()");
-    if (!end_kernel)   CHECK_CUDA(cuEventCreate(&end_kernel,   CU_EVENT_DEFAULT), "cuEventCreate()");
+    unsigned int event_flags = runtime_->profiling_enabled() ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING;
+    if (!start_kernel) CHECK_CUDA(cuEventCreate(&start_kernel, event_flags), "cuEventCreate()");
+    if (!end_kernel)   CHECK_CUDA(cuEventCreate(&end_kernel,   event_flags), "cuEventCreate()");
 
     CHECK_CUDA(cuEventRecord(start_kernel, 0), "cuEventRecord()");
 
@@ -195,20 +196,21 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 }
 
 void CudaPlatform::synchronize(DeviceId dev) {
-    if (!end_kernel) return;
-
     auto& cuda_dev = devices_[dev];
     cuCtxPushCurrent(cuda_dev.ctx);
 
-    float time;
-    CUresult err = cuEventSynchronize(end_kernel);
-    CHECK_CUDA(err, "cuEventSynchronize()");
-
-    cuEventElapsedTime(&time, start_kernel, end_kernel);
-    anydsl_kernel_time.fetch_add(time * 1000);
-
-    err = cuCtxSynchronize();
+    CUresult err = cuCtxSynchronize();
     CHECK_CUDA(err, "cuCtxSynchronize()");
+
+    if (runtime_->profiling_enabled()) {
+        float time;
+        err = cuEventSynchronize(end_kernel);
+        CHECK_CUDA(err, "cuEventSynchronize()");
+
+        cuEventElapsedTime(&time, start_kernel, end_kernel);
+        anydsl_kernel_time.fetch_add(time * 1000);
+    }
+
     cuCtxPopCurrent(NULL);
 }
 
