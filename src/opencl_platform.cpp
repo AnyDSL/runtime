@@ -192,8 +192,11 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_[dev].queue = NULL;
             #ifdef CL_VERSION_2_0
             if (cl_version_major >= 2) {
-                cl_queue_properties queue_props[] = runtime_->profiling_enabled() ?
-                                                    { CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0 } : { 0 };
+                cl_queue_properties queue_props[3] = { 0, 0, 0 };
+                if (runtime_->profiling_enabled()) {
+                    queue_props[0] = CL_QUEUE_PROPERTIES;
+                    queue_props[1] = CL_QUEUE_PROFILING_ENABLE;
+                }
                 devices_[dev].queue = clCreateCommandQueueWithProperties(devices_[dev].ctx, devices_[dev].dev, queue_props, &err);
                 CHECK_OPENCL(err, "clCreateCommandQueueWithProperties()");
             }
