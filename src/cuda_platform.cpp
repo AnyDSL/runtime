@@ -8,6 +8,7 @@
 #include <cstring>
 #include <fstream>
 #include <string>
+#include <thread>
 
 #ifndef LIBDEVICE_DIR
 #define LIBDEVICE_DIR ""
@@ -43,8 +44,6 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 }
 #endif
 
-static thread_local CUevent start_kernel = nullptr;
-static thread_local CUevent end_kernel = nullptr;
 extern std::atomic<uint64_t> anydsl_kernel_time;
 
 CudaPlatform::CudaPlatform(Runtime* runtime)
@@ -163,6 +162,31 @@ void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPopCurrent(NULL);
 }
 
+struct ProfileData {
+    CUcontext ctx;
+    CUevent start;
+    CUevent end;
+};
+
+void time_kernel(void* data) {
+    ProfileData* profile = (ProfileData*)data;
+    cuCtxPushCurrent(profile->ctx);
+
+    float time;
+    cuEventElapsedTime(&time, profile->start, profile->end);
+    anydsl_kernel_time.fetch_add(time * 1000);
+    cuEventDestroy(profile->start);
+    cuEventDestroy(profile->end);
+    delete profile;
+
+    cuCtxPopCurrent(NULL);
+}
+
+void time_kernel_callback(CUstream /*stream*/, CUresult status, void* data) {
+    CHECK_CUDA(status, "callback");
+    std::thread (time_kernel, data).join();
+}
+
 void CudaPlatform::launch_kernel(DeviceId dev,
                                  const char* file, const char* kernel,
                                  const uint32_t* grid, const uint32_t* block,
@@ -172,10 +196,11 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 
     auto func = load_kernel(dev, file, kernel);
 
-    if (!start_kernel) CHECK_CUDA(cuEventCreate(&start_kernel, CU_EVENT_DEFAULT), "cuEventCreate()");
-    if (!end_kernel)   CHECK_CUDA(cuEventCreate(&end_kernel,   CU_EVENT_DEFAULT), "cuEventCreate()");
-
-    CHECK_CUDA(cuEventRecord(start_kernel, 0), "cuEventRecord()");
+    CUevent start, end;
+    if (runtime_->profiling_enabled()) {
+        CHECK_CUDA(cuEventCreate(&start, CU_EVENT_DEFAULT), "cuEventCreate()");
+        CHECK_CUDA(cuEventRecord(start, 0), "cuEventRecord()");
+    }
 
     assert(grid[0] > 0 && grid[0] % block[0] == 0 &&
            grid[1] > 0 && grid[1] % block[1] == 0 &&
@@ -190,25 +215,21 @@ void CudaPlatform::launch_kernel(DeviceId dev,
         0, nullptr, args, nullptr);
     CHECK_CUDA(err, "cuLaunchKernel()");
 
-    CHECK_CUDA(cuEventRecord(end_kernel, 0), "cuEventRecord()");
+    if (runtime_->profiling_enabled()) {
+        CHECK_CUDA(cuEventCreate(&end, CU_EVENT_DEFAULT), "cuEventCreate()");
+        CHECK_CUDA(cuEventRecord(end, 0), "cuEventRecord()");
+        CHECK_CUDA(cuStreamAddCallback(NULL, time_kernel_callback, new ProfileData { devices_[dev].ctx, start, end } , 0), "cuStreamAddCallback()");
+    }
     cuCtxPopCurrent(NULL);
 }
 
 void CudaPlatform::synchronize(DeviceId dev) {
-    if (!end_kernel) return;
-
     auto& cuda_dev = devices_[dev];
     cuCtxPushCurrent(cuda_dev.ctx);
 
-    float time;
-    CUresult err = cuEventSynchronize(end_kernel);
-    CHECK_CUDA(err, "cuEventSynchronize()");
-
-    cuEventElapsedTime(&time, start_kernel, end_kernel);
-    anydsl_kernel_time.fetch_add(time * 1000);
-
-    err = cuCtxSynchronize();
+    CUresult err = cuCtxSynchronize();
     CHECK_CUDA(err, "cuCtxSynchronize()");
+
     cuCtxPopCurrent(NULL);
 }
 

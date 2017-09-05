@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 
+enum class ProfileLevel : uint8_t { None = 0, Full };
+
 class Runtime {
 public:
     Runtime();
@@ -114,12 +116,15 @@ public:
         }
     }
 
+    bool profiling_enabled() { return profile_ == ProfileLevel::Full; }
+
 private:
     void check_device(PlatformId plat, DeviceId dev) {
         assert((int)dev < platforms_[plat]->dev_count() && "Invalid device");
         unused(plat, dev);
     }
 
+    ProfileLevel profile_;
     std::vector<Platform*> platforms_;
 };
 
