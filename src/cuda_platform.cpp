@@ -98,10 +98,22 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     }
 }
 
-CudaPlatform::~CudaPlatform() {
-    for (size_t i = 0; i < devices_.size(); i++) {
-        cuCtxDestroy(devices_[i].ctx);
+void CudaPlatform::erase_profiles() {
+    std::lock_guard<std::mutex> guard(profile_lock_);
+    for (auto profile : profiles_) {
+        cuCtxPushCurrent(profile->ctx);
+        cuEventDestroy(profile->start);
+        cuEventDestroy(profile->end);
+        delete profile;
+        cuCtxPopCurrent(NULL);
     }
+    profiles_.clear();
+}
+
+CudaPlatform::~CudaPlatform() {
+    erase_profiles();
+    for (size_t i = 0; i < devices_.size(); i++)
+        cuCtxDestroy(devices_[i].ctx);
 }
 
 void* CudaPlatform::alloc(DeviceId dev, int64_t size) {
@@ -162,29 +174,22 @@ void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPopCurrent(NULL);
 }
 
-struct ProfileData {
-    CUcontext ctx;
-    CUevent start;
-    CUevent end;
-};
-
-void time_kernel(void* data) {
-    ProfileData* profile = (ProfileData*)data;
+void time_kernel(CudaPlatform::ProfileData* profile) {
     cuCtxPushCurrent(profile->ctx);
-
     float time;
     cuEventElapsedTime(&time, profile->start, profile->end);
     anydsl_kernel_time.fetch_add(time * 1000);
-    cuEventDestroy(profile->start);
-    cuEventDestroy(profile->end);
-    delete profile;
-
     cuCtxPopCurrent(NULL);
 }
 
 void time_kernel_callback(CUstream /*stream*/, CUresult status, void* data) {
     CHECK_CUDA(status, "callback");
-    std::thread (time_kernel, data).join();
+    auto profile = (CudaPlatform::ProfileData*)data;
+    std::thread (time_kernel, profile).join();
+
+    auto platform = profile->platform;
+    std::lock_guard<std::mutex> guard(platform->profile_lock_);
+    platform->profiles_.push_back(profile);
 }
 
 void CudaPlatform::launch_kernel(DeviceId dev,
@@ -198,6 +203,7 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 
     CUevent start, end;
     if (runtime_->profiling_enabled()) {
+        erase_profiles();
         CHECK_CUDA(cuEventCreate(&start, CU_EVENT_DEFAULT), "cuEventCreate()");
         CHECK_CUDA(cuEventRecord(start, 0), "cuEventRecord()");
     }
@@ -218,7 +224,7 @@ void CudaPlatform::launch_kernel(DeviceId dev,
     if (runtime_->profiling_enabled()) {
         CHECK_CUDA(cuEventCreate(&end, CU_EVENT_DEFAULT), "cuEventCreate()");
         CHECK_CUDA(cuEventRecord(end, 0), "cuEventRecord()");
-        CHECK_CUDA(cuStreamAddCallback(NULL, time_kernel_callback, new ProfileData { devices_[dev].ctx, start, end } , 0), "cuStreamAddCallback()");
+        CHECK_CUDA(cuStreamAddCallback(NULL, time_kernel_callback, new ProfileData { this, devices_[dev].ctx, start, end }, 0), "cuStreamAddCallback()");
     }
     cuCtxPopCurrent(NULL);
 }
