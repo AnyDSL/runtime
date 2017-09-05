@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <thread>
 
 #ifndef KERNEL_DIR
 #define KERNEL_DIR ""
@@ -206,7 +207,7 @@ HSAPlatform::~HSAPlatform() {
             CHECK_HSA(status, "hsa_queue_destroy()");
         }
         status = hsa_signal_destroy(devices_[i].signal);
-        CHECK_HSA(status, "hsa_queue_destroy()");
+        CHECK_HSA(status, "hsa_signal_destroy()");
     }
 
     hsa_shut_down();
@@ -268,6 +269,13 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
 
+    hsa_signal_t launch_signal;
+    if (runtime_->profiling_enabled()) {
+        status = hsa_signal_create(1, 0, NULL, &launch_signal);
+        CHECK_HSA(status, "hsa_signal_create()");
+    } else
+        launch_signal = signal;
+
     // construct aql packet
     hsa_kernel_dispatch_packet_t aql;
     std::memset(&aql, 0, sizeof(aql));
@@ -282,7 +290,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     aql.grid_size_x = grid[0];
     aql.grid_size_y = grid[1];
     aql.grid_size_z = grid[2];
-    aql.completion_signal = signal;
+    aql.completion_signal = launch_signal;
     aql.kernel_object = kernel;
     aql.kernarg_address = kernarg_address;
     aql.private_segment_size = private_segment_size;
@@ -294,6 +302,23 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     ((hsa_kernel_dispatch_packet_t*)(queue->base_address))[index & queue_mask] = aql;
     hsa_queue_store_write_index_relaxed(queue, index + 1);
     hsa_signal_store_relaxed(queue->doorbell_signal, index);
+
+    if (runtime_->profiling_enabled())
+        std::thread ([=] {
+            hsa_signal_value_t completion = hsa_signal_wait_relaxed(launch_signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
+            if (completion != 0)
+                debug("HSA launch_signal completion failed: %", completion);
+
+            hsa_amd_profiling_dispatch_time_t dispatch_times = { 0, 0 };
+            hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, launch_signal, &dispatch_times);
+            CHECK_HSA(status, "hsa_amd_profiling_get_dispatch_time()");
+
+            anydsl_kernel_time.fetch_add(1000000.0 * double(dispatch_times.end - dispatch_times.start) / double(frequency_));
+            hsa_signal_subtract_relaxed(signal, 1);
+
+            status = hsa_signal_destroy(launch_signal);
+            CHECK_HSA(status, "hsa_signal_destroy()");
+        }).detach();
 }
 
 void HSAPlatform::synchronize(DeviceId dev) {
@@ -301,12 +326,6 @@ void HSAPlatform::synchronize(DeviceId dev) {
     hsa_signal_value_t completion = hsa_signal_wait_relaxed(signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
     if (completion != 0)
         debug("HSA signal completion failed: %", completion);
-
-    hsa_amd_profiling_dispatch_time_t dispatch_times = { 0, 0 };
-    hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, signal, &dispatch_times);
-    CHECK_HSA(status, "hsa_amd_profiling_get_dispatch_time()");
-
-    anydsl_kernel_time.fetch_add(1000000.0 * double(dispatch_times.end - dispatch_times.start) / double(frequency_));
 }
 
 void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
