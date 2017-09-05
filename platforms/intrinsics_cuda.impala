@@ -86,6 +86,7 @@ fn cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 fn cuda_accelerator(dev: i32) -> Accelerator {
     Accelerator {
         exec          : |grid, block, body| cuda(dev, grid, block, body),
+        sync          : || synchronize_cuda(dev),
         alloc         : |size| alloc_cuda(dev, size),
         alloc_unified : |size| alloc_cuda_unified(dev, size),
         tidx          : cuda_threadIdx_x,

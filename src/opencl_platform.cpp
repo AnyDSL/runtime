@@ -242,8 +242,19 @@ void OpenCLPlatform::release(DeviceId, void* ptr) {
     CHECK_OPENCL(err, "clReleaseMemObject()");
 }
 
-static thread_local cl_event end_kernel;
 extern std::atomic<uint64_t> anydsl_kernel_time;
+
+void time_kernel_callback(cl_event event, cl_int, void*) {
+    cl_ulong end, start;
+    cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
+    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
+    CHECK_OPENCL(err, "clGetEventProfilingInfo()");
+    float time = (end-start)*1.0e-6f;
+    anydsl_kernel_time.fetch_add(time * 1000);
+
+    err = clReleaseEvent(event);
+    CHECK_OPENCL(err, "clReleaseEvent()");
+}
 
 void OpenCLPlatform::launch_kernel(DeviceId dev,
                                    const char* file, const char* name,
@@ -273,8 +284,16 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     size_t local_work_size[]  = {block[0], block[1], block[2]};
 
     // launch the kernel
-    cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &end_kernel);
+    cl_event event;
+    cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+    if (runtime_->profiling_enabled()) {
+        err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, nullptr);
+        CHECK_OPENCL(err, "clSetEventCallback()");
+    } else {
+        err = clReleaseEvent(event);
+        CHECK_OPENCL(err, "clReleaseEvent()");
+    }
 
     // release temporary buffers for struct arguments
     for (size_t i = 0; i < num_args; i++) {
@@ -288,20 +307,6 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 void OpenCLPlatform::synchronize(DeviceId dev) {
     cl_int err = clFinish(devices_[dev].queue);
     CHECK_OPENCL(err, "clFinish()");
-
-    if (runtime_->profiling_enabled()) {
-        cl_ulong end, start;
-        err = clWaitForEvents(1, &end_kernel);
-        CHECK_OPENCL(err, "clWaitForEvents()");
-        err = clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
-        err |= clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
-        CHECK_OPENCL(err, "clGetEventProfilingInfo()");
-        float time = (end-start)*1.0e-6f;
-        anydsl_kernel_time.fetch_add(time * 1000);
-
-        err = clReleaseEvent(end_kernel);
-        CHECK_OPENCL(err, "clReleaseEvent()");
-    }
 }
 
 void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
