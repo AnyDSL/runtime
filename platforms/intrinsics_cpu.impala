@@ -26,44 +26,47 @@ extern "C" {
 }
 
 extern "device" {
-    fn "llvm.exp.f32"      cpu_expf(f32) -> f32;
-    fn "llvm.exp2.f32"     cpu_exp2f(f32) -> f32;
-    fn "llvm.log.f32"      cpu_logf(f32) -> f32;
-    fn "llvm.log2.f32"     cpu_log2f(f32) -> f32;
-    fn "llvm.pow.f32"      cpu_powf(f32, f32) -> f32;
-    fn "llvm.sqrt.f32"     cpu_sqrtf(f32) -> f32;
-    fn "llvm.fabs.f32"     cpu_fabsf(f32) -> f32;
-    fn "llvm.sin.f32"      cpu_sinf(f32) -> f32;
-    fn "llvm.cos.f32"      cpu_cosf(f32) -> f32;
-    fn "llvm.floor.f32"    cpu_floorf(f32) -> f32;
-    fn "llvm.fma.f32"      cpu_fmaf(f32, f32, f32) -> f32;
-    fn "llvm.fmuladd.f32"  cpu_madf(f32, f32, f32) -> f32;
-    fn "llvm.copysign.f32" cpu_copysignf(f32, f32) -> f32;
-    fn "llvm.minnum.f32"   cpu_fminf(f32, f32) -> f32;
-    fn "llvm.maxnum.f32"   cpu_fmaxf(f32, f32) -> f32;
-    fn "llvm.exp.f64"      cpu_exp(f64) -> f64;
-    fn "llvm.exp2.f64"     cpu_exp2(f64) -> f64;
-    fn "llvm.log.f64"      cpu_log(f64) -> f64;
-    fn "llvm.log2.f64"     cpu_log2(f64) -> f64;
-    fn "llvm.pow.f64"      cpu_pow(f64, f64) -> f64;
-    fn "llvm.sqrt.f64"     cpu_sqrt(f64) -> f64;
-    fn "llvm.fabs.f64"     cpu_fabs(f64) -> f64;
-    fn "llvm.sin.f64"      cpu_sin(f64) -> f64;
-    fn "llvm.cos.f64"      cpu_cos(f64) -> f64;
-    fn "llvm.floor.f64"    cpu_floor(f64) -> f64;
-    fn "llvm.fma.f64"      cpu_fma(f64, f64, f64) -> f64;
-    fn "llvm.fmuladd.f64"  cpu_mad(f64, f64, f64) -> f64;
-    fn "llvm.copysign.f64" cpu_copysign(f64, f64) -> f64;
-    fn "llvm.minnum.f64"   cpu_fmin(f64, f64) -> f64;
-    fn "llvm.maxnum.f64"   cpu_fmax(f64, f64) -> f64;
-
-    fn "llvm.ctpop.i32"    cpu_popcount32(i32) -> i32;
-    fn "llvm.ctpop.i64"    cpu_popcount64(i64) -> i64;
-    fn "llvm.ctlz.i32"     cpu_clz32(i32, bool) -> i32;
-    fn "llvm.ctlz.i64"     cpu_clz64(i64, bool) -> i64;
-    fn "llvm.cttz.i32"     cpu_ctz32(i32, bool) -> i32;
-    fn "llvm.cttz.i64"     cpu_ctz64(i64, bool) -> i64;
-    fn "llvm.prefetch"     cpu_prefetch(&u8, i32, i32, i32) -> ();
+    fn "llvm.exp.f32"         cpu_expf(f32) -> f32;
+    fn "llvm.exp2.f32"        cpu_exp2f(f32) -> f32;
+    fn "llvm.log.f32"         cpu_logf(f32) -> f32;
+    fn "llvm.log2.f32"        cpu_log2f(f32) -> f32;
+    fn "llvm.pow.f32"         cpu_powf(f32, f32) -> f32;
+    fn "llvm.sqrt.f32"        cpu_sqrtf(f32) -> f32;
+    fn "llvm.fabs.f32"        cpu_fabsf(f32) -> f32;
+    fn "llvm.sin.f32"         cpu_sinf(f32) -> f32;
+    fn "llvm.cos.f32"         cpu_cosf(f32) -> f32;
+    fn "llvm.floor.f32"       cpu_floorf(f32) -> f32;
+    fn "llvm.fma.f32"         cpu_fmaf(f32, f32, f32) -> f32;
+    fn "llvm.fmuladd.f32"     cpu_madf(f32, f32, f32) -> f32;
+    fn "llvm.copysign.f32"    cpu_copysignf(f32, f32) -> f32;
+    fn "llvm.minnum.f32"      cpu_fminf(f32, f32) -> f32;
+    fn "llvm.maxnum.f32"      cpu_fmaxf(f32, f32) -> f32;
+    fn "llvm.exp.f64"         cpu_exp(f64) -> f64;
+    fn "llvm.exp2.f64"        cpu_exp2(f64) -> f64;
+    fn "llvm.log.f64"         cpu_log(f64) -> f64;
+    fn "llvm.log2.f64"        cpu_log2(f64) -> f64;
+    fn "llvm.pow.f64"         cpu_pow(f64, f64) -> f64;
+    fn "llvm.sqrt.f64"        cpu_sqrt(f64) -> f64;
+    fn "llvm.fabs.f64"        cpu_fabs(f64) -> f64;
+    fn "llvm.sin.f64"         cpu_sin(f64) -> f64;
+    fn "llvm.cos.f64"         cpu_cos(f64) -> f64;
+    fn "llvm.floor.f64"       cpu_floor(f64) -> f64;
+    fn "llvm.fma.f64"         cpu_fma(f64, f64, f64) -> f64;
+    fn "llvm.fmuladd.f64"     cpu_mad(f64, f64, f64) -> f64;
+    fn "llvm.copysign.f64"    cpu_copysign(f64, f64) -> f64;
+    fn "llvm.minnum.f64"      cpu_fmin(f64, f64) -> f64;
+    fn "llvm.maxnum.f64"      cpu_fmax(f64, f64) -> f64;
+    fn "llvm.ctpop.i32"       cpu_popcount32(i32) -> i32;
+    fn "llvm.ctpop.i64"       cpu_popcount64(i64) -> i64;
+    fn "llvm.ctlz.i32"        cpu_clz32(i32, bool) -> i32;
+    fn "llvm.ctlz.i64"        cpu_clz64(i64, bool) -> i64;
+    fn "llvm.cttz.i32"        cpu_ctz32(i32, bool) -> i32;
+    fn "llvm.cttz.i64"        cpu_ctz64(i64, bool) -> i64;
+    fn "llvm.x86.bmi.pext.32" cpu_pext32(i32, i32) -> i32;
+    fn "llvm.x86.bmi.pext.64" cpu_pext64(i64, i64) -> i64;
+    fn "llvm.x86.bmi.pdep.32" cpu_pdep32(i32, i32) -> i32;
+    fn "llvm.x86.bmi.pdep.64" cpu_pdep64(i64, i64) -> i64;
+    fn "llvm.prefetch"        cpu_prefetch(&u8, i32, i32, i32) -> ();
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
