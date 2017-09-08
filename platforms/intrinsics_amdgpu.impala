@@ -129,7 +129,7 @@ struct hsa_dispatch_packet_t {
 
 fn amdgpu_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| amdgpu(dev, grid, block, body),
+        exec          : @|grid, block, body| amdgpu(dev, grid, block, body),
         sync          : || synchronize_hsa(dev),
         alloc         : |size| alloc_hsa(dev, size),
         alloc_unified : |size| alloc_hsa_unified(dev, size),
@@ -203,6 +203,6 @@ static amdgpu_intrinsics = Intrinsics {
     isinf       : ocml_isinf,
     isnan       : ocml_isnan,
     isfinite    : ocml_isfinite,
-    min         : |a: i32, b: i32| -> i32 { if a < b { a } else { b } },
-    max         : |a: i32, b: i32| -> i32 { if a > b { a } else { b } },
+    min         : @|a: i32, b: i32| -> i32 { if a < b { a } else { b } },
+    max         : @|a: i32, b: i32| -> i32 { if a > b { a } else { b } },
 };

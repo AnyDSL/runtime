@@ -423,7 +423,7 @@ fn nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
 fn nvvm_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| nvvm(dev, grid, block, body),
+        exec          : @|grid, block, body| nvvm(dev, grid, block, body),
         sync          : || synchronize_cuda(dev),
         alloc         : |size| alloc_cuda(dev, size),
         alloc_unified : |size| alloc_cuda_unified(dev, size),
