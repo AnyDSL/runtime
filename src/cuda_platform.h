@@ -4,10 +4,11 @@
 #include "platform.h"
 #include "runtime.h"
 
+#include <atomic>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <atomic>
 
 #include <cuda.h>
 #include <nvvm.h>
@@ -82,12 +83,26 @@ protected:
 
     std::vector<DeviceData> devices_;
 
+    struct ProfileData {
+        CudaPlatform* platform;
+        CUcontext ctx;
+        CUevent start;
+        CUevent end;
+    };
+
+    std::mutex profile_lock_;
+    std::vector<ProfileData*> profiles_;
+    void erase_profiles();
+
     CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
     std::string load_ptx(const std::string& filename) const;
     CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;
+
+    friend void time_kernel_callback(CUstream, CUresult, void*);
+    friend void time_kernel(ProfileData*);
 };
 
 #endif

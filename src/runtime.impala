@@ -4,11 +4,11 @@ extern "C" {
     fn "anydsl_alloc"          runtime_alloc(i32, i64) -> &[i8];
     fn "anydsl_alloc_host"     runtime_alloc_host(i32, i64) -> &[i8];
     fn "anydsl_alloc_unified"  runtime_alloc_unified(i32, i64) -> &[i8];
+    fn "anydsl_copy"           runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
     fn "anydsl_get_device_ptr" runtime_get_device_ptr(i32, &[i8]) -> &[i8];
     fn "anydsl_release"        runtime_release(i32, &[i8]) -> ();
     fn "anydsl_release_host"   runtime_release_host(i32, &[i8]) -> ();
-
-    fn "anydsl_copy" runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
+    fn "anydsl_synchronize"    runtime_synchronize(i32) -> ();
 
     fn "anydsl_random_seed"     random_seed(u32) -> ();
     fn "anydsl_random_val_f32"  random_val_f32() -> f32;
@@ -57,11 +57,14 @@ fn alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
 fn alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }
 fn alloc_cuda_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(1, dev), size) }
 fn alloc_cuda_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(1, dev), size) }
+fn synchronize_cuda(dev: i32) -> () { runtime_synchronize(runtime_device(1, dev)) }
 fn alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), size) }
 fn alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
+fn synchronize_opencl(dev: i32) -> () { runtime_synchronize(runtime_device(2, dev)) }
 fn alloc_hsa(dev: i32, size: i32) -> Buffer { alloc(runtime_device(3, dev), size) }
 fn alloc_hsa_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(3, dev), size) }
 fn alloc_hsa_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
+fn synchronize_hsa(dev: i32) -> () { runtime_synchronize(runtime_device(3, dev)) }
 
 fn copy(src: Buffer, dst: Buffer, size: i32) -> () {
     runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, size as i64)

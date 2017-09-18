@@ -139,9 +139,6 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             auto device = devices[j];
             cl_device_type dev_type;
             cl_uint device_vendor_id;
-            cl_uint cl_version_major, cl_version_minor;
-
-            unused(cl_version_major, cl_version_minor);
 
             err  = clGetDeviceInfo(devices[j], CL_DEVICE_NAME, sizeof(buffer), &buffer, NULL);
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_TYPE, sizeof(dev_type), &dev_type, NULL);
@@ -160,14 +157,12 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, sizeof(buffer), &buffer, NULL);
             debug("      Device OpenCL Version: %", buffer);
             std::string version(buffer);
-            size_t sz;
-            cl_version_major = std::stoi(version.substr(7), &sz);
-            cl_version_minor = std::stoi(version.substr(7 + sz + 1));
             err |= clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, sizeof(buffer), &buffer, NULL);
             debug("      Device Driver Version: %", buffer);
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
+            cl_uint cl_version_major = std::stoi(version.substr(7));
             if (cl_version_major >= 2) {
                 cl_device_svm_capabilities svm_caps;
                 err |= clGetDeviceInfo(devices[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(svm_caps), &svm_caps, NULL);
@@ -201,13 +196,20 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_[dev].queue = NULL;
             #ifdef CL_VERSION_2_0
             if (cl_version_major >= 2) {
-                cl_queue_properties queue_props[3] = { CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0 };
+                cl_queue_properties queue_props[3] = { 0, 0, 0 };
+                if (runtime_->profiling_enabled()) {
+                    queue_props[0] = CL_QUEUE_PROPERTIES;
+                    queue_props[1] = CL_QUEUE_PROFILING_ENABLE;
+                }
                 devices_[dev].queue = clCreateCommandQueueWithProperties(devices_[dev].ctx, devices_[dev].dev, queue_props, &err);
                 CHECK_OPENCL(err, "clCreateCommandQueueWithProperties()");
             }
             #endif
             if (!devices_[dev].queue) {
-                devices_[dev].queue = clCreateCommandQueue(devices_[dev].ctx, devices_[dev].dev, CL_QUEUE_PROFILING_ENABLE, &err);
+                cl_command_queue_properties queue_props = 0;
+                if (runtime_->profiling_enabled())
+                    queue_props = CL_QUEUE_PROFILING_ENABLE;
+                devices_[dev].queue = clCreateCommandQueue(devices_[dev].ctx, devices_[dev].dev, queue_props, &err);
                 CHECK_OPENCL(err, "clCreateCommandQueue()");
             }
         }
@@ -248,8 +250,19 @@ void OpenCLPlatform::release(DeviceId, void* ptr) {
     CHECK_OPENCL(err, "clReleaseMemObject()");
 }
 
-static thread_local cl_event end_kernel;
 extern std::atomic<uint64_t> anydsl_kernel_time;
+
+void time_kernel_callback(cl_event event, cl_int, void*) {
+    cl_ulong end, start;
+    cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
+    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
+    CHECK_OPENCL(err, "clGetEventProfilingInfo()");
+    float time = (end-start)*1.0e-6f;
+    anydsl_kernel_time.fetch_add(time * 1000);
+
+    err = clReleaseEvent(event);
+    CHECK_OPENCL(err, "clReleaseEvent()");
+}
 
 void OpenCLPlatform::launch_kernel(DeviceId dev,
                                    const char* file, const char* name,
@@ -285,8 +298,16 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
         CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
     }
     else{
-        cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &end_kernel);
+        cl_event event;
+        cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
         CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+        if (runtime_->profiling_enabled()) {
+            err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, nullptr);
+            CHECK_OPENCL(err, "clSetEventCallback()");
+        } else {
+            err = clReleaseEvent(event);
+            CHECK_OPENCL(err, "clReleaseEvent()");
+        }
     }
 
     // release temporary buffers for struct arguments
@@ -312,20 +333,6 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
 	} else{
         cl_int err = clFinish(devices_[dev].queue);
         CHECK_OPENCL(err, "clFinish()");
-
-        cl_ulong end, start;
-        float time;
-
-        err = clWaitForEvents(1, &end_kernel);
-        CHECK_OPENCL(err, "clWaitForEvents()");
-        err = clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
-        err |= clGetEventProfilingInfo(end_kernel, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
-        CHECK_OPENCL(err, "clGetEventProfilingInfo()");
-        time = (end-start)*1.0e-6f;
-        anydsl_kernel_time.fetch_add(time * 1000);
-
-        err = clReleaseEvent(end_kernel);
-        CHECK_OPENCL(err, "clReleaseEvent()");
     }
 }
 

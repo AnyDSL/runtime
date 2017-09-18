@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <locale>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -42,6 +44,16 @@ Runtime& runtime() {
 }
 
 Runtime::Runtime() {
+    profile_ = ProfileLevel::None;
+    char* env_var = std::getenv("ANYDSL_PROFILE");
+    if (env_var) {
+        std::string env_str = env_var;
+        for (auto& c: env_str)
+            c = std::toupper(c, std::locale());
+        if (env_str == "FULL")
+            profile_ = ProfileLevel::Full;
+    }
+
     register_platform<CpuPlatform>();
 #ifdef ENABLE_CUDA
     register_platform<CudaPlatform>();

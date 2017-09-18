@@ -51,15 +51,16 @@ else()
     set(HSA_PLATFORM "")
 endif()
 
-# look for TBB
+# look for Threads
 find_package(Threads REQUIRED)
+list(APPEND CONF_RUNTIME_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+
+# look for TBB
 find_package(TBB)
 if(TBB_FOUND)
     include_directories(${TBB_INCLUDE_DIRS})
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DENABLE_TBB)
     list(APPEND CONF_RUNTIME_LIBRARIES "${TBB_LIBRARIES}")
-else()
-    list(APPEND CONF_RUNTIME_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
 if(NOT MSVC)
