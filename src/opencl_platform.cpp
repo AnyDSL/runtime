@@ -183,8 +183,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_.resize(dev + 1);
             devices_[dev].platform = platform;
             devices_[dev].dev = device;
-            if(platform_name.find("FPGA") != std::string::npos ){
-                devices_[dev].ifIntelFPGA = true;
+            if (platform_name.find("FPGA") != std::string::npos) {
+                devices_[dev].isIntelFPGA = true;
             }
 
             // create context
@@ -220,7 +220,9 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
 OpenCLPlatform::~OpenCLPlatform() {
     for (size_t i = 0; i < devices_.size(); i++) {
-        if(devices_[i].ifIntelFPGA) continue;
+        if (devices_[i].isIntelFPGA)
+            continue;
+
         for (auto& map : devices_[i].kernels) {
             for (auto& it : map.second) {
                 cl_int err = clReleaseKernel(it.second);
@@ -292,12 +294,11 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     size_t local_work_size[]  = {block[0], block[1], block[2]};
 
     // launch the kernel
-	if(devices_[dev].ifIntelFPGA) {
+    if (devices_[dev].isIntelFPGA) {
         auto& kernel_queue = devices_[dev].kernels_queue[kernel];
         cl_int err = clEnqueueNDRangeKernel(kernel_queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL);
         CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
-    }
-    else{
+    } else {
         cl_event event;
         cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
         CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
@@ -320,8 +321,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 }
 
 void OpenCLPlatform::synchronize(DeviceId dev) {
-
-	if(devices_[dev].ifIntelFPGA) {
+    if (devices_[dev].isIntelFPGA) {
         auto& kernels_queue = devices_[dev].kernels_queue;
         for (auto& it : kernels_queue) {
             cl_command_queue& queue = it.second;
@@ -330,7 +330,7 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
         }
         // Note that the device queue is not released
         // clEvent Timing is not supported
-	} else{
+    } else {
         cl_int err = clFinish(devices_[dev].queue);
         CHECK_OPENCL(err, "clFinish()");
     }
@@ -365,16 +365,16 @@ cl_program OpenCLPlatform::try_find_program(DeviceData& opencl_dev, const std::s
     opencl_dev.lock();
     auto& prog_cache = opencl_dev.programs;
     auto prog_it = prog_cache.find(filename);
-	auto program = prog_it != prog_cache.end() ? prog_it->second : nullptr;
-	opencl_dev.unlock();
-	return program;
+    auto program = prog_it != prog_cache.end() ? prog_it->second : nullptr;
+    opencl_dev.unlock();
+    return program;
 }
 
-void OpenCLPlatform::insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program) { 
-	opencl_dev.lock();
+void OpenCLPlatform::insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program) {
+    opencl_dev.lock();
     auto& prog_cache = opencl_dev.programs;
-	prog_cache[filename] = program;
-	opencl_dev.unlock();
+    prog_cache[filename] = program;
+    opencl_dev.unlock();
 }
 
 cl_kernel OpenCLPlatform::try_find_kernel(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program) {
@@ -383,22 +383,22 @@ cl_kernel OpenCLPlatform::try_find_kernel(DeviceData& opencl_dev, const std::str
     auto& kernel_map = kernel_cache[program];
     auto kernel_it = kernel_map.find(kernelname);
     auto kernel = kernel_it != kernel_map.end() ? kernel_it->second : nullptr;
-	opencl_dev.unlock();
-	return kernel;
+    opencl_dev.unlock();
+    return kernel;
 }
 
-void OpenCLPlatform::insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel) { 
-	opencl_dev.lock();
+void OpenCLPlatform::insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel) {
+    opencl_dev.lock();
     auto& kernel_cache = opencl_dev.kernels;
     kernel_cache[program].emplace(kernelname, kernel);
-	opencl_dev.unlock();
+    opencl_dev.unlock();
 }
 
-void OpenCLPlatform::insert_kernelqueue_into_cache(DeviceData& opencl_dev, cl_kernel& kernel, cl_command_queue& kernel_queue) { 
-	opencl_dev.lock();
-	auto& kernels_queue = opencl_dev.kernels_queue;
+void OpenCLPlatform::insert_kernelqueue_into_cache(DeviceData& opencl_dev, cl_kernel& kernel, cl_command_queue& kernel_queue) {
+    opencl_dev.lock();
+    auto& kernels_queue = opencl_dev.kernels_queue;
     kernels_queue[kernel] = kernel_queue;
-	opencl_dev.unlock();
+    opencl_dev.unlock();
 }
 
 cl_program OpenCLPlatform::create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options) {
@@ -410,18 +410,18 @@ cl_program OpenCLPlatform::create_program(DeviceData& opencl_dev, const std::str
         const size_t program_length = program_string.length();
         const char* program_c_str = program_string.c_str();
 
-		cl_int err = CL_SUCCESS;
+        cl_int err = CL_SUCCESS;
         options += " -cl-std=CL1.2";
         program = clCreateProgramWithSource(opencl_dev.ctx, 1, (const char**)&program_c_str, &program_length, &err);
         CHECK_OPENCL(err, "clCreateProgramWithSource()");
         //debug("Compiling '%' on OpenCL device %", filename, opencl_dev.dev);
         debug("Compiling '%'", filename);
 
-		insert_program_into_cache(opencl_dev, filename, program);
+        insert_program_into_cache(opencl_dev, filename, program);
     } else {
         error("Could not find kernel file '%'", filename);
-	}
-	return program;
+    }
+    return program;
 }
 
 cl_program OpenCLPlatform::create_programFPGA(DeviceData& opencl_dev, const std::string& filename, std::string& options) {
@@ -431,24 +431,23 @@ cl_program OpenCLPlatform::create_programFPGA(DeviceData& opencl_dev, const std:
     cl_program program = nullptr;
     if (std::ifstream(file_name).good()) {
         FILE* srcFile;
-        srcFile = fopen (file_name.c_str(), "rb");
-        if (srcFile == NULL){
-        error("Could not open binary file '%'", file_name);
-        }
+        srcFile = fopen(file_name.c_str(), "rb");
+        if (srcFile == NULL)
+            error("Could not open binary file '%'", file_name);
+
         // Calculate the size of the file
         fseek(srcFile, 0, SEEK_END);
         const size_t binary_length = ftell(srcFile);
         unsigned char* binary = new unsigned char[binary_length];
         rewind(srcFile);
-        if(fread((void*)binary, binary_length, 1, srcFile) == 0) {
+        if (fread((void*)binary, binary_length, 1, srcFile) == 0) {
           delete[] binary;
           fclose(srcFile);
         }
-        if(binary == NULL) {
+        if (binary == NULL)
           error("Could not read binary file '%'", file_name);
-        }
 
-		cl_int err = CL_SUCCESS;
+        cl_int err = CL_SUCCESS;
         cl_int binary_status;
         program = clCreateProgramWithBinary(opencl_dev.ctx, 1, &(opencl_dev.dev), &binary_length,
                                             (const unsigned char**)&binary, &binary_status, &err);
@@ -456,34 +455,34 @@ cl_program OpenCLPlatform::create_programFPGA(DeviceData& opencl_dev, const std:
         CHECK_OPENCL(binary_status, "clCreateProgramWithBinary()");
         debug("Loading binary of '%'", file_name);
 
-		insert_program_into_cache(opencl_dev, filename, program);
+        insert_program_into_cache(opencl_dev, filename, program);
     } else {
         error("Could not find binary file '%'", file_name);
     }
     options = "";
-	return program;
+    return program;
 }
 
 cl_kernel OpenCLPlatform::create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname) {
-	cl_int err = CL_SUCCESS;
-	cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
-	CHECK_OPENCL(err, "clCreateKernel()");
+    cl_int err = CL_SUCCESS;
+    cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
+    CHECK_OPENCL(err, "clCreateKernel()");
     insert_kernel_into_cache(opencl_dev, kernelname, program, kernel);
-	return kernel;
+    return kernel;
 }
 
 cl_kernel OpenCLPlatform::create_kernelFPGA(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname) {
-	cl_int err = CL_SUCCESS;
-	cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
-	CHECK_OPENCL(err, "clCreateKernel()");
-	cl_command_queue kernel_queue = clCreateCommandQueue(opencl_dev.ctx, opencl_dev.dev, CL_QUEUE_PROFILING_ENABLE, &err);
+    cl_int err = CL_SUCCESS;
+    cl_kernel kernel = clCreateKernel(program, kernelname.c_str(), &err);
+    CHECK_OPENCL(err, "clCreateKernel()");
+    cl_command_queue kernel_queue = clCreateCommandQueue(opencl_dev.ctx, opencl_dev.dev, CL_QUEUE_PROFILING_ENABLE, &err);
     CHECK_OPENCL(err, "clCreateCommandQueue()");
 
     // TODO: check if this is the right approach regarding multithreading
     insert_kernel_into_cache(opencl_dev, kernelname, program, kernel);
-	// Intel SDK for FPGA needs a new queue for each kernel
+    // Intel SDK for FPGA needs a new queue for each kernel
     insert_kernelqueue_into_cache(opencl_dev, kernel, kernel_queue);
-	return kernel;
+    return kernel;
 }
 
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
@@ -491,14 +490,14 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     cl_int err = CL_SUCCESS;
 
     // create and build program if not exist
-	auto program = try_find_program(opencl_dev, filename);
-	if(program == nullptr){
-	    std::string options = "";
-	    if(opencl_dev.ifIntelFPGA) {
+    auto program = try_find_program(opencl_dev, filename);
+    if (program == nullptr) {
+        std::string options = "";
+        if (opencl_dev.isIntelFPGA) {
             program = create_programFPGA(opencl_dev, filename, options);
-	    } else{
+        } else {
             program = create_program(opencl_dev, filename, options);
-	    }
+        }
 
         debug("Target OpenCL device is %", dev);
         cl_build_status build_status;
@@ -526,16 +525,16 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
             delete[] program_build_log;
         }
         CHECK_OPENCL(err, "clBuildProgram(), clGetProgramBuildInfo()");
-	}
+    }
 
     // create kernel if not exist
     auto kernel = try_find_kernel(opencl_dev, kernelname, program);
-	if(kernel == nullptr){
-		if(opencl_dev.ifIntelFPGA) {
-			kernel = create_kernelFPGA(opencl_dev, program, kernelname);
-		}else{
-	        kernel = create_kernel(opencl_dev, program, kernelname);
-		}
+    if (kernel == nullptr) {
+        if (opencl_dev.isIntelFPGA) {
+            kernel = create_kernelFPGA(opencl_dev, program, kernelname);
+        }else{
+            kernel = create_kernel(opencl_dev, program, kernelname);
+        }
     }
     return kernel;
 }

@@ -51,7 +51,7 @@ protected:
     struct DeviceData {
         cl_platform_id platform;
         cl_device_id dev;
-        bool ifIntelFPGA = false;
+        bool isIntelFPGA = false;
         cl_command_queue queue;
         cl_context ctx;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
@@ -64,7 +64,7 @@ protected:
         DeviceData(DeviceData&& data)
             : platform(data.platform)
             , dev(data.dev)
-            , ifIntelFPGA(data.ifIntelFPGA)
+            , isIntelFPGA(data.isIntelFPGA)
             , queue(data.queue)
             , ctx(data.ctx)
             , programs(std::move(data.programs))
