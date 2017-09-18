@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <thread>
 
 #ifndef KERNEL_DIR
 #define KERNEL_DIR ""
@@ -110,6 +111,9 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     if (queue_size > 0) {
         status = hsa_queue_create(agent, queue_size, HSA_QUEUE_TYPE_SINGLE, NULL, NULL, UINT32_MAX, UINT32_MAX, &queue);
         CHECK_HSA(status, "hsa_queue_create()");
+
+        status = hsa_amd_profiling_set_profiler_enabled(queue, 1);
+        CHECK_HSA(status, "hsa_amd_profiling_set_profiler_enabled()");
     }
 
     hsa_signal_t signal;
@@ -183,6 +187,9 @@ HSAPlatform::HSAPlatform(Runtime* runtime)
     CHECK_HSA(status, "hsa_system_get_info()");
     debug("HSA System Runtime Version: %.%", version_major, version_minor);
 
+    status = hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &frequency_);
+    CHECK_HSA(status, "hsa_system_get_info()");
+
     status = hsa_iterate_agents(iterate_agents_callback, &devices_);
     CHECK_HSA(status, "hsa_iterate_agents()");
 }
@@ -200,18 +207,18 @@ HSAPlatform::~HSAPlatform() {
             CHECK_HSA(status, "hsa_queue_destroy()");
         }
         status = hsa_signal_destroy(devices_[i].signal);
-        CHECK_HSA(status, "hsa_queue_destroy()");
+        CHECK_HSA(status, "hsa_signal_destroy()");
     }
 
     hsa_shut_down();
 }
 
-void* HSAPlatform::alloc(DeviceId dev, int64_t size) {
+void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
     if (!size)
         return nullptr;
 
     char* mem;
-    hsa_status_t status = hsa_memory_allocate(devices_[dev].finegrained_region, size, (void**) &mem);
+    hsa_status_t status = hsa_memory_allocate(region, size, (void**) &mem);
     CHECK_HSA(status, "hsa_memory_allocate()");
 
     return (void*)mem;
@@ -222,7 +229,6 @@ void HSAPlatform::release(DeviceId, void* ptr) {
     CHECK_HSA(status, "hsa_memory_free()");
 }
 
-//static thread_local cl_event end_kernel;
 extern std::atomic<uint64_t> anydsl_kernel_time;
 
 void HSAPlatform::launch_kernel(DeviceId dev,
@@ -230,6 +236,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
                                 const uint32_t* grid, const uint32_t* block,
                                 void** args, const uint32_t* sizes, const KernelArgType*,
                                 uint32_t num_args) {
+    auto queue = devices_[dev].queue;
+    if (!queue)
+        error("The selected HSA device '%' cannot execute kernels", dev);
+
     uint64_t kernel;
     uint32_t kernarg_segment_size;
     uint32_t group_segment_size;
@@ -243,6 +253,8 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     CHECK_HSA(status, "hsa_memory_allocate()");
     size_t offset = 0;
     auto align_address = [] (size_t base, size_t align) {
+        if (align > 8)
+            align = 8;
         return ((base + align - 1) / align) * align;
     };
     for (uint32_t i = 0; i < num_args; i++) {
@@ -254,9 +266,15 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     if (offset != kernarg_segment_size)
         debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernarg_segment_size, offset);
 
-    auto queue = devices_[dev].queue;
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
+
+    hsa_signal_t launch_signal;
+    if (runtime_->profiling_enabled()) {
+        status = hsa_signal_create(1, 0, NULL, &launch_signal);
+        CHECK_HSA(status, "hsa_signal_create()");
+    } else
+        launch_signal = signal;
 
     // construct aql packet
     hsa_kernel_dispatch_packet_t aql;
@@ -272,7 +290,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     aql.grid_size_x = grid[0];
     aql.grid_size_y = grid[1];
     aql.grid_size_z = grid[2];
-    aql.completion_signal = signal;
+    aql.completion_signal = launch_signal;
     aql.kernel_object = kernel;
     aql.kernarg_address = kernarg_address;
     aql.private_segment_size = private_segment_size;
@@ -284,6 +302,23 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     ((hsa_kernel_dispatch_packet_t*)(queue->base_address))[index & queue_mask] = aql;
     hsa_queue_store_write_index_relaxed(queue, index + 1);
     hsa_signal_store_relaxed(queue->doorbell_signal, index);
+
+    if (runtime_->profiling_enabled())
+        std::thread ([=] {
+            hsa_signal_value_t completion = hsa_signal_wait_relaxed(launch_signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
+            if (completion != 0)
+                debug("HSA launch_signal completion failed: %", completion);
+
+            hsa_amd_profiling_dispatch_time_t dispatch_times = { 0, 0 };
+            hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, launch_signal, &dispatch_times);
+            CHECK_HSA(status, "hsa_amd_profiling_get_dispatch_time()");
+
+            anydsl_kernel_time.fetch_add(1000000.0 * double(dispatch_times.end - dispatch_times.start) / double(frequency_));
+            hsa_signal_subtract_relaxed(signal, 1);
+
+            status = hsa_signal_destroy(launch_signal);
+            CHECK_HSA(status, "hsa_signal_destroy()");
+        }).detach();
 }
 
 void HSAPlatform::synchronize(DeviceId dev) {

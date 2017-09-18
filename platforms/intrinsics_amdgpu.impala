@@ -41,7 +41,7 @@ extern "C" {
     fn "__ocml_floor_f32"       ocml_floorf(f32) -> f32;
     fn "__ocml_isinf_f32"       ocml_isinff(f32) -> i32;
     fn "__ocml_isnan_f32"       ocml_isnanf(f32) -> i32;
-    fn "__ocml_finite_f32"      ocml_isfinitef(f32) -> i32;
+    fn "__ocml_isfinite_f32"    ocml_isfinitef(f32) -> i32;
     fn "__ocml_mad_f32"         ocml_madf(f32, f32, f32) -> f32;
     fn "__ocml_exp_f64"         ocml_exp(f64) -> f64;
     fn "__ocml_exp2_f64"        ocml_exp2(f64) -> f64;
@@ -67,7 +67,7 @@ extern "C" {
     fn "__ocml_floor_f64"       ocml_floor(f64) -> f64;
     fn "__ocml_isinf_f64"       ocml_isinf(f64) -> i32;
     fn "__ocml_isnan_f64"       ocml_isnan(f64) -> i32;
-    fn "__ocml_finite_f64"      ocml_isfinite(f64) -> i32;
+    fn "__ocml_isfinite_f64"    ocml_isfinite(f64) -> i32;
     fn "__ocml_mad_f64"         ocml_mad(f64, f64, f64) -> f64;
 }
 
@@ -88,9 +88,9 @@ fn amdgcn_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared
 // global atomics are mapped to PCIe atomics: CAS, FetchADD, Swap
 fn amdgcn_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(0u, a, b) }
 fn amdgcn_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, b) }
-fn amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { x - y }) }
-fn amdgcn_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x > y { x } else { y } }) }
-fn amdgcn_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a: &mut[1]i32, b: i32, c: i32| -> i32 { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x < y { x } else { y } }) }
+fn amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, -b) }
+fn amdgcn_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a, b, c| { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x > y { x } else { y } }) }
+fn amdgcn_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a, b, c| { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x < y { x } else { y } }) }
 
 // atomic operations based on cmpxchg
 fn atomic_op_global(a: &mut[1]i32, b: i32, cmpxchg: fn(&mut[1]i32, i32, i32) -> i32, op: fn(i32, i32) -> i32) -> i32 {
@@ -103,6 +103,24 @@ fn atomic_op_global(a: &mut[1]i32, b: i32, cmpxchg: fn(&mut[1]i32, i32, i32) -> 
     }
 
     old
+}
+
+fn amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_min3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
+}
+
+fn amdgcn_maxmax(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_max3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
 }
 
 struct hsa_signal_t {
@@ -203,6 +221,6 @@ static amdgpu_intrinsics = Intrinsics {
     isinf       : ocml_isinf,
     isnan       : ocml_isnan,
     isfinite    : ocml_isfinite,
-    min         : @|a: i32, b: i32| -> i32 { if a < b { a } else { b } },
-    max         : @|a: i32, b: i32| -> i32 { if a > b { a } else { b } },
+    min         : @|a, b| { if a < b { a } else { b } },
+    max         : @|a, b| { if a > b { a } else { b } },
 };

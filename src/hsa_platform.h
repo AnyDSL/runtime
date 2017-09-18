@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <hsa.h>
+#include <hsa_ext_amd.h>
 
 /// HSA platform. Has the same number of devices as that of the HSA implementation.
 class HSAPlatform : public Platform {
@@ -19,9 +20,9 @@ public:
     ~HSAPlatform();
 
 protected:
-    void* alloc(DeviceId dev, int64_t size) override;
-    void* alloc_host(DeviceId dev, int64_t size) override { return alloc(dev, size); }
-    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc(dev, size); }
+    void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
+    void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
+    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].finegrained_region); }
     void* get_device_ptr(DeviceId, void* ptr) override { return ptr; }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
@@ -79,11 +80,13 @@ protected:
         }
     };
 
+    uint64_t frequency_;
     std::vector<DeviceData> devices_;
 
+    void* alloc_hsa(int64_t, hsa_region_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
-    std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+    std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId, const std::string&, const std::string&);
 };
 
 #endif
