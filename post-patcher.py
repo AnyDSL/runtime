@@ -10,7 +10,6 @@ def patch_llvmir(rttype):
         with open(filename) as f:
             for line in f:
                 if rttype=="nvvm":
-                    matched = False
 
                     # patch to opaque identity functions
                     m = re.match('^declare (.*) @(magic_.*_id)\((.*)\)\n$', line)
@@ -22,25 +21,34 @@ def patch_llvmir(rttype):
                         result.append('define {0} @{1}({0} %name) {{\n'.format(ty1, fname))
                         result.append('  ret {0} %name\n'.format(ty1))
                         result.append('}\n')
-                        matched = True
-
-                    # patch unnamed_addr and local_unnamed_addr attributes
-                    m = re.match('^(define .* @.*\(.*\)) (unnamed_addr|local_unnamed_addr)(.*{)\n$', line)
-                    if m is not None:
-                        first, attr, last = m.groups()
-                        print("Patching '{0}' in {1}".format(attr, filename))
-                        result.append('{0}{1}\n'.format(first, last))
-                        matched = True
+                        continue
 
                     # remove source_filename information
                     if 'source_filename = ' in line:
                         print("Removing 'source_filename' in {0}".format(filename))
                         result.append(';{0}'.format(line))
-                        matched = True
+                        continue
 
-                    # it's a normal line, keep it
-                    if not matched:
-                        result.append(line)
+                    matched = True
+                    while matched:
+                        matched = False
+                        # patch unnamed_addr and local_unnamed_addr attributes
+                        m = re.match('^(define .* @.*\(.*\)) (unnamed_addr|local_unnamed_addr)(.*{)\n$', line)
+                        if m is not None:
+                            first, attr, last = m.groups()
+                            print("Patching '{0}' in {1}".format(attr, filename))
+                            line = '{0}{1}\n'.format(first, last)
+                            matched = True
+
+                        # patch readonly and writeonly attributes
+                        m = re.match('^((declare|define) .*@.*\(.*)(readonly|writeonly)(.*\).*)\n$', line)
+                        if m is not None:
+                            first, decl, attr, last = m.groups()
+                            print("Patching '{0}' in {1}".format(attr, filename))
+                            line = '{0}{1}\n'.format(first, last)
+                            matched = True
+
+                    result.append(line)
         # we have the patched thing, write it
         with open(filename, "w") as f:
             for line in result:
