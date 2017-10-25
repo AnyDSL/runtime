@@ -33,9 +33,9 @@ def patch_llvmir(rttype):
                     while matched:
                         matched = False
                         # patch unnamed_addr and local_unnamed_addr attributes
-                        m = re.match('^(define .* @.*\(.*\)) (unnamed_addr|local_unnamed_addr)(.*{)\n$', line)
+                        m = re.match('^((declare|define) .* @.*\(.*\)) (unnamed_addr|local_unnamed_addr)(.*)\n$', line)
                         if m is not None:
-                            first, attr, last = m.groups()
+                            first, decl, attr, last = m.groups()
                             print("Patching '{0}' in {1}".format(attr, filename))
                             line = '{0}{1}\n'.format(first, last)
                             matched = True
