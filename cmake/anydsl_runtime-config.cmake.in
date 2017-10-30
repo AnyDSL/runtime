@@ -91,6 +91,7 @@ macro(AnyDSL_runtime_files outfiles)
 
     set(_backend_instrinsics
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cpu.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_hls.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cuda.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_nvvm.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
