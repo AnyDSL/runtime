@@ -128,6 +128,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
         CHECK_OPENCL(err, "clGetPlatformInfo()");
 
         err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+        if (err == CL_DEVICE_NOT_FOUND)
+            continue;
         CHECK_OPENCL(err, "clGetDeviceIDs()");
 
         cl_device_id* devices = new cl_device_id[num_devices];
