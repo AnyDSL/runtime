@@ -56,31 +56,6 @@ extern "device" {
     fn "max"        hls_max(i32, i32) -> i32;
 }
 
-fn hls_accelerator(dev: i32) -> Accelerator {
-    Accelerator {
-        exec          : |grid, block, body| hls(dev, grid, block, body),
-        sync          : || {}, //undef(),
-        alloc         : |size| alloc_host(dev, size),
-        alloc_unified : |size| alloc_host(dev, size),
-        tidx          : undef(),
-        tidy          : undef(),
-        tidz          : undef(),
-        bidx          : undef(),
-        bidy          : undef(),
-        bidz          : undef(),
-        bdimx         : undef(),
-        bdimy         : undef(),
-        bdimz         : undef(),
-        gdimx         : undef(),
-        gdimy         : undef(),
-        gdimz         : undef(),
-        gidx          : undef(),
-        gidy          : undef(),
-        gidz          : undef(),
-        barrier       : || {},
-    }
-}
-
 static hls_intrinsics = Intrinsics {
     expf        : hls_expf,
     exp2f       : hls_exp2f,
