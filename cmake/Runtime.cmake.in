@@ -94,6 +94,7 @@ macro(anydsl_runtime_wrap outfiles)
         COMMAND ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
         COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_llvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_amdgpuir.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${IMPALA_BIN} ${PYTHON_BIN} ${ANYDSL_RUNTIME_DIR}/post-patcher.py ${_impala_platform} ${_infiles} VERBATIM)
 
@@ -109,6 +110,7 @@ macro(anydsl_runtime_wrap outfiles)
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
         COMMAND ${CLANG_BIN} ${_clang_flags} -fPIE -c -o ${_objfile} ${_llfile}
+        COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${ANYDSL_RUNTIME_DIR}/cmake/check_hlsobj.cmake
         DEPENDS ${_llfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
