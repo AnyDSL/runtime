@@ -12,7 +12,7 @@ if(EXISTS ${_basename}.hls)
                                  "open_solution ${_basename}_${kernel}\n"
                                  "set_part {xc7k70tfbv676-2}\n"
                                  "create_clock -period 10.0 -name default\n"
-                                 "csim_design -ldflags {-lrt} -clean\n"
+                                 "csim_design -compiler clang -ldflags {-lrt} -clean\n"
                                  "#csynth_design\n"
                                  "#export_design -format ip_catalog -evaluate verilog\n"
                                  "exit")
