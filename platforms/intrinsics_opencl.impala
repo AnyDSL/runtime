@@ -24,7 +24,7 @@ extern "device" {
     fn "isfinite"   opencl_isfinitef(f32) -> i32;
     fn "fma"        opencl_fmaf(f32, f32, f32) -> f32;
     fn "mad"        opencl_madf(f32, f32, f32) -> f32;
-    fn "copysignf"  opencl_copysignf(f32, f32) -> f32;
+    fn "copysign"   opencl_copysignf(f32, f32) -> f32;
     fn "exp"        opencl_exp(f64) -> f64;
     fn "exp2"       opencl_exp2(f64) -> f64;
     fn "log"        opencl_log(f64) -> f64;

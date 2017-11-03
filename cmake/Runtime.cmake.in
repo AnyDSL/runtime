@@ -69,7 +69,12 @@ macro(anydsl_runtime_wrap outfiles)
     endif()
 
     set(_impala_flags -emit-llvm ${_opt_flags})
-    if("${_build_type}" STREQUAL "debug")
+    foreach(flag ${IMPALA_FLAGS})
+        if(flag MATCHES "--log-level")
+            set(IMPALA_FLAGS_HAS_LOG_LEVEL TRUE)
+        endif()
+    endforeach()
+    if(NOT IMPALA_FLAGS_HAS_LOG_LEVEL AND "${_build_type}" STREQUAL "debug")
         set(_impala_flags ${_impala_flags} "--log-level" "info")
     endif()
     if(PARGS_IMPALA_FLAGS)
@@ -102,7 +107,7 @@ macro(anydsl_runtime_wrap outfiles)
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${CLANG_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+        COMMAND ${CLANG_BIN} ${_clang_flags} -fPIE -c -o ${_objfile} ${_llfile}
         DEPENDS ${_llfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
