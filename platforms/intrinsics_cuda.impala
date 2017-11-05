@@ -85,25 +85,19 @@ fn cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 
 fn cuda_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| cuda(dev, grid, block, body),
+        exec          : |grid, block, body| {
+            let tid  = (cuda_threadIdx_x, cuda_threadIdx_y, cuda_threadIdx_z);
+            let bid  = (cuda_blockIdx_x,  cuda_blockIdx_y,  cuda_blockIdx_z);
+            let bdim = (cuda_blockDim_x,  cuda_blockDim_y,  cuda_blockDim_z);
+            let gdim = (cuda_gridDim_x,   cuda_gridDim_y,   cuda_gridDim_z);
+            let gid  = (|| cuda_threadIdx_x() + cuda_blockDim_x() * cuda_blockIdx_x(),
+                        || cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
+                        || cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z());
+            cuda(dev, grid, block, || body(tid, bid, bdim, gdim, gid))
+        },
         sync          : || synchronize_cuda(dev),
         alloc         : |size| alloc_cuda(dev, size),
         alloc_unified : |size| alloc_cuda_unified(dev, size),
-        tidx          : cuda_threadIdx_x,
-        tidy          : cuda_threadIdx_y,
-        tidz          : cuda_threadIdx_z,
-        bidx          : cuda_blockIdx_x,
-        bidy          : cuda_blockIdx_y,
-        bidz          : cuda_blockIdx_z,
-        bdimx         : cuda_blockDim_x,
-        bdimy         : cuda_blockDim_y,
-        bdimz         : cuda_blockDim_z,
-        gdimx         : cuda_gridDim_x,
-        gdimy         : cuda_gridDim_y,
-        gdimz         : cuda_gridDim_z,
-        gidx          : || cuda_threadIdx_x() + cuda_blockDim_x() * cuda_blockIdx_x(),
-        gidy          : || cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
-        gidz          : || cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z(),
         barrier       : cuda_syncthreads
     }
 };
