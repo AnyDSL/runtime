@@ -380,7 +380,7 @@ fn nvvm_ldg_f32(addr: &[1]f32) -> f32 {
 
 fn nvvm_ldg_i32(addr: &[1]i32) -> i32 {
     let mut res: i32;
-    asm("ld.global.nc.i32 $0, [$1];" : "=f"(res) : "l"(addr));
+    asm("ld.global.nc.s32 $0, [$1];" : "=r"(res) : "l"(addr));
     res
 }
 
@@ -423,25 +423,19 @@ fn nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
 fn nvvm_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : @|grid, block, body| nvvm(dev, grid, block, body),
+        exec          : @|grid, block, body| {
+            let tid  = (nvvm_read_ptx_sreg_tid_x,    nvvm_read_ptx_sreg_tid_y,    nvvm_read_ptx_sreg_tid_z);
+            let bid  = (nvvm_read_ptx_sreg_ctaid_x,  nvvm_read_ptx_sreg_ctaid_y,  nvvm_read_ptx_sreg_ctaid_z);
+            let bdim = (nvvm_read_ptx_sreg_ntid_x,   nvvm_read_ptx_sreg_ntid_y,   nvvm_read_ptx_sreg_ntid_z);
+            let gdim = (nvvm_read_ptx_sreg_nctaid_x, nvvm_read_ptx_sreg_nctaid_y, nvvm_read_ptx_sreg_nctaid_z);
+            let gid  = (|| nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
+                        || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
+                        || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z());
+            nvvm(dev, grid, block, || body(tid, bid, bdim, gdim, gid))
+        },
         sync          : || synchronize_cuda(dev),
         alloc         : |size| alloc_cuda(dev, size),
         alloc_unified : |size| alloc_cuda_unified(dev, size),
-        tidx          : nvvm_read_ptx_sreg_tid_x,
-        tidy          : nvvm_read_ptx_sreg_tid_y,
-        tidz          : nvvm_read_ptx_sreg_tid_z,
-        bidx          : nvvm_read_ptx_sreg_ctaid_x,
-        bidy          : nvvm_read_ptx_sreg_ctaid_y,
-        bidz          : nvvm_read_ptx_sreg_ctaid_z,
-        bdimx         : nvvm_read_ptx_sreg_ntid_x,
-        bdimy         : nvvm_read_ptx_sreg_ntid_y,
-        bdimz         : nvvm_read_ptx_sreg_ntid_z,
-        gdimx         : nvvm_read_ptx_sreg_nctaid_x,
-        gdimy         : nvvm_read_ptx_sreg_nctaid_y,
-        gdimz         : nvvm_read_ptx_sreg_nctaid_z,
-        gidx          : || nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
-        gidy          : || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
-        gidz          : || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
         barrier       : nvvm_barrier
     }
 };
