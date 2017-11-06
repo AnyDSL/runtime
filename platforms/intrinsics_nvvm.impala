@@ -380,7 +380,7 @@ fn nvvm_ldg_f32(addr: &[1]f32) -> f32 {
 
 fn nvvm_ldg_i32(addr: &[1]i32) -> i32 {
     let mut res: i32;
-    asm("ld.global.nc.i32 $0, [$1];" : "=f"(res) : "l"(addr));
+    asm("ld.global.nc.s32 $0, [$1];" : "=r"(res) : "l"(addr));
     res
 }
 
