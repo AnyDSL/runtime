@@ -79,8 +79,8 @@ fn cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 fn cpu_rsqrtf(a: f32) -> f32 { 1.0f / cpu_sqrtf(a) }
 fn cpu_rsqrt(a: f64) -> f64 { 1.0 / cpu_sqrt(a) }
 
-fn cpu_min(a: i32, b: i32) -> i32 { if a < b { a } else { b } }
-fn cpu_max(a: i32, b: i32) -> i32 { if a > b { a } else { b } }
+fn @cpu_min(a: i32, b: i32) -> i32 { if a < b { a } else { b } }
+fn @cpu_max(a: i32, b: i32) -> i32 { if a > b { a } else { b } }
 
 static cpu_intrinsics = Intrinsics {
     expf        : cpu_expf,

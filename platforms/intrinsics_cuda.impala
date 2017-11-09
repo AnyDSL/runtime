@@ -85,7 +85,7 @@ fn cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 
 fn cuda_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| {
+        exec          : @|grid, block, body| {
             let tid  = (cuda_threadIdx_x, cuda_threadIdx_y, cuda_threadIdx_z);
             let bid  = (cuda_blockIdx_x,  cuda_blockIdx_y,  cuda_blockIdx_z);
             let bdim = (cuda_blockDim_x,  cuda_blockDim_y,  cuda_blockDim_z);

@@ -147,7 +147,7 @@ struct hsa_dispatch_packet_t {
 
 fn amdgpu_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| {
+        exec          : @|grid, block, body| {
             let tid  = (amdgcn_workitem_id_x,  amdgcn_workitem_id_y,  amdgcn_workitem_id_z);
             let bid  = (amdgcn_workgroup_id_x, amdgcn_workgroup_id_y, amdgcn_workgroup_id_z);
             let bdim = (|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32, || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32, || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32);
@@ -215,6 +215,6 @@ static amdgpu_intrinsics = Intrinsics {
     isinf       : ocml_isinf,
     isnan       : ocml_isnan,
     isfinite    : ocml_isfinite,
-    min         : |a, b| { if a < b { a } else { b } },
-    max         : |a, b| { if a > b { a } else { b } },
+    min         : @|a, b| { if a < b { a } else { b } },
+    max         : @|a, b| { if a > b { a } else { b } },
 };
