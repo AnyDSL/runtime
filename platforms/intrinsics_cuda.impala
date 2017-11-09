@@ -76,14 +76,14 @@ extern "device" {
     fn "gridDim_z"     cuda_gridDim_z() -> i32;
 }
 
-fn cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
-fn cuda_maxmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_max(a, b), c) }
-fn cuda_minmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_min(a, b), c) }
-fn cuda_maxmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_max(a, b), c) }
-fn cuda_madf(a: f32, b: f32, c: f32) -> f32 { cuda_fmaf(a, b, c) }
-fn cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
+fn @cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
+fn @cuda_maxmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_max(a, b), c) }
+fn @cuda_minmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_min(a, b), c) }
+fn @cuda_maxmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_max(a, b), c) }
+fn @cuda_madf(a: f32, b: f32, c: f32) -> f32 { cuda_fmaf(a, b, c) }
+fn @cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 
-fn cuda_accelerator(dev: i32) -> Accelerator {
+fn @cuda_accelerator(dev: i32) -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
             let tid  = (cuda_threadIdx_x, cuda_threadIdx_y, cuda_threadIdx_z);
