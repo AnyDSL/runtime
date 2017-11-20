@@ -384,6 +384,12 @@ fn @nvvm_ldg_i32(addr: &[1]i32) -> i32 {
     res
 }
 
+fn @nvvm_ldg_u8(addr: &[1]u8) -> u8 {
+    let mut res: u8;
+    asm("ld.global.nc.s8 $0, [$1];" : "=r"(res) : "l"(addr));
+    res
+}
+
 fn @nvvm_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] {
     let mut r1 : f32;
     let mut r2 : f32;
