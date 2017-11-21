@@ -56,9 +56,9 @@ extern "device" {
     fn "max"        hls_max(i32, i32) -> i32;
 }
 
-fn hls_accelerator() -> Accelerator {
+fn @hls_accelerator() -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| {
+        exec          : @|grid, block, body| {
             let (gdim_x, gdim_y, gdim_z) = grid;
             let (bdim_x, bdim_y, bdim_z) = block;
             hls(|| {
