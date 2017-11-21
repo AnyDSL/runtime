@@ -70,17 +70,11 @@ extern "device" {
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
-fn cpu_atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
-fn cpu_atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
-fn cpu_atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
-fn cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
-
-fn cpu_rsqrtf(a: f32) -> f32 { 1.0f / cpu_sqrtf(a) }
-fn cpu_rsqrt(a: f64) -> f64 { 1.0 / cpu_sqrt(a) }
-
-fn cpu_min(a: i32, b: i32) -> i32 { if a < b { a } else { b } }
-fn cpu_max(a: i32, b: i32) -> i32 { if a > b { a } else { b } }
+fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
+fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
+fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
+fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
+fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
 
 static cpu_intrinsics = Intrinsics {
     expf        : cpu_expf,
@@ -88,7 +82,7 @@ static cpu_intrinsics = Intrinsics {
     logf        : cpu_logf,
     log2f       : cpu_log2f,
     powf        : cpu_powf,
-    rsqrtf      : cpu_rsqrtf,
+    rsqrtf      : @|a| { 1.0f / cpu_sqrtf(a) },
     sqrtf       : cpu_sqrtf,
     fabsf       : cpu_fabsf,
     sinf        : cpu_sinf,
@@ -113,7 +107,7 @@ static cpu_intrinsics = Intrinsics {
     log         : cpu_log,
     log2        : cpu_log2,
     pow         : cpu_pow,
-    rsqrt       : cpu_rsqrt,
+    rsqrt       : @|a| { 1.0 / cpu_sqrt(a) },
     sqrt        : cpu_sqrt,
     fabs        : cpu_fabs,
     sin         : cpu_sin,
@@ -133,6 +127,6 @@ static cpu_intrinsics = Intrinsics {
     isinf       : cpu_isinf,
     isnan       : cpu_isnan,
     isfinite    : cpu_isfinite,
-    min         : cpu_min,
-    max         : cpu_max,
+    min         : @|a, b| { if a < b { a } else { b } },
+    max         : @|a, b| { if a > b { a } else { b } },
 };

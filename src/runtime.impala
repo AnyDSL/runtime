@@ -26,50 +26,50 @@ extern "C" {
     fn "anydsl_print_string" print_string(&[u8]) -> ();
 }
 
-fn runtime_device(platform: i32, device: i32) -> i32 { platform | (device << 4) }
-
 struct Buffer {
     device: i32,
     data: &[i8]
 }
 
-fn alloc(dev: i32, size: i32) -> Buffer {
+fn @alloc(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
         data: runtime_alloc(dev, size as i64)
     }
 }
-fn alloc_host(dev: i32, size: i32) -> Buffer {
+fn @alloc_host(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
         data: runtime_alloc_host(dev, size as i64)
     }
 }
-fn alloc_unified(dev: i32, size: i32) -> Buffer {
+fn @alloc_unified(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
         data: runtime_alloc_unified(dev, size as i64)
     }
 }
-fn release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
+fn @release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
 
-fn alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
-fn alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }
-fn alloc_cuda_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(1, dev), size) }
-fn alloc_cuda_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(1, dev), size) }
-fn synchronize_cuda(dev: i32) -> () { runtime_synchronize(runtime_device(1, dev)) }
-fn alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), size) }
-fn alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
-fn synchronize_opencl(dev: i32) -> () { runtime_synchronize(runtime_device(2, dev)) }
-fn alloc_hsa(dev: i32, size: i32) -> Buffer { alloc(runtime_device(3, dev), size) }
-fn alloc_hsa_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(3, dev), size) }
-fn alloc_hsa_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
-fn synchronize_hsa(dev: i32) -> () { runtime_synchronize(runtime_device(3, dev)) }
+fn @runtime_device(platform: i32, device: i32) -> i32 { platform | (device << 4) }
 
-fn copy(src: Buffer, dst: Buffer, size: i32) -> () {
+fn @alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
+fn @alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }
+fn @alloc_cuda_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(1, dev), size) }
+fn @alloc_cuda_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(1, dev), size) }
+fn @synchronize_cuda(dev: i32) -> () { runtime_synchronize(runtime_device(1, dev)) }
+fn @alloc_opencl(dev: i32, size: i32) -> Buffer { alloc(runtime_device(2, dev), size) }
+fn @alloc_opencl_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
+fn @synchronize_opencl(dev: i32) -> () { runtime_synchronize(runtime_device(2, dev)) }
+fn @alloc_hsa(dev: i32, size: i32) -> Buffer { alloc(runtime_device(3, dev), size) }
+fn @alloc_hsa_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(3, dev), size) }
+fn @alloc_hsa_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
+fn @synchronize_hsa(dev: i32) -> () { runtime_synchronize(runtime_device(3, dev)) }
+
+fn @copy(src: Buffer, dst: Buffer, size: i32) -> () {
     runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, size as i64)
 }
 
-fn copy_offset(src: Buffer, off_src: i32, dst: Buffer, off_dst: i32, size: i32) -> () {
+fn @copy_offset(src: Buffer, off_src: i32, dst: Buffer, off_dst: i32, size: i32) -> () {
     runtime_copy(src.device, src.data, off_src as i64, dst.device, dst.data, off_dst as i64, size as i64)
 }

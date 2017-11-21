@@ -325,18 +325,18 @@ extern "thorin" {
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn nvvm_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(0u, a, b) }
-fn nvvm_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(0u, a, b) }
-fn nvvm_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(1u, a, b) }
-fn nvvm_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(1u, a, b) }
-fn nvvm_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(2u, a, b) }
-fn nvvm_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(2u, a, b) }
-fn nvvm_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(7u, a, b) }
-fn nvvm_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(7u, a, b) }
-fn nvvm_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(8u, a, b) }
-fn nvvm_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(8u, a, b) }
+fn @nvvm_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(0u, a, b) }
+fn @nvvm_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(0u, a, b) }
+fn @nvvm_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(1u, a, b) }
+fn @nvvm_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(1u, a, b) }
+fn @nvvm_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(2u, a, b) }
+fn @nvvm_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(2u, a, b) }
+fn @nvvm_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(7u, a, b) }
+fn @nvvm_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(7u, a, b) }
+fn @nvvm_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(8u, a, b) }
+fn @nvvm_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(8u, a, b) }
 
-fn nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
+fn @nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmin.s32.s32.s32.min $0, $1, $2, $3;"
         : "=r"(res)
@@ -345,7 +345,7 @@ fn nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn nvvm_maxmax(a: i32, b: i32, c: i32) -> i32 {
+fn @nvvm_maxmax(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmax.s32.s32.s32.max $0, $1, $2, $3;"
         : "=r"(res)
@@ -354,7 +354,7 @@ fn nvvm_maxmax(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn nvvm_minmax(a: i32, b: i32, c: i32) -> i32 {
+fn @nvvm_minmax(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmin.s32.s32.s32.max $0, $1, $2, $3;"
         : "=r"(res)
@@ -363,7 +363,7 @@ fn nvvm_minmax(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn nvvm_maxmin(a: i32, b: i32, c: i32) -> i32 {
+fn @nvvm_maxmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
     asm("vmax.s32.s32.s32.min $0, $1, $2, $3;"
         : "=r"(res)
@@ -372,19 +372,25 @@ fn nvvm_maxmin(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
-fn nvvm_ldg_f32(addr: &[1]f32) -> f32 {
+fn @nvvm_ldg_f32(addr: &[1]f32) -> f32 {
     let mut res: f32;
     asm("ld.global.nc.f32 $0, [$1];" : "=f"(res) : "l"(addr));
     res
 }
 
-fn nvvm_ldg_i32(addr: &[1]i32) -> i32 {
+fn @nvvm_ldg_i32(addr: &[1]i32) -> i32 {
     let mut res: i32;
     asm("ld.global.nc.s32 $0, [$1];" : "=r"(res) : "l"(addr));
     res
 }
 
-fn nvvm_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] {
+fn @nvvm_ldg_u8(addr: &[1]u8) -> u8 {
+    let mut res: u8;
+    asm("ld.global.nc.s8 $0, [$1];" : "=r"(res) : "l"(addr));
+    res
+}
+
+fn @nvvm_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] {
     let mut r1 : f32;
     let mut r2 : f32;
     let mut r3 : f32;
@@ -396,7 +402,7 @@ fn nvvm_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] {
     simd[r1, r2, r3, r4]
 }
 
-fn nvvm_ldg4_i32(addr: &[1]simd[i32 * 4]) -> simd[i32 * 4] {
+fn @nvvm_ldg4_i32(addr: &[1]simd[i32 * 4]) -> simd[i32 * 4] {
     let mut r1 : i32;
     let mut r2 : i32;
     let mut r3 : i32;
@@ -408,7 +414,7 @@ fn nvvm_ldg4_i32(addr: &[1]simd[i32 * 4]) -> simd[i32 * 4] {
     simd[r1, r2, r3, r4]
 }
 
-fn nvvm_ballot(a: i32) -> i32 {
+fn @nvvm_ballot(a: i32) -> i32 {
     let mut res: i32;
     asm("{ .reg .pred %p1;"
         "setp.ne.u32 %p1, $1, 0;"
@@ -419,11 +425,11 @@ fn nvvm_ballot(a: i32) -> i32 {
     res
 }
 
-fn nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
+fn @nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
-fn nvvm_accelerator(dev: i32) -> Accelerator {
+fn @nvvm_accelerator(dev: i32) -> Accelerator {
     Accelerator {
-        exec          : |grid, block, body| {
+        exec          : @|grid, block, body| {
             let tid  = (nvvm_read_ptx_sreg_tid_x,    nvvm_read_ptx_sreg_tid_y,    nvvm_read_ptx_sreg_tid_z);
             let bid  = (nvvm_read_ptx_sreg_ctaid_x,  nvvm_read_ptx_sreg_ctaid_y,  nvvm_read_ptx_sreg_ctaid_z);
             let bdim = (nvvm_read_ptx_sreg_ntid_x,   nvvm_read_ptx_sreg_ntid_y,   nvvm_read_ptx_sreg_ntid_z);
