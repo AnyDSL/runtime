@@ -68,20 +68,28 @@ def patch_cfiles(rttype):
         with open(filename) as f:
             for line in f:
                 # patch channel declarations and read/write functions
-                m = re.match('^__device__ struct_channel_.* \*(.*) =.*', line)
+                m = re.match('^(__device__|__constant) struct_channel_.* \*(.*) =.*', line)
                 if m is not None:
-                    channel_name = m.groups()[0]
+                    channel_name = m.groups()[1]
                     result.append('//dummy channel\n')
                     channel_line[channel_name] = len(result)-1
                     continue
-                m = re.match('^__device__ struct_channel_.*slot.*', line)
+                m = re.match('^(__device__|__constant) struct_channel_.*slot.*', line)
                 if m is not None:
                     continue
-                m = re.match('(.*)channel_intel_(.*)\((.*)\);', line)
+
+                m = re.match('(.*)read_channel_intel_(.*)\((.*)\);', line)
                 if m is not None:
                     prefix, ctype, channel_name = m.groups()
                     channel_type[channel_name] = ctype
-                    result.append('{0}channel_intel({1});\n'.format(prefix, channel_name))
+                    result.append('{0}read_channel_intel({1});\n'.format(prefix, channel_name))
+                    continue
+
+                m = re.match('(.*)write_channel_intel_(.*)\((.*), (.*)\);', line)
+                if m is not None:
+                    prefix, ctype, channel_name, value = m.groups()
+                    channel_type[channel_name] = ctype
+                    result.append('{0}write_channel_intel({1}, {2});\n'.format(prefix, channel_name, value))
                     continue
 
                 # patch to opaque identity functions
