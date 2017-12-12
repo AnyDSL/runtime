@@ -59,27 +59,13 @@ extern "device" {
 fn @hls_accelerator() -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
-            let (gdim_x, gdim_y, gdim_z) = grid;
-            let (bdim_x, bdim_y, bdim_z) = block;
             hls(|| {
-                for bid_z in range(0, gdim_z / bdim_z) {
-                    for bid_y in range(0, gdim_y / bdim_y) {
-                        for bid_x in range(0, gdim_x / bdim_x) {
-                            for tid_z in unroll(0, bdim_z) {
-                                for tid_y in unroll(0, bdim_y) {
-                                    for tid_x in unroll(0, bdim_x) {
-                                        let tid  = (|| tid_x,  || tid_y,  || tid_z);
-                                        let bid  = (|| bid_x,  || bid_y,  || bid_z);
-                                        let bdim = (|| bdim_x, || bdim_y, || bdim_z);
-                                        let gdim = (|| gdim_x, || gdim_y, || gdim_z);
-                                        let gid  = (|| tid_x + bid_x * bdim_x, || tid_y + bid_y * bdim_y, || tid_z + bid_z * bdim_z);
-                                        body(tid, bid, bdim, gdim, gid)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                let tid  = (|| 1, || 1, || 1);
+                let bid  = (|| 1, || 1, || 1);
+                let bdim = (|| 1, || 1, || 1);
+                let gdim = (|| 1, || 1, || 1);
+                let gid  = (|| 1, || 1, || 1);
+                body(tid, bid, bdim, gdim, gid)
             });
         },
         sync          : || (),
