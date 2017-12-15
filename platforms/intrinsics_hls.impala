@@ -75,6 +75,10 @@ fn @hls_accelerator() -> Accelerator {
     }
 };
 
+extern "C" {
+    fn hls_pragma_pipeline() -> ();
+}
+
 static hls_intrinsics = Intrinsics {
     expf        : hls_expf,
     exp2f       : hls_exp2f,

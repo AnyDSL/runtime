@@ -62,11 +62,20 @@ def patch_cfiles(rttype):
     result = []
     if rttype == "cuda":
         filename = basename+"."+"cu"
-    else:
+    elif rttype == "opencl":
         filename = basename+"."+"cl"
+    else:
+        filename = basename+"."+"hls"
+
     if os.path.isfile(filename):
         with open(filename) as f:
             for line in f:
+                # patch hls_pragma_pipeline
+                if line.find('hls_pragma_pipeline();') >= 0:
+                    result.append('#pragma HLS pipeline II=1\n')
+                    print("Patching #pragma HLS in {0}".format(filename))
+                    continue
+
                 # patch channel declarations and read/write functions
                 m = re.match('^(__device__|__constant) struct_channel_.* \*(.*) =.*', line)
                 if m is not None:
@@ -140,4 +149,5 @@ def patch_defs(rttype):
 patch_llvmir("nvvm")
 patch_cfiles("cuda")
 patch_cfiles("opencl")
+patch_cfiles("hls")
 patch_defs("nvvm")
