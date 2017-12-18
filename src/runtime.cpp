@@ -166,13 +166,13 @@ int32_t anydsl_isinf(double x)    { return std::isinf(x); }
 int32_t anydsl_isnan(double x)    { return std::isnan(x); }
 int32_t anydsl_isfinite(double x) { return std::isfinite(x); }
 
-void anydsl_print_i16(int16_t s)  { std::cout << s; }
-void anydsl_print_i32(int32_t i)  { std::cout << i; }
-void anydsl_print_i64(int64_t l)  { std::cout << l; }
-void anydsl_print_f32(float f)    { std::cout << f; }
-void anydsl_print_f64(double d)   { std::cout << d; }
-void anydsl_print_char(char c)    { std::cout << c; }
-void anydsl_print_string(char* s) { std::cout << s; }
+void anydsl_print_i16(int16_t s)  { std::cout << s << std::flush; }
+void anydsl_print_i32(int32_t i)  { std::cout << i << std::flush; }
+void anydsl_print_i64(int64_t l)  { std::cout << l << std::flush; }
+void anydsl_print_f32(float f)    { std::cout << f << std::flush; }
+void anydsl_print_f64(double d)   { std::cout << d << std::flush; }
+void anydsl_print_char(char c)    { std::cout << c << std::flush; }
+void anydsl_print_string(char* s) { std::cout << s << std::flush; }
 
 #ifndef __has_feature
 #define __has_feature(x) 0
