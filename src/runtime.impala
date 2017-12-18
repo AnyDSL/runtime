@@ -24,6 +24,7 @@ extern "C" {
     fn "anydsl_print_f64"    print_f64(f64) -> ();
     fn "anydsl_print_char"   print_char(u8) -> ();
     fn "anydsl_print_string" print_string(&[u8]) -> ();
+    fn "anydsl_print_flush"  print_flush() -> ();
 }
 
 struct Buffer {
