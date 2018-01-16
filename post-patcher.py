@@ -71,9 +71,12 @@ def patch_cfiles(rttype):
         with open(filename) as f:
             for line in f:
                 # patch hls_pragma_pipeline
-                if line.find('hls_pragma_pipeline();') >= 0:
-                    result.append('#pragma HLS pipeline II=1\n')
-                    print("Patching #pragma HLS in {0}".format(filename))
+                if line.find('pragma_pipeline();') >= 0:
+                    if rttype == "opencl":
+                        result.append('#pragma ii 1\n')
+                    elif rttype == "hls":
+                        result.append('#pragma HLS pipeline II=1\n')
+                        #print("Patching #pragma HLS in {0}".format(filename))
                     continue
 
                 # patch channel struct
