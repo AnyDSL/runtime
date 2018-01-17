@@ -90,15 +90,15 @@ def patch_cfiles(rttype):
                     continue
 
                 # patch channel declarations and read/write functions
-                m = re.match('struct_channel_(.*) \*(.*) =.*', line)
-                #m = re.match('^(__device__|__constant) struct_channel_(.*) \*(.*) =.*', line)
+                m = re.match('(.*)struct_channel_(.*) \*(.*) =.*', line)
+                #m = re.match('^(__device__|__constant|) struct_channel_(.*) \*(.*) =.*', line)
                 if m is not None:
-                    channel_name = m.groups()[1]
+                    channel_name = m.groups()[2]
                     result.append('//dummy channel\n')
                     channel_line[channel_name] = len(result)-1
-                    channel_type[channel_name] = 'struct_channel_' + m.groups()[0]
+                    channel_type[channel_name] = 'struct_channel_' + m.groups()[1]
                     continue
-                m = re.match('struct_channel_.*slot.*', line)
+                m = re.match('(.*)struct_channel_.*slot.*', line)
                 #m = re.match('^(__device__|__constant) struct_channel_.*slot.*', line)
                 if m is not None:
                     continue
