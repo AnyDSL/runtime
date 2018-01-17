@@ -67,8 +67,6 @@ extern "device" {
     fn "get_num_groups"    opencl_get_num_groups(u32) -> u64;
     fn "get_group_id"      opencl_get_group_id(u32) -> u64;
     fn "get_global_offset" opencl_get_global_offset(u32) -> u64;
-    fn "read_channel_intel"  read_channel(&mut channel) -> pixel_t;
-    fn "write_channel_intel" write_channel(&mut channel, pixel_t) -> ();
 }
 
 fn @opencl_accelerator(dev: i32) -> Accelerator {
@@ -89,11 +87,10 @@ fn @opencl_accelerator(dev: i32) -> Accelerator {
 }
 
 struct channel {data: pixel_t};
-//type channel = pixel_t;
-// extern "device" {
-//     fn "read_channel_intel"  read_channel(&mut channel) -> pixel_t;
-//     fn "write_channel_intel" write_channel(&mut channel, pixel_t) -> ();
-// }
+extern "device" {
+    fn "read_channel"  read_pipe(&mut channel) -> pixel_t;
+    fn "write_channel" write_pipe(&mut channel, pixel_t) -> ();
+}
 
 static opencl_intrinsics = Intrinsics {
     expf        : opencl_expf,
