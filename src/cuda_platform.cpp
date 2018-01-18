@@ -515,7 +515,7 @@ CUmodule CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, C
         error("Cannot run NVCC");
     }
 
-    return create_module(dev, filename, target_cc, load_ptx(filename).c_str());
+    return create_module(dev, filename, target_cc, load_ptx(ptx_filename).c_str());
 }
 #endif
 
