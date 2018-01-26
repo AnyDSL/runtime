@@ -24,6 +24,7 @@ extern "C" {
     fn "anydsl_print_f64"    print_f64(f64) -> ();
     fn "anydsl_print_char"   print_char(u8) -> ();
     fn "anydsl_print_string" print_string(&[u8]) -> ();
+    fn "anydsl_print_flush"  print_flush() -> ();
 }
 
 struct Buffer {
@@ -96,3 +97,4 @@ fn @range_rev(upper: i32, lower: i32, body: fn(i32) -> ()) -> () { may_unroll_st
 
 fn @unroll(lower: i32, upper: i32, body: fn(i32) -> ()) -> () { may_unroll_step(lower, upper, 1, body) }
 fn @unroll_step(lower: i32, upper: i32, step: i32, body: fn(i32) -> ()) -> () { may_unroll_step(lower, upper, step, body) }
+fn @unroll_rev(upper: i32, lower: i32, body: fn(i32) -> ()) -> () { may_unroll_step_rev(upper, lower, 1, body) }

@@ -6,6 +6,7 @@ extern "thorin" {
 
     fn bitcast[D, S](S) -> D;
     fn select[T, U](T, U, U) -> U;
+    fn insert[T, U](T, i32, U) -> T;
     //fn shuffle[T](T, T, T) -> T;
 
     fn cuda(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
