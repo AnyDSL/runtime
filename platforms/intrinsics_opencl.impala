@@ -88,8 +88,8 @@ fn @opencl_accelerator(dev: i32) -> Accelerator {
 
 struct channel {data: pixel_t};
 extern "device" {
-    fn "read_channel"  read_pipe(&mut channel) -> pixel_t;
-    fn "write_channel" write_pipe(&mut channel, pixel_t) -> ();
+    fn "read_channel"  read_channel(&mut channel) -> pixel_t;
+    fn "write_channel" write_channel(&mut channel, pixel_t) -> ();
 }
 
 static opencl_intrinsics = Intrinsics {
