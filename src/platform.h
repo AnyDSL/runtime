@@ -58,7 +58,7 @@ public:
 
 protected:
     void platform_error() {
-        error("The selected platform is not available");
+        error("The selected '%' platform is not available", name());
     }
 
     Runtime* runtime_;
