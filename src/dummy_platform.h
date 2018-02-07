@@ -14,10 +14,10 @@ public:
     {}
 
 protected:
-    void* alloc(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* get_device_ptr(DeviceId, void*) override { platform_error(); return nullptr; }
+    void* alloc(DeviceId, int64_t) override { platform_error(); }
+    void* alloc_host(DeviceId, int64_t) override { platform_error(); }
+    void* alloc_unified(DeviceId, int64_t) override { platform_error(); }
+    void* get_device_ptr(DeviceId, void*) override { platform_error(); }
     void release(DeviceId, void*) override { platform_error(); }
     void release_host(DeviceId, void*) override { platform_error(); }
 

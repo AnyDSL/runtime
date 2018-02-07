@@ -57,8 +57,12 @@ public:
     virtual std::string name() const = 0;
 
 protected:
-    void platform_error() {
+    [[noreturn]] void platform_error() {
         error("The selected '%' platform is not available", name());
+    }
+
+    [[noreturn]] void command_unavailable(const std::string& command) {
+        error("The command '%' is unavailable on platform '%'", command, name());
     }
 
     Runtime* runtime_;
