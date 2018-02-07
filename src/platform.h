@@ -1,10 +1,10 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include "log.h"
+
 #include <cstdint>
 #include <string>
-
-#include "log.h"
 
 class Runtime;
 enum DeviceId   : uint32_t {};

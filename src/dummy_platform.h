@@ -1,10 +1,10 @@
 #ifndef DUMMY_PLATFORM_H
 #define DUMMY_PLATFORM_H
 
-#include <limits>
-
 #include "platform.h"
 #include "runtime.h"
+
+#include <limits>
 
 /// Dummy platform, implemented
 class DummyPlatform : public Platform {

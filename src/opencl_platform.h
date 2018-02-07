@@ -4,10 +4,10 @@
 #include "platform.h"
 #include "runtime.h"
 
+#include <atomic>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <atomic>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>

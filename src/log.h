@@ -1,10 +1,10 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <iostream>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 inline void unused() {}
 template <typename T, typename... Args>
