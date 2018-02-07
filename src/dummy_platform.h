@@ -1,6 +1,8 @@
 #ifndef DUMMY_PLATFORM_H
 #define DUMMY_PLATFORM_H
 
+#include <limits>
+
 #include "platform.h"
 #include "runtime.h"
 
@@ -30,9 +32,9 @@ protected:
     void copy_from_host(const void*, int64_t, DeviceId, void*, int64_t, int64_t) override { platform_error(); }
     void copy_to_host(DeviceId, const void*, int64_t, void*, int64_t, int64_t) override { platform_error(); }
 
-    int dev_count() override { return 0; }
-
-    std::string name() override { return name_; }
+    // Maximum number of devices to prevent assertions in debug mode
+    size_t dev_count() const override { return std::numeric_limits<size_t>::max(); }
+    std::string name() const override { return name_; }
 
     std::string name_;
 };

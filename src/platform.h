@@ -52,9 +52,9 @@ public:
     virtual void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) = 0;
 
     /// Returns the number of devices in this platform.
-    virtual int dev_count() = 0;
+    virtual size_t dev_count() const = 0;
     /// Returns the platform name.
-    virtual std::string name() = 0;
+    virtual std::string name() const = 0;
 
 protected:
     void platform_error() {

@@ -335,10 +335,6 @@ void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t off
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
 }
 
-int OpenCLPlatform::dev_count() {
-    return devices_.size();
-}
-
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
 
