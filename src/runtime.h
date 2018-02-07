@@ -120,7 +120,7 @@ public:
 
 private:
     void check_device(PlatformId plat, DeviceId dev) {
-        assert((int)dev < platforms_[plat]->dev_count() && "Invalid device");
+        assert((size_t)dev < platforms_[plat]->dev_count() && "Invalid device");
         unused(plat, dev);
     }
 
