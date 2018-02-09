@@ -39,9 +39,8 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) override { copy(src, offset_src, dst, offset_dst, size); }
     void copy_to_host(DeviceId, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override { copy(src, offset_src, dst, offset_dst, size); }
 
-    int dev_count() override;
-
-    std::string name() override { return "HSA"; }
+    size_t dev_count() const override { return devices_.size(); }
+    std::string name() const override { return "HSA"; }
 
     typedef std::unordered_map<std::string, std::tuple<uint64_t, uint32_t, uint32_t, uint32_t>> KernelMap;
 

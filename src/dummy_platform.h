@@ -4,6 +4,8 @@
 #include "platform.h"
 #include "runtime.h"
 
+#include <limits>
+
 /// Dummy platform, implemented
 class DummyPlatform : public Platform {
 public:
@@ -12,10 +14,10 @@ public:
     {}
 
 protected:
-    void* alloc(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* get_device_ptr(DeviceId, void*) override { platform_error(); return nullptr; }
+    void* alloc(DeviceId, int64_t) override { platform_error(); }
+    void* alloc_host(DeviceId, int64_t) override { platform_error(); }
+    void* alloc_unified(DeviceId, int64_t) override { platform_error(); }
+    void* get_device_ptr(DeviceId, void*) override { platform_error(); }
     void release(DeviceId, void*) override { platform_error(); }
     void release_host(DeviceId, void*) override { platform_error(); }
 
@@ -30,9 +32,9 @@ protected:
     void copy_from_host(const void*, int64_t, DeviceId, void*, int64_t, int64_t) override { platform_error(); }
     void copy_to_host(DeviceId, const void*, int64_t, void*, int64_t, int64_t) override { platform_error(); }
 
-    int dev_count() override { return 0; }
-
-    std::string name() override { return name_; }
+    // Maximum number of devices to prevent assertions in debug mode
+    size_t dev_count() const override { return std::numeric_limits<size_t>::max(); }
+    std::string name() const override { return name_; }
 
     std::string name_;
 };

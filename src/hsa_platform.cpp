@@ -333,10 +333,6 @@ void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t o
     CHECK_HSA(status, "hsa_memory_copy()");
 }
 
-int HSAPlatform::dev_count() {
-    return devices_.size();
-}
-
 std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;

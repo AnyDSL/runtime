@@ -64,9 +64,8 @@ protected:
         copy(src, offset_src, dst, offset_dst, size);
     }
 
-    int dev_count() override { return 1; }
-
-    std::string name() override { return "CPU"; }
+    size_t dev_count() const override { return 1; }
+    std::string name() const override { return "CPU"; }
 };
 
 #endif

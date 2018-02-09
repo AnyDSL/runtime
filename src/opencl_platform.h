@@ -4,10 +4,10 @@
 #include "platform.h"
 #include "runtime.h"
 
+#include <atomic>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <atomic>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -25,11 +25,11 @@ public:
 
 protected:
     void* alloc(DeviceId dev, int64_t size) override;
-    void* alloc_host(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* alloc_unified(DeviceId, int64_t) override { platform_error(); return nullptr; }
-    void* get_device_ptr(DeviceId, void*) override { platform_error(); return nullptr; }
+    void* alloc_host(DeviceId, int64_t) override { command_unavailable("alloc_host"); }
+    void* alloc_unified(DeviceId, int64_t) override { command_unavailable("alloc_unified"); }
+    void* get_device_ptr(DeviceId, void*) override { command_unavailable("get_device_ptr"); }
     void release(DeviceId dev, void* ptr) override;
-    void release_host(DeviceId, void*) override { platform_error(); }
+    void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
@@ -42,9 +42,8 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
 
-    int dev_count() override;
-
-    std::string name() override { return "OpenCL"; }
+    size_t dev_count() const override { return devices_.size(); }
+    std::string name() const override { return "OpenCL"; }
 
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;
 

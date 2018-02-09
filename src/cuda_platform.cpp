@@ -274,10 +274,6 @@ void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offse
     cuCtxPopCurrent(NULL);
 }
 
-int CudaPlatform::dev_count() {
-    return devices_.size();
-}
-
 CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernelname) {
     auto& cuda_dev = devices_[dev];
 

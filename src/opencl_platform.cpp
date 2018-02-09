@@ -359,10 +359,6 @@ void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t off
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
 }
 
-int OpenCLPlatform::dev_count() {
-    return devices_.size();
-}
-
 cl_program OpenCLPlatform::try_find_program(DeviceData& opencl_dev, const std::string& filename) {
     opencl_dev.lock();
     auto& prog_cache = opencl_dev.programs;

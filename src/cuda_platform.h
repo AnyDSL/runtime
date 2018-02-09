@@ -46,9 +46,8 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
 
-    int dev_count() override;
-
-    std::string name() override { return "CUDA"; }
+    size_t dev_count() const override { return devices_.size(); }
+    std::string name() const override { return "CUDA"; }
 
     typedef std::unordered_map<std::string, CUfunction> FunctionMap;
 
