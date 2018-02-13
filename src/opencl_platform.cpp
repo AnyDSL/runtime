@@ -228,6 +228,10 @@ OpenCLPlatform::~OpenCLPlatform() {
             cl_int err = clReleaseProgram(it.second);
             CHECK_OPENCL(err, "clReleaseProgram()");
         }
+        cl_int err = clReleaseCommandQueue(devices_[i].queue);
+        CHECK_OPENCL(err, "clReleaseCommandQueue()");
+        err = clReleaseContext(devices_[i].ctx);
+        CHECK_OPENCL(err, "clReleaseContext()");
     }
 }
 
