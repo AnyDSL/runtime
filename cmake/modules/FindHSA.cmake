@@ -1,7 +1,7 @@
 # Find the HSA includes and library
 #
 # To set manually the paths, define these environment variables:
-#  HSA_DIR              - Include path
+#  HSA_DIR           - Include path
 #
 # Once done this will define
 #  HSA_INCLUDE_DIRS  - where to find HSA include files
