@@ -52,6 +52,7 @@ protected:
         cl_device_id dev;
         cl_command_queue queue;
         cl_context ctx;
+        std::atomic_int timings_counter;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
@@ -63,6 +64,7 @@ protected:
             , dev(data.dev)
             , queue(data.queue)
             , ctx(data.ctx)
+            , timings_counter(0)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
         {}
@@ -79,6 +81,8 @@ protected:
     std::vector<DeviceData> devices_;
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+
+    friend void time_kernel_callback(cl_event, cl_int, void*);
 };
 
 #endif
