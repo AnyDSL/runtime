@@ -86,6 +86,8 @@ static std::string get_opencl_error_code_str(int error) {
         CL_ERROR_CODE(CL_INVALID_PIPE_SIZE)
         CL_ERROR_CODE(CL_INVALID_DEVICE_QUEUE)
         #endif
+        // error code from cl_ext.h
+        CL_ERROR_CODE(CL_PLATFORM_NOT_FOUND_KHR)
         default: return "unknown error code";
     }
     #undef CL_ERROR_CODE
@@ -104,9 +106,13 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
     // get OpenCL platform count
     cl_uint num_platforms, num_devices;
     cl_int err = clGetPlatformIDs(0, NULL, &num_platforms);
-    CHECK_OPENCL(err, "clGetPlatformIDs()");
 
     debug("Number of available OpenCL Platforms: %", num_platforms);
+    if (err == CL_PLATFORM_NOT_FOUND_KHR) {
+        debug("No valid OpenCL ICD");
+        return;
+    }
+    CHECK_OPENCL(err, "clGetPlatformIDs()");
 
     cl_platform_id* platforms = new cl_platform_id[num_platforms];
 
