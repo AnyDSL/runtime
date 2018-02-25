@@ -53,10 +53,11 @@ protected:
         bool isIntelFPGA = false;
         cl_command_queue queue;
         cl_context ctx;
+        std::atomic_int timings_counter;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
-        std::unordered_map<cl_kernel, cl_command_queue> kernels_queue; //FPGA, ordered
+        std::unordered_map<cl_kernel, cl_command_queue> kernels_queue; // FPGA, ordered
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -66,6 +67,7 @@ protected:
             , isIntelFPGA(data.isIntelFPGA)
             , queue(data.queue)
             , ctx(data.ctx)
+            , timings_counter(0)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
         {}
@@ -93,8 +95,7 @@ protected:
     cl_kernel create_kernelFPGA(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
-    void finish(DeviceData& opencl_dev);
-    void finishFPGA(DeviceData& opencl_dev);
+    friend void time_kernel_callback(cl_event, cl_int, void*);
 };
 
 #endif

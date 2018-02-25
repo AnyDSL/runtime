@@ -86,6 +86,10 @@ static std::string get_opencl_error_code_str(int error) {
         CL_ERROR_CODE(CL_INVALID_PIPE_SIZE)
         CL_ERROR_CODE(CL_INVALID_DEVICE_QUEUE)
         #endif
+        // error code from cl_ext.h
+        #ifdef CL_PLATFORM_NOT_FOUND_KHR
+        CL_ERROR_CODE(CL_PLATFORM_NOT_FOUND_KHR)
+        #endif
         default: return "unknown error code";
     }
     #undef CL_ERROR_CODE
@@ -104,9 +108,15 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
     // get OpenCL platform count
     cl_uint num_platforms, num_devices;
     cl_int err = clGetPlatformIDs(0, NULL, &num_platforms);
-    CHECK_OPENCL(err, "clGetPlatformIDs()");
 
     debug("Number of available OpenCL Platforms: %", num_platforms);
+    #ifdef CL_PLATFORM_NOT_FOUND_KHR
+    if (err == CL_PLATFORM_NOT_FOUND_KHR) {
+        debug("No valid OpenCL ICD");
+        return;
+    }
+    #endif
+    CHECK_OPENCL(err, "clGetPlatformIDs()");
 
     cl_platform_id* platforms = new cl_platform_id[num_platforms];
 
@@ -235,6 +245,10 @@ OpenCLPlatform::~OpenCLPlatform() {
             cl_int err = clReleaseProgram(it.second);
             CHECK_OPENCL(err, "clReleaseProgram()");
         }
+        cl_int err = clReleaseCommandQueue(devices_[i].queue);
+        CHECK_OPENCL(err, "clReleaseCommandQueue()");
+        err = clReleaseContext(devices_[i].ctx);
+        CHECK_OPENCL(err, "clReleaseContext()");
     }
 }
 
@@ -256,14 +270,15 @@ void OpenCLPlatform::release(DeviceId, void* ptr) {
 
 extern std::atomic<uint64_t> anydsl_kernel_time;
 
-void time_kernel_callback(cl_event event, cl_int, void*) {
+void time_kernel_callback(cl_event event, cl_int, void* data) {
+    OpenCLPlatform::DeviceData* dev = reinterpret_cast<OpenCLPlatform::DeviceData*>(data);
     cl_ulong end, start;
     cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
     CHECK_OPENCL(err, "clGetEventProfilingInfo()");
     float time = (end-start)*1.0e-6f;
     anydsl_kernel_time.fetch_add(time * 1000);
-
+    dev->timings_counter.fetch_sub(1);
     err = clReleaseEvent(event);
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
@@ -305,7 +320,8 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
         cl_int err = clEnqueueNDRangeKernel(devices_[dev].queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
         CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
         if (runtime_->profiling_enabled()) {
-            err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, nullptr);
+            err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
+            devices_[dev].timings_counter.fetch_add(1);
             CHECK_OPENCL(err, "clSetEventCallback()");
         } else {
             err = clReleaseEvent(event);
@@ -334,6 +350,7 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
         // clEvent Timing is not supported
     } else {
         cl_int err = clFinish(devices_[dev].queue);
+        while (devices_[dev].timings_counter.load() != 0) ;
         CHECK_OPENCL(err, "clFinish()");
     }
 }

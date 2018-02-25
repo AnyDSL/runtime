@@ -5,6 +5,7 @@
 #include "runtime.h"
 
 #include <atomic>
+#include <forward_list>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -90,8 +91,8 @@ protected:
     };
 
     std::mutex profile_lock_;
-    std::vector<ProfileData*> profiles_;
-    void erase_profiles();
+    std::forward_list<ProfileData*> profiles_;
+    void erase_profiles(bool);
 
     CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
@@ -99,9 +100,6 @@ protected:
     CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
     CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;
-
-    friend void time_kernel_callback(CUstream, CUresult, void*);
-    friend void time_kernel(ProfileData*);
 };
 
 #endif

@@ -98,20 +98,29 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     }
 }
 
-void CudaPlatform::erase_profiles() {
+void CudaPlatform::erase_profiles(bool erase_all) {
     std::lock_guard<std::mutex> guard(profile_lock_);
-    for (auto profile : profiles_) {
+    profiles_.remove_if([=] (const ProfileData* profile) {
         cuCtxPushCurrent(profile->ctx);
-        cuEventDestroy(profile->start);
-        cuEventDestroy(profile->end);
-        delete profile;
+        auto status = cuEventQuery(profile->end);
+        auto erased = erase_all || status == CUDA_SUCCESS;
+        if (erased) {
+            float time;
+            if (status == CUDA_SUCCESS) {
+                cuEventElapsedTime(&time, profile->start, profile->end);
+                anydsl_kernel_time.fetch_add(time * 1000);
+            }
+            cuEventDestroy(profile->start);
+            cuEventDestroy(profile->end);
+            delete profile;
+        }
         cuCtxPopCurrent(NULL);
-    }
-    profiles_.clear();
+        return erased;
+    });
 }
 
 CudaPlatform::~CudaPlatform() {
-    erase_profiles();
+    erase_profiles(true);
     for (size_t i = 0; i < devices_.size(); i++)
         cuCtxDestroy(devices_[i].ctx);
 }
@@ -174,24 +183,6 @@ void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPopCurrent(NULL);
 }
 
-void time_kernel(CudaPlatform::ProfileData* profile) {
-    cuCtxPushCurrent(profile->ctx);
-    float time;
-    cuEventElapsedTime(&time, profile->start, profile->end);
-    anydsl_kernel_time.fetch_add(time * 1000);
-    cuCtxPopCurrent(NULL);
-}
-
-void time_kernel_callback(CUstream /*stream*/, CUresult status, void* data) {
-    CHECK_CUDA(status, "callback");
-    auto profile = (CudaPlatform::ProfileData*)data;
-    std::thread (time_kernel, profile).join();
-
-    auto platform = profile->platform;
-    std::lock_guard<std::mutex> guard(platform->profile_lock_);
-    platform->profiles_.push_back(profile);
-}
-
 void CudaPlatform::launch_kernel(DeviceId dev,
                                  const char* file, const char* kernel,
                                  const uint32_t* grid, const uint32_t* block,
@@ -203,7 +194,7 @@ void CudaPlatform::launch_kernel(DeviceId dev,
 
     CUevent start, end;
     if (runtime_->profiling_enabled()) {
-        erase_profiles();
+        erase_profiles(false);
         CHECK_CUDA(cuEventCreate(&start, CU_EVENT_DEFAULT), "cuEventCreate()");
         CHECK_CUDA(cuEventRecord(start, 0), "cuEventRecord()");
     }
@@ -224,7 +215,7 @@ void CudaPlatform::launch_kernel(DeviceId dev,
     if (runtime_->profiling_enabled()) {
         CHECK_CUDA(cuEventCreate(&end, CU_EVENT_DEFAULT), "cuEventCreate()");
         CHECK_CUDA(cuEventRecord(end, 0), "cuEventRecord()");
-        CHECK_CUDA(cuStreamAddCallback(NULL, time_kernel_callback, new ProfileData { this, devices_[dev].ctx, start, end }, 0), "cuStreamAddCallback()");
+        profiles_.push_front(new ProfileData { this, devices_[dev].ctx, start, end });
     }
     cuCtxPopCurrent(NULL);
 }
@@ -237,6 +228,7 @@ void CudaPlatform::synchronize(DeviceId dev) {
     CHECK_CUDA(err, "cuCtxSynchronize()");
 
     cuCtxPopCurrent(NULL);
+    erase_profiles(false);
 }
 
 void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
