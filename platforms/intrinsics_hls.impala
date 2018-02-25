@@ -76,13 +76,13 @@ fn @hls_accelerator() -> Accelerator {
 };
 
 
-//struct channel {data: pixel_t};
+//struct channel { data : pixel_t };
 //extern "device" {
 //    fn "read_channel_intel"  read_channel(&mut channel) -> pixel_t;
 //    fn "write_channel_intel" write_channel(&mut channel, pixel_t) -> ();
 //}
 extern "device" {
-    fn "pragma_pipeline" pragma_pipeline() -> ();
+    fn print_pragma(&[u8]) -> ();
 }
 
 
