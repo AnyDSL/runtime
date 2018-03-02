@@ -60,6 +60,7 @@ def patch_cfiles(rttype):
     channel_line = {}
     channel_type = {}
     result = []
+    channel_typename = ''
     if rttype == "cuda":
         filename = basename+"."+"cu"
     elif rttype == "opencl":
@@ -83,10 +84,18 @@ def patch_cfiles(rttype):
                 # patch channel struct
                 m = re.match('} struct_channel_(.*);', line)
                 if m is not None:
-                    result[len(result)-2] = ''
-                    typeline = result[len(result)-1]
-                    type_m = re.match('(.*) (.*) *.;', typeline)
-                    result[len(result)-1] = 'typedef ' + type_m.groups()[0].strip() + ' struct_channel_' + m.groups()[0] + ';\n'
+                    result[len(result)-3] = ''
+                    #typeline = result[len(result)-1]
+                    #type_m = re.match('(.*) (.*) *.;', typeline)
+                    #result[len(result)-1] = 'typedef ' + type_m.groups()[0].strip() + ' struct_channel_' + m.groups()[0] + ';'
+                    channel_typename = m.groups()[0].strip()
+                    continue
+                    # a dirty hack and won't always work (temporary)
+                    m = re.match('\} array_(.*);', line)
+                    if m is not None:
+                        result.append(line)
+                        array_typename = m.groups()[0].strip()
+                        result.append('typedef array_' + array_typename + ' struct_channel_' + channel_typename + ';\n')
                     continue
 
                 # patch channel declarations and read/write functions
