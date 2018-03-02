@@ -60,7 +60,9 @@ def patch_cfiles(rttype):
     channel_line = {}
     channel_type = {}
     result = []
-    channel_typename = ''
+    channel_decl_name = ''
+    channel_decl_type = ''
+    channel_decl_line = 0
     if rttype == "cuda":
         filename = basename+"."+"cu"
     elif rttype == "opencl":
@@ -84,18 +86,23 @@ def patch_cfiles(rttype):
                 # patch channel struct
                 m = re.match('} struct_channel_(.*);', line)
                 if m is not None:
+                    channel_decl_name = m.groups()[0].strip()
+                    typeline = result[len(result)-1]
+                    type_m = re.match('(.*) (.*) *.;', typeline)
+                    channel_decl_type = type_m.groups()[0].strip();
+                    # clean previous channel declaration
                     result[len(result)-3] = ''
-                    #typeline = result[len(result)-1]
-                    #type_m = re.match('(.*) (.*) *.;', typeline)
-                    #result[len(result)-1] = 'typedef ' + type_m.groups()[0].strip() + ' struct_channel_' + m.groups()[0] + ';'
-                    channel_typename = m.groups()[0].strip()
+                    result[len(result)-2] = ''
+                    result[len(result)-1] = ''
                     continue
-                    # a dirty hack and won't always work (temporary)
-                    m = re.match('\} array_(.*);', line)
-                    if m is not None:
-                        result.append(line)
-                        array_typename = m.groups()[0].strip()
-                        result.append('typedef array_' + array_typename + ' struct_channel_' + channel_typename + ';\n')
+                # a dirty hack: last array_type is registered as channel type
+                m = re.match('\} array_(.*);', line)
+                if m is not None:
+                    result.append(line)
+                    channel_decl_type = 'array_' + m.groups()[0].strip()
+                    # add a line for channel declaration
+                    channel_decl_line = len(result);
+                    result.append("");
                     continue
 
                 # patch channel declarations and read/write functions
@@ -145,6 +152,10 @@ def patch_cfiles(rttype):
                     result.append('{0} = {1};\n'.format(lhs, arg))
                 else:
                     result.append(line)
+
+        # add channel typename
+        result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n';
+
         # replace channel placeholder with channel declaration
         for name, line in channel_line.items():
             if rttype == "opencl":
@@ -153,6 +164,7 @@ def patch_cfiles(rttype):
                 result[line] = 'hls::stream<{0}> {1};\n'.format(channel_type[name], name)
             else:
                 continue
+
         # we have the patched thing, write it
         with open(filename, "w") as f:
             for line in result:
