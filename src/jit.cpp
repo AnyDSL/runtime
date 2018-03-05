@@ -26,7 +26,6 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
 
     MemBuf buf(string, size);
     std::istream is(&buf);
-    std::string copy(module_name);
     impala::init();
     impala::Items items;
     impala::parse(items, is, module_name);
