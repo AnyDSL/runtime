@@ -20,7 +20,20 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+find_package(Thorin REQUIRED)
+include_directories(${Thorin_INCLUDE_DIRS})
+find_package(Impala REQUIRED)
+include_directories(${Impala_INCLUDE_DIR})
+
+if(LLVM_FOUND)
+    add_definitions(${LLVM_DEFINITIONS})
+    add_definitions("-DLLVM_SUPPORT")
+    include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+    llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES executionengine)
+endif()
+
 add_subdirectory(src)
+add_subdirectory(test)
 
 message(STATUS "Using Debug flags: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "Using Release flags: ${CMAKE_CXX_FLAGS_RELEASE}")

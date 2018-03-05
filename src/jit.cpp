@@ -26,30 +26,32 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
 
     MemBuf buf(string, size);
     std::istream is(&buf);
+    std::string copy(module_name);
+    impala::init();
     impala::Items items;
-    impala::Init init(module_name);
     impala::parse(items, is, module_name);
 
     auto module = std::make_unique<const impala::Module>(module_name, std::move(items));
     impala::global_num_warnings = 0;
     impala::global_num_errors   = 0;
-    impala::check(init, module.get(), false);
+    std::unique_ptr<impala::TypeTable> typetable;
+    impala::check(typetable, module.get(), false);
     if (impala::global_num_errors != 0)
         return nullptr;
 
-    impala::emit(init.world, module.get());
-
-    init.world.cleanup();
-    init.world.opt();
-    init.world.cleanup();
-    thorin::codegen_prepare(init.world);
-    thorin::CPUCodeGen cg(init.world);
+    thorin::World world(module_name);
+    impala::emit(world, module.get());
+    world.cleanup();
+    world.opt();
+    world.cleanup();
+    thorin::codegen_prepare(world);
+    thorin::CPUCodeGen cg(world);
     auto& llvm_module = cg.emit(opt, debug, false);
+
     auto fn = llvm_module->getFunction(fn_name);
     if (!fn)
         return nullptr;
 
-    llvm::InitializeNativeTarget();
     auto& ctx = llvm_module->getContext();
     auto engine = llvm::EngineBuilder(std::move(llvm_module))
         .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
