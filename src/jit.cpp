@@ -45,8 +45,8 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
     world.cleanup();
     thorin::codegen_prepare(world);
     thorin::CPUCodeGen cg(world);
+#if 0
     auto& llvm_module = cg.emit(opt, debug, false);
-
     auto fn = llvm_module->getFunction(fn_name);
     if (!fn)
         return nullptr;
@@ -63,4 +63,6 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
         return nullptr;
 
     return engine->getPointerToFunction(fn);
+#endif
+    return nullptr;
 }
