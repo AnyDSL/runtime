@@ -29,7 +29,7 @@ if(LLVM_FOUND)
     add_definitions(${LLVM_DEFINITIONS})
     add_definitions("-DLLVM_SUPPORT")
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES executionengine)
+    llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES core executionengine object mcjit runtimedyld support target native)
 endif()
 
 add_subdirectory(src)

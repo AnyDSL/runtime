@@ -2,6 +2,8 @@
 #include <istream>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/ExecutionEngine/RuntimeDyld.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/TargetSelect.h>
 
@@ -45,24 +47,23 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
     world.cleanup();
     thorin::codegen_prepare(world);
     thorin::CPUCodeGen cg(world);
-#if 0
     auto& llvm_module = cg.emit(opt, debug, false);
     auto fn = llvm_module->getFunction(fn_name);
     if (!fn)
         return nullptr;
 
-    auto& ctx = llvm_module->getContext();
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
     auto engine = llvm::EngineBuilder(std::move(llvm_module))
+        .setEngineKind(llvm::EngineKind::JIT)
         .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
                         opt == 1  ? llvm::CodeGenOpt::Less    :
                         opt == 2  ? llvm::CodeGenOpt::Default :
                      /* opt == 3 */ llvm::CodeGenOpt::Aggressive)
-        .setMArch("native")
         .create();
     if (!engine)
         return nullptr;
 
+    engine->finalizeObject();
     return engine->getPointerToFunction(fn);
-#endif
-    return nullptr;
 }
