@@ -60,8 +60,8 @@ def patch_cfiles(rttype):
     channel_line = {}
     channel_type = {}
     result = []
-    channel_decl_name = ''
-    channel_decl_type = ''
+    channel_decl_name = None
+    channel_decl_type = None
     channel_decl_line = 0
     if rttype == "cuda":
         filename = basename+"."+"cu"
@@ -154,7 +154,8 @@ def patch_cfiles(rttype):
                     result.append(line)
 
         # add channel typename
-        result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n';
+        if channel_decl_type is not None :
+            result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n';
 
         # replace channel placeholder with channel declaration
         for name, line in channel_line.items():
