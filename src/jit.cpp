@@ -1,5 +1,5 @@
+#include <fstream>
 #include <memory>
-#include <istream>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
@@ -24,6 +24,26 @@ struct MemBuf : public std::streambuf {
     }
 };
 
+std::string get_runtime_src() {
+    std::string runtime_src;
+    auto load_file = [&](const std::string file) {
+        std::ifstream str(file);
+        runtime_src += std::string(std::istreambuf_iterator<char>(str), (std::istreambuf_iterator<char>()));
+    };
+
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_amdgpu.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_cpu.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_cuda.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_hls.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_nvvm.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_opencl.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/platforms/intrinsics_thorin.impala");
+    load_file(ANYDSL_RUNTIME_DIR "/src/runtime.impala");
+
+    return runtime_src;
+}
+
 void anydsl_link(const char* lib) {
     llvm::sys::DynamicLibrary::LoadLibraryPermanently(lib);
 }
@@ -33,7 +53,8 @@ void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uin
     static constexpr bool debug = false;
     assert(opt <= 3);
 
-    MemBuf buf(string, size);
+    std::string program = get_runtime_src() + string;
+    MemBuf buf(program.c_str(), program.size());
     std::istream is(&buf);
     impala::init();
     impala::Items items;
