@@ -14,7 +14,7 @@
 #include <thorin/transform/codegen_prepare.h>
 #include <thorin/be/llvm/cpu.h>
 
-#include "jit.h"
+#include "anydsl_runtime.h"
 
 struct MemBuf : public std::streambuf {
     MemBuf(const char* string, uint32_t size) {

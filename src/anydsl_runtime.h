@@ -64,6 +64,11 @@ void anydsl_parallel_for(int32_t, int32_t, int32_t, void*, void*);
 int32_t anydsl_spawn_thread(void*, void*);
 void anydsl_sync_thread(int32_t);
 
+#ifdef RUNTIME_ENABLE_JIT
+void  anydsl_link(const char*);
+void* anydsl_compile(const char*, uint32_t, const char*, uint32_t);
+#endif
+
 #ifdef __cplusplus
 }
 #include "anydsl_runtime.hpp"

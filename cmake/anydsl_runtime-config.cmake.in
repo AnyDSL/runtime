@@ -41,38 +41,11 @@ find_path(AnyDSL_runtime_INCLUDE_DIR
 )
 set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
 
-set(AnyDSL_runtime_LIBS_DIR
-    "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@"
-    "@CMAKE_ARCHIVE_OUTPUT_DIRECTORY@"
-    # TODO: additionally use install prefix
-)
-# TODO: this should be @ANYDSL_RUNTIME_OUTPUT_NAME@
-set(AnyDSL_runtime_LIBNAME runtime)
-find_library(AnyDSL_runtime_LIBRARY_RELEASE
-    NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_RELEASE_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_RELEASE_POSTFIX@"
-    PATHS ${AnyDSL_runtime_LIBS_DIR}
-    PATH_SUFFIXES Release
-)
-find_library(AnyDSL_runtime_LIBRARY_DEBUG
-    NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_DEBUG_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_DEBUG_POSTFIX@"
-    PATHS ${AnyDSL_runtime_LIBS_DIR}
-    PATH_SUFFIXES Debug
-)
-if(NOT AnyDSL_runtime_LIBRARY_RELEASE)
-    set(nyDSL_runtime_LIBRARY_RELEASE ${AnyDSL_runtime_LIBRARY_DEBUG})
-endif()
-if(NOT AnyDSL_runtime_LIBRARY_DEBUG)
-    set(AnyDSL_runtime_LIBRARY_DEBUG ${AnyDSL_runtime_LIBRARY_RELEASE})
-endif()
-if(AnyDSL_runtime_LIBRARY_RELEASE STREQUAL AnyDSL_runtime_LIBRARY_DEBUG)
-    set(AnyDSL_runtime_LIBRARY ${AnyDSL_runtime_LIBRARY_RELEASE})
-else()
-    set(AnyDSL_runtime_LIBRARY
-        optimized ${AnyDSL_runtime_LIBRARY_RELEASE}
-        debug ${AnyDSL_runtime_LIBRARY_DEBUG})
+if(NOT TARGET runtime)
+    include(${AnyDSL-runtime_DIR}/runtime-exports.cmake)
 endif()
 
-set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARY} "@CONF_RUNTIME_LIBRARIES@")
+set(AnyDSL_runtime_LIBRARIES runtime;@CONF_RUNTIME_LIBRARIES@)
 if(MSVC)
     set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd)
 endif()
