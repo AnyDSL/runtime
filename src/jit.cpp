@@ -6,12 +6,15 @@
 #include <llvm/ExecutionEngine/RuntimeDyld.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/DynamicLibrary.h>
 
 #include <impala/impala.h>
 #include <impala/ast.h>
 #include <thorin/world.h>
 #include <thorin/transform/codegen_prepare.h>
 #include <thorin/be/llvm/cpu.h>
+
+#include "jit.h"
 
 struct MemBuf : public std::streambuf {
     MemBuf(const char* string, uint32_t size) {
@@ -20,6 +23,10 @@ struct MemBuf : public std::streambuf {
         setg(begin, begin, end);
     }
 };
+
+void anydsl_link(const char* lib) {
+    llvm::sys::DynamicLibrary::LoadLibraryPermanently(lib);
+}
 
 void* anydsl_compile(const char* string, uint32_t size, const char* fn_name, uint32_t opt) {
     static constexpr auto module_name = "jit";
