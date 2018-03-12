@@ -69,10 +69,11 @@ endif()
 
 if(RUNTIME_JIT)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_JIT -DANYDSL_RUNTIME_DIR=\"${PROJECT_SOURCE_DIR}\")
-    set(RUNTIME_JIT_SRC jit.cpp runtime_srcs.inc)
+    set(RUNTIME_SOURCES_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/runtime_srcs.inc)
+    set(RUNTIME_JIT_SRC jit.cpp ${RUNTIME_SOURCES_INC_FILE})
     find_package(Impala REQUIRED)
     find_package(Thorin REQUIRED)
-    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS})
+    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
 
     find_package(LLVM REQUIRED)
     add_definitions(${LLVM_DEFINITIONS})
@@ -91,11 +92,11 @@ if(RUNTIME_JIT)
         ../platforms/intrinsics_thorin.impala
         ../platforms/intrinsics.impala
         runtime.impala)
-    add_custom_command(OUTPUT runtime_srcs.inc
-        COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > runtime_srcs.inc
+    add_custom_command(OUTPUT ${RUNTIME_SOURCES_INC_FILE}
+        COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > ${RUNTIME_SOURCES_INC_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
-    set_source_files_properties(runtime_srcs.inc PROPERTIES GENERATED TRUE)
+    set_source_files_properties(${RUNTIME_SOURCES_INC_FILE} PROPERTIES GENERATED TRUE)
 endif()
 
 add_definitions(${RUNTIME_DEFINITIONS})
