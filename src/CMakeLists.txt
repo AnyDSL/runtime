@@ -53,7 +53,7 @@ endif()
 
 # look for Threads
 find_package(Threads REQUIRED)
-list(APPEND CONF_RUNTIME_LIBRARIES "${CMAKE_THREAD_LIBS_INIT}")
+list(APPEND CONF_RUNTIME_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 # look for TBB
 find_package(TBB)
