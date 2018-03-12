@@ -57,14 +57,27 @@ find_path(Impala_DIR
 )
 find_package(Impala REQUIRED)
 if(@RUNTIME_JIT@)
-    find_package(LLVM REQUIRED)
     find_package(Thorin REQUIRED)
+    find_package(LLVM REQUIRED)
 endif()
-find_program(CLANG_BIN clang)
-find_program(LLVM_AS_BIN llvm-as)
-if(NOT CLANG_BIN)
+
+# clang dependency
+find_package(LLVM QUIET)
+find_path(Clang_DIR ClangConfig.cmake PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES ../clang)
+find_package(Clang QUIET)
+if(TARGET clang AND NOT Clang_BIN)
+    get_target_property(Clang_BIN clang LOCATION)
+    set(Clang_BIN ${Clang_BIN} CACHE FILEPATH "path to clang executable")
+endif()
+find_program(Clang_BIN clang
+    PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES}
+)
+if(NOT Clang_BIN)
     message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
 endif()
+
+find_program(LLVM_AS_BIN llvm-as)
 if(LLVM_AS_BIN)
     message(STATUS "Found llvm-as: ${LLVM_AS_BIN}")
     message(STATUS "Note: llvm-as version needs to match the required LLVM bitcode version from NVVM.")
@@ -158,7 +171,7 @@ macro(anydsl_runtime_wrap outfiles)
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${CLANG_BIN} ${_clang_flags} -fPIE -c -o ${_objfile} ${_llfile}
+        COMMAND ${Clang_BIN} ${_clang_flags} -fPIE -c -o ${_objfile} ${_llfile}
         DEPENDS ${_llfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
