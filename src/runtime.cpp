@@ -14,7 +14,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef ENABLE_TBB
+#ifdef RUNTIME_ENABLE_TBB
 #include <tbb/tbb.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_scheduler_init.h>
@@ -28,13 +28,13 @@
 #include "platform.h"
 #include "cpu_platform.h"
 #include "dummy_platform.h"
-#ifdef ENABLE_CUDA
+#ifdef RUNTIME_ENABLE_CUDA
 #include "cuda_platform.h"
 #endif
-#ifdef ENABLE_OPENCL
+#ifdef RUNTIME_ENABLE_OPENCL
 #include "opencl_platform.h"
 #endif
-#ifdef ENABLE_HSA
+#ifdef RUNTIME_ENABLE_HSA
 #include "hsa_platform.h"
 #endif
 
@@ -55,17 +55,17 @@ Runtime::Runtime() {
     }
 
     register_platform<CpuPlatform>();
-#ifdef ENABLE_CUDA
+#ifdef RUNTIME_ENABLE_CUDA
     register_platform<CudaPlatform>();
 #else
     register_platform<DummyPlatform>("CUDA");
 #endif
-#ifdef ENABLE_OPENCL
+#ifdef RUNTIME_ENABLE_OPENCL
     register_platform<OpenCLPlatform>();
 #else
     register_platform<DummyPlatform>("OpenCL");
 #endif
-#ifdef ENABLE_HSA
+#ifdef RUNTIME_ENABLE_HSA
     register_platform<HSAPlatform>();
 #else
     register_platform<DummyPlatform>("HSA");
@@ -199,7 +199,7 @@ uint64_t anydsl_random_val_u64() {
     return std_dist_u64(std_gen);
 }
 
-#ifndef ENABLE_TBB // C++11 threads version
+#ifndef RUNTIME_ENABLE_TBB // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
 
