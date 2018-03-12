@@ -70,10 +70,9 @@ endif()
 if(RUNTIME_JIT)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_JIT -DANYDSL_RUNTIME_DIR=\"${PROJECT_SOURCE_DIR}\")
     set(RUNTIME_JIT_SRC jit.cpp runtime_srcs.inc)
-    find_package(Thorin REQUIRED)
-    include_directories(${Thorin_INCLUDE_DIRS})
     find_package(Impala REQUIRED)
-    include_directories(${Impala_INCLUDE_DIR})
+    find_package(Thorin REQUIRED)
+    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS})
 
     find_package(LLVM REQUIRED)
     add_definitions(${LLVM_DEFINITIONS})
@@ -116,6 +115,3 @@ add_library(runtime
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
-
-# generate the Runtime.cmake file from the template
-configure_file(../cmake/Runtime.cmake.in ${CMAKE_BINARY_DIR}/cmake/Runtime.cmake @ONLY)
