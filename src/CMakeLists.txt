@@ -69,7 +69,7 @@ endif()
 
 if(RUNTIME_JIT)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_JIT -DANYDSL_RUNTIME_DIR=\"${PROJECT_SOURCE_DIR}\")
-    set(RUNTIME_JIT_SRC jit.cpp)
+    set(RUNTIME_JIT_SRC jit.cpp runtime_srcs.inc)
     find_package(Thorin REQUIRED)
     include_directories(${Thorin_INCLUDE_DIRS})
     find_package(Impala REQUIRED)
@@ -81,6 +81,22 @@ if(RUNTIME_JIT)
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES core executionengine object mcjit runtimedyld support target native)
     list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY};${LLVM_JIT_LIBRARIES})
+
+    find_package(PythonInterp REQUIRED)
+    set(RUNTIME_IMPALA_SRCS
+        ../platforms/intrinsics_amdgpu.impala
+        ../platforms/intrinsics_cpu.impala
+        ../platforms/intrinsics_cuda.impala
+        ../platforms/intrinsics_nvvm.impala
+        ../platforms/intrinsics_opencl.impala
+        ../platforms/intrinsics_thorin.impala
+        ../platforms/intrinsics.impala
+        runtime.impala)
+    add_custom_command(OUTPUT runtime_srcs.inc
+        COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > runtime_srcs.inc
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
+    set_source_files_properties(runtime_srcs.inc PROPERTIES GENERATED TRUE)
 endif()
 
 add_definitions(${RUNTIME_DEFINITIONS})
