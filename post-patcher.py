@@ -48,6 +48,14 @@ def patch_llvmir(rttype):
                             line = '{0}{1}\n'.format(first, last)
                             matched = True
 
+                        # patch speculatable
+                        m = re.match('^(attributes .* = {.*) (speculatable)(.*})\n$', line)
+                        if m is not None:
+                            first, attr, last = m.groups()
+                            print("Patching '{0}' in {1}".format(attr, filename))
+                            line = '{0}{1}\n'.format(first, last)
+                            matched = True
+
                     result.append(line)
         # we have the patched thing, write it
         with open(filename, "w") as f:
