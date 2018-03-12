@@ -34,6 +34,7 @@ struct JIT {
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
 
+        // Parse runtime files once
         MemBuf buf(runtime_srcs, sizeof(runtime_srcs));
         std::istream is(&buf);
         impala::parse(runtime_items, is, "runtime");
@@ -101,12 +102,15 @@ struct JIT {
     size_t runtime_items_count;
 };
 
-static JIT jit;
+JIT& jit() {
+    static std::unique_ptr<JIT> jit(new JIT());
+    return *jit;
+}
 
 void anydsl_link(const char* lib) {
-    jit.link(lib);
+    jit().link(lib);
 }
 
 void* anydsl_compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
-    return jit.compile(program, size, fn_name, opt);
+    return jit().compile(program, size, fn_name, opt);
 }
