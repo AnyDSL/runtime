@@ -5,6 +5,7 @@
 # AnyDSL_runtime_LIBRARIES
 # AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
+# AnyDSL_runtime_HAS_JIT_SUPPORT
 
 cmake_minimum_required(VERSION 3.1)
 
@@ -50,19 +51,31 @@ if(MSVC)
     set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd)
 endif()
 
+# determine impala binary for toolchain
 find_path(Impala_DIR
     NAMES impala-config.cmake
     PATHS ${Impala_DIR} $ENV{Impala_DIR} @Impala_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
     PATH_SUFFIXES share/anydsl/cmake
 )
-find_package(Impala REQUIRED)
-if(@RUNTIME_JIT@)
+find_package(Impala QUIET)
+if(TARGET impala AND NOT Impala_BIN)
+    get_target_property(Impala_BIN impala LOCATION)
+    set(Impala_BIN ${Impala_BIN} CACHE FILEPATH "path to impala executable")
+endif()
+find_program(Impala_BIN impala
+    PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
+    PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
+
+find_path(LLVM_DIR LLVMConfig.cmake PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@")
+find_package(LLVM CONFIG QUIET)
+
+set(AnyDSL_runtime_HAS_JIT_SUPPORT @RUNTIME_JIT@)
+if(AnyDSL_runtime_HAS_JIT_SUPPORT)
     find_package(Thorin REQUIRED)
     find_package(LLVM REQUIRED)
 endif()
 
-# clang dependency
-find_package(LLVM QUIET)
+# determine clang binary for toolchain
 find_path(Clang_DIR ClangConfig.cmake PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES ../clang)
 find_package(Clang QUIET)
 if(TARGET clang AND NOT Clang_BIN)
@@ -73,11 +86,10 @@ find_program(Clang_BIN clang
     PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES}
 )
-if(NOT Clang_BIN)
-    message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
-endif()
 
-find_program(LLVM_AS_BIN llvm-as)
+find_program(LLVM_AS_BIN llvm-as
+    PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES @CMAKE_CONFIGURATION_TYPES@)
 if(LLVM_AS_BIN)
     message(STATUS "Found llvm-as: ${LLVM_AS_BIN}")
     message(STATUS "Note: llvm-as version needs to match the required LLVM bitcode version from NVVM.")
@@ -89,13 +101,22 @@ endif()
 
 # find python for post-patcher.py
 find_package(PythonInterp REQUIRED)
-message(STATUS "Python found: ${PYTHON_VERSION_STRING}")
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
 macro(anydsl_runtime_wrap outfiles)
     cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
+    endif()
+
+    # check for impala in toolchain
+    if(NOT Impala_BIN)
+        message(FATAL_ERROR "Could not find impala binary, please set Impala_DIR or Impala_BIN respectively")
+    endif()
+
+    # check for clang in toolchain
+    if(NOT Clang_BIN)
+        message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
     endif()
 
     # get last filename, and absolute filenames
