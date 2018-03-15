@@ -57,11 +57,11 @@ struct JIT {
         std::move(runtime_items.begin(), runtime_items.end(), items.begin() + items_count);
 
         auto module = std::make_unique<const impala::Module>(module_name, std::move(items));
-        impala::global_num_warnings = 0;
-        impala::global_num_errors   = 0;
+        impala::num_warnings() = 0;
+        impala::num_errors()   = 0;
         std::unique_ptr<impala::TypeTable> typetable;
         impala::check(typetable, module.get(), false);
-        if (impala::global_num_errors != 0)
+        if (impala::num_errors() != 0)
             return nullptr;
 
         thorin::World world(module_name);
