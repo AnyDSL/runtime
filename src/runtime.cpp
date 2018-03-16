@@ -294,7 +294,7 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
         id = free_ids.back();
         free_ids.pop_back();
     } else {
-        id = task_pool.size();
+        id = int32_t(task_pool.size());
     }
 
     tbb::task* root = new (tbb::task::allocate_root()) RuntimeTask(args, fun);
