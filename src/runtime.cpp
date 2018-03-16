@@ -15,6 +15,7 @@
 #endif
 
 #ifdef RUNTIME_ENABLE_TBB
+#define NOMINMAX
 #include <tbb/tbb.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_scheduler_init.h>
