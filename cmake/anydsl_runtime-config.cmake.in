@@ -154,6 +154,7 @@ function(anydsl_runtime_wrap outfiles)
     set(_impala_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_IMPALA_FLAGS_DEBUG})
     set(_impala_flags -emit-llvm ${PARGS_IMPALA_FLAGS} $<$<CONFIG:Release>:${_impala_flags_RELEASE}>$<$<CONFIG:Debug>:${_impala_flags_DEBUG}>)
 
+    # TODO: this does not work - check whether it is actually needed
     foreach(flag ${IMPALA_FLAGS})
         if(flag MATCHES "--log-level")
             set(IMPALA_FLAGS_HAS_LOG_LEVEL TRUE)
