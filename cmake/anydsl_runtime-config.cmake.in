@@ -196,7 +196,7 @@ function(anydsl_runtime_wrap outfiles)
         DEPENDS ${_llfile} ${_hfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
-    set(${outfiles} ${${outfiles}} ${_objfile} PARENT_SCOPE)
+    set(${outfiles} ${${outfiles}} ${_objfile} ${_impala_platform_files} PARENT_SCOPE)
 endfunction()
 
 include(FindPackageHandleStandardArgs)
