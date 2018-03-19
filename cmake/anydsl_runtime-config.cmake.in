@@ -166,6 +166,9 @@ function(anydsl_runtime_wrap outfiles)
     set(_clang_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_CLANG_FLAGS_RELEASE})
     set(_clang_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_CLANG_FLAGS_DEBUG})
     set(_clang_flags ${PARGS_CLANG_FLAGS} $<$<CONFIG:Release>:${_clang_flags_RELEASE}>$<$<CONFIG:Debug>:${_clang_flags_DEBUG}>)
+    if(NOT MSVC)
+        set(_clang_flags ${_clang_flags} -fPIE)
+    endif()
 
     # generate .ll file and patch it
     set(_irfile ${_basepath}.nvvm)
@@ -189,7 +192,7 @@ function(anydsl_runtime_wrap outfiles)
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${Clang_BIN} ${_clang_flags} -fPIE -c -o ${_objfile} ${_llfile}
+        COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
         DEPENDS ${_llfile} ${_hfile} VERBATIM)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
