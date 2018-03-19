@@ -133,8 +133,9 @@ function(anydsl_runtime_wrap outfiles)
         set(_basename ${PARGS_NAME})
     endif()
 
-    set(_llfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.ll)
-    set(_objfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.o)
+    set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
+    set(_llfile ${_basepath}.ll)
+    set(_objfile ${_basepath}.o)
 
     set(_impala_platform
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
@@ -172,10 +173,10 @@ function(anydsl_runtime_wrap outfiles)
     endif()
 
     # generate .ll file and patch it
-    set(_irfile ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.nvvm)
+    set(_irfile ${_basepath}.nvvm)
     add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${Impala_BIN} ${_impala_platform} ${_infiles} ${_impala_flags} -o ${_basename}
-        COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${CMAKE_CURRENT_BINARY_DIR}/${_basename}
+        COMMAND ${Impala_BIN} ${_impala_platform} ${_infiles} ${_impala_flags} -o ${_basepath}
+        COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_llvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_amdgpuir.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
