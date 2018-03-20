@@ -122,6 +122,12 @@ function(anydsl_runtime_wrap outfiles)
         message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
     endif()
 
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug or Release" FORCE)
+        message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+    endif()
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" _build_type)
+
     # get last filename, and absolute filenames
     set(_infiles)
     foreach(_it ${PARGS_FILES})
@@ -154,7 +160,6 @@ function(anydsl_runtime_wrap outfiles)
     set(_impala_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_IMPALA_FLAGS_DEBUG})
     set(_impala_flags -emit-llvm ${PARGS_IMPALA_FLAGS} $<$<CONFIG:Release>:${_impala_flags_RELEASE}>$<$<CONFIG:Debug>:${_impala_flags_DEBUG}>)
 
-    # TODO: this does not work - check whether it is actually needed
     foreach(flag ${IMPALA_FLAGS})
         if(flag MATCHES "--log-level")
             set(IMPALA_FLAGS_HAS_LOG_LEVEL TRUE)
