@@ -33,12 +33,6 @@ struct JIT {
         impala::init();
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
-
-        // Parse runtime files once
-        MemBuf buf(runtime_srcs, sizeof(runtime_srcs));
-        std::istream is(&buf);
-        impala::parse(runtime_items, is, "runtime");
-        runtime_items_count = runtime_items.size();
     }
 
     void* compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
@@ -46,17 +40,15 @@ struct JIT {
         static constexpr bool debug = false;
         assert(opt <= 3);
 
-        MemBuf buf(program, size);
-        std::istream is(&buf);
         impala::Items items;
-        impala::parse(items, is, module_name);
+        MemBuf program_buf(program, size);
+        MemBuf runtime_buf(runtime_srcs, sizeof(runtime_srcs));
+        std::istream program_is(&program_buf);
+        std::istream runtime_is(&runtime_buf);
+        impala::parse(items, runtime_is, "runtime");
+        impala::parse(items, program_is, module_name);
 
-        // Move the runtime items inside the module
-        auto items_count = items.size();
-        items.resize(items_count + runtime_items_count);
-        std::move(runtime_items.begin(), runtime_items.end(), items.begin() + items_count);
-
-        auto module = std::make_unique<const impala::Module>(module_name, std::move(items));
+        auto module = std::make_unique<impala::Module>(module_name, std::move(items));
         impala::num_warnings() = 0;
         impala::num_errors()   = 0;
         std::unique_ptr<impala::TypeTable> typetable;
@@ -66,9 +58,6 @@ struct JIT {
 
         thorin::World world(module_name);
         impala::emit(world, module.get());
-
-        // Move runtime items back
-        std::move(items.begin() + items_count, items.end(), runtime_items.begin());
 
         world.cleanup();
         world.opt();
@@ -97,9 +86,6 @@ struct JIT {
     void link(const char* lib) {
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(lib);
     }
-
-    impala::Items runtime_items;
-    size_t runtime_items_count;
 };
 
 JIT& jit() {
