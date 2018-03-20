@@ -7,7 +7,7 @@
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.4.3)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
