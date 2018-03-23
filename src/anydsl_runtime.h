@@ -64,6 +64,16 @@ void anydsl_parallel_for(int32_t, int32_t, int32_t, void*, void*);
 int32_t anydsl_spawn_thread(void*, void*);
 void anydsl_sync_thread(int32_t);
 
+struct Closure {
+    void (*fn)(uint64_t);
+    uint64_t payload;
+};
+
+int32_t anydsl_create_graph();
+int32_t anydsl_create_task(int32_t, Closure);
+void    anydsl_create_edge(int32_t, int32_t);
+void    anydsl_execute_graph(int32_t, int32_t);
+
 #ifdef RUNTIME_ENABLE_JIT
 void  anydsl_link(const char*);
 void* anydsl_compile(const char*, uint32_t, const char*, uint32_t);

@@ -24,3 +24,13 @@ extern "thorin" {
 
     fn vectorize(vector_length: i32, alignment: i32, lower: i32, upper: i32, body: fn(i32) -> ()) -> ();
 }
+
+// intrinsics for flow graphs
+struct FlowGraph {};
+struct FlowTask {};
+extern "thorin" {
+    fn "anydsl_create_graph"  create_graph() -> FlowGraph;
+    fn "anydsl_create_task"   create_task(FlowGraph, fn() -> ()) -> FlowTask;
+    fn "anydsl_create_edge"   create_edge(FlowTask, FlowTask) -> ();
+    fn "anydsl_execute_graph" execute_flowgraph(FlowGraph, FlowTask) -> ();
+}
