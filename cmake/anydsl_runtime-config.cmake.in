@@ -166,16 +166,6 @@ function(anydsl_runtime_wrap outfiles)
         set(_clang_flags ${_clang_flags} -fPIE)
     endif()
 
-    # generate C interface on request
-    if(NOT ${PARGS_INTERFACE} STREQUAL "")
-        set(_hfile ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${PARGS_INTERFACE}.h)
-        add_custom_command(OUTPUT ${_hfile}
-           COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
-           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-           DEPENDS ${Impala_BIN} ${_impala_platform_files} ${_infiles})
-        set_source_files_properties("${PARGS_INTERFACE}.h" PROPERTIES GENERATED TRUE)
-    endif()
-
     # generate .ll file and patch it
     set(_irfile ${_basepath}.nvvm)
     add_custom_command(OUTPUT ${_llfile}
@@ -185,6 +175,16 @@ function(anydsl_runtime_wrap outfiles)
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_amdgpuir.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM)
+
+    # generate C interface on request
+    if(NOT ${PARGS_INTERFACE} STREQUAL "")
+        set(_hfile ${PARGS_INTERFACE}.h)
+        add_custom_command(OUTPUT ${_hfile}
+           COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+           DEPENDS ${Impala_BIN} ${_impala_platform_files} ${_infiles})
+        set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
+    endif()
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
