@@ -155,7 +155,8 @@ def patch_cfiles(rttype):
 
         # add channel typename
         if channel_decl_type is not None :
-            result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n';
+            if channel_decl_name is not None :
+                result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n'
 
         # replace channel placeholder with channel declaration
         for name, line in channel_line.items():
