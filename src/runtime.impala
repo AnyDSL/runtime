@@ -28,26 +28,30 @@ extern "C" {
 }
 
 struct Buffer {
-    device: i32,
-    data: &[i8]
+    data: &[i8],
+    size: i64,
+    device: i32
 }
 
 fn @alloc(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc(dev, size as i64)
+        data: runtime_alloc(dev, size as i64),
+        size: size as i64
     }
 }
 fn @alloc_host(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc_host(dev, size as i64)
+        data: runtime_alloc_host(dev, size as i64),
+        size: size as i64
     }
 }
 fn @alloc_unified(dev: i32, size: i32) -> Buffer {
     Buffer {
         device: dev,
-        data: runtime_alloc_unified(dev, size as i64)
+        data: runtime_alloc_unified(dev, size as i64),
+        size: size as i64
     }
 }
 fn @release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
