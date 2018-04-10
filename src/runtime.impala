@@ -28,30 +28,30 @@ extern "C" {
 }
 
 struct Buffer {
-    data: &[i8],
-    size: i64,
-    device: i32
+    data : &[i8],
+    size : i64,
+    device : i32
 }
 
 fn @alloc(dev: i32, size: i32) -> Buffer {
     Buffer {
-        device: dev,
-        data: runtime_alloc(dev, size as i64),
-        size: size as i64
+        device : dev,
+        data : runtime_alloc(dev, size as i64),
+        size : size as i64
     }
 }
 fn @alloc_host(dev: i32, size: i32) -> Buffer {
     Buffer {
-        device: dev,
-        data: runtime_alloc_host(dev, size as i64),
-        size: size as i64
+        device : dev,
+        data : runtime_alloc_host(dev, size as i64),
+        size : size as i64
     }
 }
 fn @alloc_unified(dev: i32, size: i32) -> Buffer {
     Buffer {
-        device: dev,
-        data: runtime_alloc_unified(dev, size as i64),
-        size: size as i64
+        device : dev,
+        data : runtime_alloc_unified(dev, size as i64),
+        size : size as i64
     }
 }
 fn @release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
@@ -71,8 +71,8 @@ fn @alloc_hsa_host(dev: i32, size: i32) -> Buffer { alloc_host(runtime_device(3,
 fn @alloc_hsa_unified(dev: i32, size: i32) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
 fn @synchronize_hsa(dev: i32) -> () { runtime_synchronize(runtime_device(3, dev)) }
 
-fn @copy(src: Buffer, dst: Buffer, size: i32) -> () {
-    runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, size as i64)
+fn @copy(src: Buffer, dst: Buffer) -> () {
+    runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, src.size)
 }
 
 fn @copy_offset(src: Buffer, off_src: i32, dst: Buffer, off_dst: i32, size: i32) -> () {
