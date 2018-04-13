@@ -260,6 +260,14 @@ void anydsl_sync_thread(int32_t id) {
         assert(0 && "Trying to synchronize on invalid thread id");
     }
 }
+
+[[noreturn]] void tbb_required() {
+    error("Flow Graph implementation only available in TBB, rebuild runtime with TBB support!");
+}
+int32_t anydsl_create_graph() { tbb_required(); }
+int32_t anydsl_create_task(int32_t, Closure) { tbb_required(); }
+void anydsl_create_edge(int32_t, int32_t) { tbb_required(); }
+void anydsl_execute_graph(int32_t, int32_t) { tbb_required(); }
 #else // TBB version
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     tbb::task_scheduler_init init((num_threads == 0) ? tbb::task_scheduler_init::automatic : num_threads);
