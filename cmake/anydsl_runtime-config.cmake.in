@@ -5,8 +5,9 @@
 # AnyDSL_runtime_LIBRARIES
 # AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
+# AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.4.3)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
@@ -18,7 +19,7 @@ find_path(AnyDSL_runtime_DIR
         "@CMAKE_CURRENT_BINARY_DIR@"
         "@CMAKE_INSTALL_PREFIX@"
     PATH_SUFFIXES
-        share/AnyDSL_runtime/cmake
+        share/anydsl/cmake
 )
 
 find_path(AnyDSL_runtime_ROOT_DIR
@@ -41,70 +42,163 @@ find_path(AnyDSL_runtime_INCLUDE_DIR
 )
 set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
 
-set(AnyDSL_runtime_LIBS_DIR
-    "@CMAKE_LIBRARY_OUTPUT_DIRECTORY@"
-    "@CMAKE_ARCHIVE_OUTPUT_DIRECTORY@"
-    # TODO: additionally use install prefix
-)
-# TODO: this should be @ANYDSL_RUNTIME_OUTPUT_NAME@
-set(AnyDSL_runtime_LIBNAME runtime)
-find_library(AnyDSL_runtime_LIBRARY_RELEASE
-    NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_RELEASE_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_RELEASE_POSTFIX@"
-    PATHS ${AnyDSL_runtime_LIBS_DIR}
-    PATH_SUFFIXES Release
-)
-find_library(AnyDSL_runtime_LIBRARY_DEBUG
-    NAMES ${AnyDSL_runtime_LIBNAME} "@CMAKE_DEBUG_PREFIX@${AnyDSL_runtime_LIBNAME}@CMAKE_DEBUG_POSTFIX@"
-    PATHS ${AnyDSL_runtime_LIBS_DIR}
-    PATH_SUFFIXES Debug
-)
-if(NOT AnyDSL_runtime_LIBRARY_RELEASE)
-    set(nyDSL_runtime_LIBRARY_RELEASE ${AnyDSL_runtime_LIBRARY_DEBUG})
-endif()
-if(NOT AnyDSL_runtime_LIBRARY_DEBUG)
-    set(AnyDSL_runtime_LIBRARY_DEBUG ${AnyDSL_runtime_LIBRARY_RELEASE})
-endif()
-if(AnyDSL_runtime_LIBRARY_RELEASE STREQUAL AnyDSL_runtime_LIBRARY_DEBUG)
-    set(AnyDSL_runtime_LIBRARY ${AnyDSL_runtime_LIBRARY_RELEASE})
-else()
-    set(AnyDSL_runtime_LIBRARY
-        optimized ${AnyDSL_runtime_LIBRARY_RELEASE}
-        debug ${AnyDSL_runtime_LIBRARY_DEBUG})
+if(NOT TARGET runtime)
+    include(${AnyDSL_runtime_DIR}/anydsl_runtime-exports.cmake)
 endif()
 
-set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARY} "@CONF_RUNTIME_LIBRARIES@")
+set(AnyDSL_runtime_LIBRARIES runtime;@CONF_RUNTIME_LIBRARIES@)
 if(MSVC)
     set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd)
 endif()
 
-macro(AnyDSL_runtime_files outfiles)
-    cmake_parse_arguments("PARGS" "" "FRONTEND" "" ${ARGN})
+# determine impala binary for toolchain
+find_path(Impala_DIR
+    NAMES impala-config.cmake
+    PATHS ${Impala_DIR} $ENV{Impala_DIR} @Impala_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
+    PATH_SUFFIXES share/anydsl/cmake
+)
+find_package(Impala QUIET)
+if(TARGET impala AND NOT Impala_BIN)
+    get_target_property(Impala_BIN impala LOCATION)
+    set(Impala_BIN ${Impala_BIN} CACHE FILEPATH "path to impala executable")
+endif()
+find_program(Impala_BIN impala
+    PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
+    PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
+
+find_path(LLVM_DIR LLVMConfig.cmake PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@")
+find_package(LLVM CONFIG QUIET)
+
+set(AnyDSL_runtime_HAS_JIT_SUPPORT @RUNTIME_JIT@)
+if(AnyDSL_runtime_HAS_JIT_SUPPORT)
+    find_package(Thorin REQUIRED)
+    find_package(LLVM REQUIRED)
+endif()
+
+# determine clang binary for toolchain
+find_path(Clang_DIR ClangConfig.cmake PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES ../clang)
+find_package(Clang QUIET)
+if(TARGET clang AND NOT Clang_BIN)
+    get_target_property(Clang_BIN clang LOCATION)
+    set(Clang_BIN ${Clang_BIN} CACHE FILEPATH "path to clang executable")
+endif()
+find_program(Clang_BIN clang
+    PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES}
+)
+
+find_program(LLVM_AS_BIN llvm-as
+    PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES @CMAKE_CONFIGURATION_TYPES@)
+if(LLVM_AS_BIN)
+    message(STATUS "Found llvm-as: ${LLVM_AS_BIN}")
+    message(STATUS "Note: llvm-as version needs to match the required LLVM bitcode version from NVVM.")
+else()
+    message(STATUS "Could not find llvm-as binary.")
+    message(STATUS "llvm-as is required to generate LLVM bitcode for NVVM.")
+    message(STATUS "llvm-as version needs to match the required LLVM bitcode version from NVVM.")
+endif()
+
+# find python for post-patcher.py
+find_package(PythonInterp REQUIRED)
+set(PYTHON_BIN ${PYTHON_EXECUTABLE})
+
+set(OPT_FLAGS_DEBUG "-g")
+set(OPT_FLAGS_RELEASE "-O3")
+
+function(anydsl_runtime_wrap outfiles)
+    cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
 
-    string(TOLOWER ${PARGS_FRONTEND} _frontend)
-
-    if(NOT _frontend STREQUAL "impala")
-        message(ERROR "Unsupported frontend: ${_frontend} (supported frontends: impala)")
+    # check for impala in toolchain
+    if(NOT Impala_BIN)
+        message(FATAL_ERROR "Could not find impala binary, please set Impala_DIR or Impala_BIN respectively")
     endif()
 
-    set(_backend_instrinsics
+    # check for clang in toolchain
+    if(NOT Clang_BIN)
+        message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
+    endif()
+
+    # get last filename, and absolute filenames
+    set(_infiles)
+    foreach(_it ${PARGS_FILES})
+        get_filename_component(_infile ${_it} ABSOLUTE)
+        set(_infiles ${_infiles} ${_infile})
+        set(_lastfile ${_it})
+    endforeach()
+
+    if(NOT PARGS_NAME)
+        get_filename_component(_basename ${_lastfile} NAME_WE)
+    else()
+        set(_basename ${PARGS_NAME})
+    endif()
+
+    set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
+    set(_llfile ${_basepath}.ll)
+    set(_objfile ${_basepath}.o)
+
+    set(_impala_platform_files
+        ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cpu.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_hls.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cuda.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_nvvm.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_amdgpu.impala)
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_amdgpu.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala)
 
-    set(${outfiles} ${${outfiles}}
-        ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala
-        ${_backend_instrinsics})
-endmacro()
+    set(_impala_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_IMPALA_FLAGS_RELEASE})
+    set(_impala_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_IMPALA_FLAGS_DEBUG})
+    set(_impala_flags -emit-llvm ${PARGS_IMPALA_FLAGS} $<$<CONFIG:Release>:${_impala_flags_RELEASE}>$<$<NOT:$<CONFIG:Release>>:${_impala_flags_DEBUG}>)
+
+    list(FIND PARGS_IMPALA_FLAGS "--log-level" IMPALA_FLAGS_LOG_LEVEL_IDX)
+    if(IMPALA_FLAGS_LOG_LEVEL_IDX EQUAL -1)
+        list(APPEND _impala_flags --log-level $<$<CONFIG:Release>:error>$<$<NOT:$<CONFIG:Release>>:info>)
+    endif()
+
+    set(_clang_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_CLANG_FLAGS_RELEASE})
+    set(_clang_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_CLANG_FLAGS_DEBUG})
+    set(_clang_flags ${PARGS_CLANG_FLAGS} $<$<CONFIG:Release>:${_clang_flags_RELEASE}>$<$<NOT:$<CONFIG:Release>>:${_clang_flags_DEBUG}>)
+    if(NOT MSVC)
+        set(_clang_flags ${_clang_flags} -fPIE)
+    endif()
+
+    # generate .ll file and patch it
+    set(_irfile ${_basepath}.nvvm)
+    add_custom_command(OUTPUT ${_llfile}
+        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -o ${_basepath}
+        COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
+        COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_llvmir.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_amdgpuir.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM)
+
+    # generate C interface on request
+    if(NOT ${PARGS_INTERFACE} STREQUAL "")
+        set(_hfile ${PARGS_INTERFACE}.h)
+        add_custom_command(OUTPUT ${_hfile}
+           COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+           DEPENDS ${Impala_BIN} ${_impala_platform_files} ${_infiles})
+        set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
+    endif()
+
+    # run clang on the .ll file to get the .o
+    add_custom_command(OUTPUT ${_objfile}
+        COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+        COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
+        DEPENDS ${_llfile} VERBATIM)
+
+    set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
+    set(${outfiles} ${${outfiles}} ${_objfile} ${_impala_platform_files} PARENT_SCOPE)
+endfunction()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS)
 
-mark_as_advanced(AnyDSL_runtime_LIBRARY AnyDSL_runtime_LIBRARY_DEBUG AnyDSL_runtime_LIBRARY_RELEASE AnyDSL_runtime_LIBS_DIR AnyDSL_runtime_LIBNAME AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR)
+mark_as_advanced(AnyDSL_runtime_LIBRARIES AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR)

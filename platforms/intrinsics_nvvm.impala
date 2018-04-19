@@ -139,11 +139,11 @@ extern "device" {
     fn "llvm.nvvm.fma.rz.d" nvvm_fma_rz_d(f64, f64, f64) -> f64;
     fn "llvm.nvvm.fma.rz.f" nvvm_fma_rz_f(f32, f32, f32) -> f32;
     fn "llvm.nvvm.fma.rz.ftz.f" nvvm_fma_rz_ftz_f(f32, f32, f32) -> f32;
-    fn "llvm.nvvm.fmax.d" nvvm_fmax(f64, f64) -> f64;
-    fn "llvm.nvvm.fmax.f" nvvm_fmaxf(f32, f32) -> f32;
+    //fn "llvm.nvvm.fmax.d" nvvm_fmax(f64, f64) -> f64;
+    //fn "llvm.nvvm.fmax.f" nvvm_fmaxf(f32, f32) -> f32;
     fn "llvm.nvvm.fmax.ftz.f" nvvm_fmax_ftz_f(f32, f32) -> f32;
-    fn "llvm.nvvm.fmin.d" nvvm_fmin(f64, f64) -> f64;
-    fn "llvm.nvvm.fmin.f" nvvm_fminf(f32, f32) -> f32;
+    //fn "llvm.nvvm.fmin.d" nvvm_fmin(f64, f64) -> f64;
+    //fn "llvm.nvvm.fmin.f" nvvm_fminf(f32, f32) -> f32;
     fn "llvm.nvvm.fmin.ftz.f" nvvm_fmin_ftz_f(f32, f32) -> f32;
     fn "llvm.nvvm.h2f" nvvm_h2f(i16) -> f32;
     fn "llvm.nvvm.i2d.rm" nvvm_i2d_rm(i32) -> f64;
@@ -283,6 +283,8 @@ extern "C" {
     fn "__nv_atanf"     nvvm_atanf(f32) -> f32;
     fn "__nv_erff"      nvvm_erff(f32) -> f32;
     fn "__nv_atan2f"    nvvm_atan2f(f32, f32) -> f32;
+    fn "__nv_fmaxf"     nvvm_fmaxf(f32, f32) -> f32;
+    fn "__nv_fminf"     nvvm_fminf(f32, f32) -> f32;
     fn "__nv_fmodf"     nvvm_fmodf(f32, f32) -> f32;
     fn "__nv_floorf"    nvvm_floorf(f32) -> f32;
     fn "__nv_fmaf"      nvvm_fmaf(f32, f32, f32) -> f32;
@@ -307,6 +309,8 @@ extern "C" {
     fn "__nv_atan"      nvvm_atan(f64) -> f64;
     fn "__nv_erf"       nvvm_erf(f64) -> f64;
     fn "__nv_atan2"     nvvm_atan2(f64, f64) -> f64;
+    fn "__nv_fmin"      nvvm_fmin(f64, f64) -> f64;
+    fn "__nv_fmax"      nvvm_fmax(f64, f64) -> f64;
     fn "__nv_fmod"      nvvm_fmod(f64, f64) -> f64;
     fn "__nv_floor"     nvvm_floor(f64) -> f64;
     fn "__nv_fma"       nvvm_fma(f64, f64, f64) -> f64;
