@@ -56,6 +56,27 @@ extern "device" {
     fn "max"        hls_max(i32, i32) -> i32;
 }
 
+struct channel {
+    data : pixel_t
+};
+
+extern "device" {
+    fn print_pragma(&[u8]) -> ();
+    fn "read_channel"  read_channel  (&mut channel) ->  pixel_t;
+    fn "read_channel"  read_channel2 (&mut channel) -> [pixel_t * 2];
+    fn "read_channel"  read_channel4 (&mut channel) -> [pixel_t * 4];
+    fn "read_channel"  read_channel8 (&mut channel) -> [pixel_t * 8];
+    fn "read_channel"  read_channel16(&mut channel) -> [pixel_t * 16];
+    fn "read_channel"  read_channel32(&mut channel) -> [pixel_t * 32];
+    fn "write_channel" write_channel  (&mut channel,  pixel_t      ) -> ();
+    fn "write_channel" write_channel2 (&mut channel, [pixel_t * 2 ]) -> ();
+    fn "write_channel" write_channel4 (&mut channel, [pixel_t * 4 ]) -> ();
+    fn "write_channel" write_channel8 (&mut channel, [pixel_t * 8 ]) -> ();
+    fn "write_channel" write_channel16(&mut channel, [pixel_t * 16]) -> ();
+    fn "write_channel" write_channel32(&mut channel, [pixel_t * 32]) -> ();
+    fn " "             bitcast_channel(&mut channel) -> [pixel_t * 2];
+}
+
 fn @hls_accelerator() -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
@@ -74,17 +95,6 @@ fn @hls_accelerator() -> Accelerator {
         barrier       : || ()
     }
 };
-
-
-//struct channel { data : pixel_t };
-//extern "device" {
-//    fn "read_channel_intel"  read_channel(&mut channel) -> pixel_t;
-//    fn "write_channel_intel" write_channel(&mut channel, pixel_t) -> ();
-//}
-extern "device" {
-    fn print_pragma(&[u8]) -> ();
-}
-
 
 static hls_intrinsics = Intrinsics {
     expf        : hls_expf,

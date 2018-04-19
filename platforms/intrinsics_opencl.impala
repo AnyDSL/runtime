@@ -67,19 +67,6 @@ extern "device" {
     fn "get_num_groups"    opencl_get_num_groups(u32) -> u64;
     fn "get_group_id"      opencl_get_group_id(u32) -> u64;
     fn "get_global_offset" opencl_get_global_offset(u32) -> u64;
-    fn "read_channel"  read_channel  (&mut channel) ->  pixel_t;
-    fn "read_channel"  read_channel2 (&mut channel) -> [pixel_t * 2];
-    fn "read_channel"  read_channel4 (&mut channel) -> [pixel_t * 4];
-    fn "read_channel"  read_channel8 (&mut channel) -> [pixel_t * 8];
-    fn "read_channel"  read_channel16(&mut channel) -> [pixel_t * 16];
-    fn "read_channel"  read_channel32(&mut channel) -> [pixel_t * 32];
-    fn "write_channel" write_channel  (&mut channel,  pixel_t      ) -> ();
-    fn "write_channel" write_channel2 (&mut channel, [pixel_t * 2 ]) -> ();
-    fn "write_channel" write_channel4 (&mut channel, [pixel_t * 4 ]) -> ();
-    fn "write_channel" write_channel8 (&mut channel, [pixel_t * 8 ]) -> ();
-    fn "write_channel" write_channel16(&mut channel, [pixel_t * 16]) -> ();
-    fn "write_channel" write_channel32(&mut channel, [pixel_t * 32]) -> ();
-    fn " " bitcast_channel(&mut channel) -> [pixel_t * 2];
 }
 
 fn @opencl_accelerator(dev: i32) -> Accelerator {
@@ -98,8 +85,6 @@ fn @opencl_accelerator(dev: i32) -> Accelerator {
         barrier       : || opencl_barrier(1u), // CLK_LOCAL_MEM_FENCE -> 1 // CLK_GLOBAL_MEM_FENCE -> 2
     }
 }
-
-struct channel  {data: pixel_t};
 
 static opencl_intrinsics = Intrinsics {
     expf        : opencl_expf,
