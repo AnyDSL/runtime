@@ -91,18 +91,21 @@ def patch_cfiles(rttype):
                     type_m = re.match('(.*) (.*) *.;', typeline)
                     channel_decl_type = type_m.groups()[0].strip();
                     # clean previous channel declaration
-                    result[len(result)-3] = ''
+                    if rttype == "opencl":
+                        result[len(result)-3] = ''
                     result[len(result)-2] = ''
                     result[len(result)-1] = ''
+                    # channel declaration location
+                    channel_decl_line = len(result) - 1;
                     continue
                 # a dirty hack: last array_type is registered as channel type
                 m = re.match('\} array_(.*);', line)
                 if m is not None:
                     result.append(line)
                     channel_decl_type = 'array_' + m.groups()[0].strip()
-                    # add a line for channel declaration
-                    channel_decl_line = len(result);
+                    # change declaration location
                     result.append("");
+                    channel_decl_line = len(result) - 1;
                     continue
 
                 # patch channel declarations and read/write functions
