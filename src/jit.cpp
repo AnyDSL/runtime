@@ -35,7 +35,7 @@ struct JIT {
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    void* compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
+    llvm::ExecutionEngine* compile(const char* program, uint32_t size, uint32_t opt) {
         static constexpr auto module_name = "jit";
         static constexpr bool debug = false;
         assert(opt <= 3);
@@ -64,11 +64,8 @@ struct JIT {
         world.cleanup();
         thorin::codegen_prepare(world);
         thorin::CPUCodeGen cg(world);
-        auto& llvm_module = cg.emit(opt, debug, false);
-        auto fn = llvm_module->getFunction(fn_name);
-        if (!fn)
-            return nullptr;
 
+        auto& llvm_module = cg.emit(opt, debug, false);
         auto engine = llvm::EngineBuilder(std::move(llvm_module))
             .setEngineKind(llvm::EngineKind::JIT)
             .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
@@ -80,7 +77,7 @@ struct JIT {
             return nullptr;
 
         engine->finalizeObject();
-        return engine->getPointerToFunction(fn);
+        return engine;
     }
 
     void link(const char* lib) {
@@ -98,5 +95,14 @@ void anydsl_link(const char* lib) {
 }
 
 void* anydsl_compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
-    return jit().compile(program, size, fn_name, opt);
+    return anydsl_lookup(anydsl_get_engine(program, size, opt), fn_name);
+}
+
+void* anydsl_get_engine(const char* program, uint32_t size, uint32_t opt) {
+    return jit().compile(program, size, opt);
+}
+
+void* anydsl_lookup(void* engine_ptr, const char* fn_name) {
+    auto engine = (llvm::ExecutionEngine *)engine_ptr;
+    return (void *)engine->getFunctionAddress(fn_name);
 }
