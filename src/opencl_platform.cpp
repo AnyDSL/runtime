@@ -74,7 +74,9 @@ static std::string get_opencl_error_code_str(int error) {
         CL_ERROR_CODE(CL_INVALID_MIP_LEVEL)
         CL_ERROR_CODE(CL_INVALID_GLOBAL_WORK_SIZE)
         #ifdef CL_VERSION_1_1
-//CL_ERROR_CODE(CL_INVALID_PROPERTY)
+        #ifdef CL_INVALID_PROPERTY
+        CL_ERROR_CODE(CL_INVALID_PROPERTY)
+        #endif
         #endif
         #ifdef CL_VERSION_1_2
         CL_ERROR_CODE(CL_INVALID_IMAGE_DESCRIPTOR)
