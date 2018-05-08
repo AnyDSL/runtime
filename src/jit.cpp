@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 #include <memory>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -12,9 +13,10 @@
 #include <impala/ast.h>
 #include <thorin/world.h>
 #include <thorin/transform/codegen_prepare.h>
-#include <thorin/be/llvm/cpu.h>
+#include <thorin/be/llvm/llvm.h>
 
 #include "anydsl_runtime.h"
+#include "runtime.h"
 
 struct MemBuf : public std::streambuf {
     MemBuf(const char* string, uint32_t size) {
@@ -69,10 +71,9 @@ struct JIT {
         world.cleanup();
         world.opt();
         world.cleanup();
-        thorin::codegen_prepare(world);
-        thorin::CPUCodeGen cg(world);
 
-        auto& llvm_module = cg.emit(opt, debug, false);
+        thorin::Backends backends(world);
+        auto& llvm_module = backends.cpu_cg->emit(opt, debug);
         auto engine = llvm::EngineBuilder(std::move(llvm_module))
             .setEngineKind(llvm::EngineKind::JIT)
             .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
@@ -85,6 +86,18 @@ struct JIT {
 
         engine->finalizeObject();
         programs.push_back(Program(engine));
+
+        auto emit_to_string = [&](thorin::CodeGen* cg, PlatformId id, std::string ext) {
+            if (cg) {
+                std::ostringstream stream;
+                cg->emit(stream, opt, debug);
+                runtime().register_module(id, (std::string(module_name) + ext).c_str(), stream.str().c_str());
+            }
+        };
+        emit_to_string(backends.opencl_cg.get(), PlatformId(ANYDSL_OPENCL), ".cl");
+        emit_to_string(backends.cuda_cg.get(),   PlatformId(ANYDSL_CUDA),   ".cu");
+        emit_to_string(backends.nvvm_cg.get(),   PlatformId(ANYDSL_CUDA),   ".nvvm");
+        emit_to_string(backends.amdgpu_cg.get(), PlatformId(ANYDSL_HSA),    ".amdgpu");
 
         return (int32_t)programs.size() - 1;
     }

@@ -31,6 +31,7 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
+    void register_module(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -79,8 +80,10 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+    std::unordered_map<std::string, std::string> modules_;
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+    cl_program compile_module(DeviceId dev, const std::string& filename, const std::string& program_string);
 
     friend void time_kernel_callback(cl_event, cl_int, void*);
 };

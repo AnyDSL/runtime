@@ -352,6 +352,49 @@ void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t off
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
 }
 
+void OpenCLPlatform::register_module(const std::string& filename, const std::string& program_string) {
+    modules_[filename] = program_string;
+}
+
+cl_program OpenCLPlatform::compile_module(DeviceId dev, const std::string& filename, const std::string& program_string) {
+    std::string options = "-cl-fast-relaxed-math";
+    const size_t program_length = program_string.length();
+    const char* program_c_str = program_string.c_str();
+    options += " -cl-std=CL1.2";
+    cl_int err = CL_SUCCESS;
+    cl_program program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
+    CHECK_OPENCL(err, "clCreateProgramWithSource()");
+    debug("Compiling '%' on OpenCL device %", filename, dev);
+
+    cl_build_status build_status;
+    err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
+    err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
+
+    if (build_status == CL_BUILD_ERROR || err != CL_SUCCESS) {
+        // determine the size of the options and log
+        size_t log_size, options_size;
+        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, 0, NULL, &options_size);
+        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+
+        // allocate memory for the options and log
+        char* program_build_options = new char[options_size];
+        char* program_build_log = new char[log_size];
+
+        // get the options and log
+        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, options_size, program_build_options, NULL);
+        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, log_size, program_build_log, NULL);
+        info("OpenCL build options : %", program_build_options);
+        info("OpenCL build log : %", program_build_log);
+
+        // free memory for options and log
+        delete[] program_build_options;
+        delete[] program_build_log;
+    }
+    CHECK_OPENCL(err, "clBuildProgram(), clGetProgramBuildInfo()");
+
+    return program;
+}
+
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
 
@@ -364,45 +407,18 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
 
-        std::string options = "-cl-fast-relaxed-math";
-        if (std::ifstream(filename).good()) {
-            std::ifstream src_file(KERNEL_DIR + filename);
-            std::string program_string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-            const size_t program_length = program_string.length();
-            const char* program_c_str = program_string.c_str();
-            options += " -cl-std=CL1.2";
-            program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
-            CHECK_OPENCL(err, "clCreateProgramWithSource()");
-            debug("Compiling '%' on OpenCL device %", filename, dev);
+        auto module_it = modules_.find(filename);
+        if (module_it == modules_.end()) {
+            std::ifstream stream(KERNEL_DIR + filename);
+            if (stream.good()) {
+                std::string program_string(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
+                program = compile_module(dev, filename, program_string);
+            } else {
+                error("Could not find kernel file '%'", filename);
+            }
         } else {
-            error("Could not find kernel file '%'", filename);
+            program = compile_module(dev, filename, module_it->second);
         }
-
-        cl_build_status build_status;
-        err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
-        err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
-
-        if (build_status == CL_BUILD_ERROR || err != CL_SUCCESS) {
-            // determine the size of the options and log
-            size_t log_size, options_size;
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, 0, NULL, &options_size);
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-
-            // allocate memory for the options and log
-            char* program_build_options = new char[options_size];
-            char* program_build_log = new char[log_size];
-
-            // get the options and log
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, options_size, program_build_options, NULL);
-            err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, log_size, program_build_log, NULL);
-            info("OpenCL build options : %", program_build_options);
-            info("OpenCL build log : %", program_build_log);
-
-            // free memory for options and log
-            delete[] program_build_options;
-            delete[] program_build_log;
-        }
-        CHECK_OPENCL(err, "clBuildProgram(), clGetProgramBuildInfo()");
 
         opencl_dev.lock();
         prog_cache[filename] = program;
