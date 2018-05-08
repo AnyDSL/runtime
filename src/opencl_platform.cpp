@@ -352,8 +352,8 @@ void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t off
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
 }
 
-void OpenCLPlatform::register_module(const std::string& filename, const std::string& program_string) {
-    modules_[filename] = program_string;
+void OpenCLPlatform::register_file(const std::string& filename, const std::string& program_string) {
+    files_[filename] = program_string;
 }
 
 cl_program OpenCLPlatform::compile_module(DeviceId dev, const std::string& filename, const std::string& program_string) {
@@ -407,8 +407,8 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
 
-        auto module_it = modules_.find(filename);
-        if (module_it == modules_.end()) {
+        auto file_it = files_.find(filename);
+        if (file_it == files_.end()) {
             std::ifstream stream(KERNEL_DIR + filename);
             if (stream.good()) {
                 std::string program_string(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
@@ -417,7 +417,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
                 error("Could not find kernel file '%'", filename);
             }
         } else {
-            program = compile_module(dev, filename, module_it->second);
+            program = compile_module(dev, filename, file_it->second);
         }
 
         opencl_dev.lock();

@@ -21,7 +21,7 @@ protected:
     void release(DeviceId, void*) override { platform_error(); }
     void release_host(DeviceId, void*) override { platform_error(); }
 
-    void register_module(const std::string&, const std::string&) override { platform_error(); }
+    void register_file(const std::string&, const std::string&) override { platform_error(); }
     void launch_kernel(DeviceId,
                        const char*, const char*,
                        const uint32_t*, const uint32_t*,

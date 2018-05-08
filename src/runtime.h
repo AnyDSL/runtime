@@ -72,8 +72,8 @@ public:
     }
 
     /// Associate a program string to a given filename.
-    void register_module(PlatformId plat, const char* filename, const char* program_string) {
-        platforms_[plat]->register_module(filename, program_string);
+    void register_file(PlatformId plat, const char* filename, const char* program_string) {
+        platforms_[plat]->register_file(filename, program_string);
     }
 
     /// Launches a kernel on the platform and device.

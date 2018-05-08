@@ -40,7 +40,7 @@ protected:
 
     void no_kernel() { error("Kernels are not supported on the CPU"); }
 
-    void register_module(const std::string& filename, const std::string& program_string) override {}
+    void register_file(const std::string& filename, const std::string& program_string) override {}
 
     void launch_kernel(DeviceId,
                        const char*, const char*,

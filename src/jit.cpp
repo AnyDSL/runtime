@@ -91,7 +91,7 @@ struct JIT {
             if (cg) {
                 std::ostringstream stream;
                 cg->emit(stream, opt, debug);
-                runtime().register_module(id, (std::string(module_name) + ext).c_str(), stream.str().c_str());
+                runtime().register_file(id, (std::string(module_name) + ext).c_str(), stream.str().c_str());
             }
         };
         emit_to_string(backends.opencl_cg.get(), PlatformId(ANYDSL_OPENCL), ".cl");
