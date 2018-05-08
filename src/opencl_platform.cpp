@@ -8,10 +8,6 @@
 #include <fstream>
 #include <string>
 
-#ifndef KERNEL_DIR
-#define KERNEL_DIR ""
-#endif
-
 static std::string get_opencl_error_code_str(int error) {
     #define CL_ERROR_CODE(CODE) case CODE: return #CODE;
     switch (error) {
@@ -409,7 +405,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 
         auto file_it = files_.find(filename);
         if (file_it == files_.end()) {
-            std::ifstream stream(KERNEL_DIR + filename);
+            std::ifstream stream(filename);
             if (stream.good()) {
                 std::string program_string(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
                 program = compile_module(dev, filename, program_string);

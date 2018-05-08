@@ -13,9 +13,6 @@
 #ifndef LIBDEVICE_DIR
 #define LIBDEVICE_DIR ""
 #endif
-#ifndef KERNEL_DIR
-#define KERNEL_DIR ""
-#endif
 
 #define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
 #define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
@@ -489,7 +486,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     #endif
     std::string ptx_filename = std::string(filename) + ".ptx";
     std::string command = (NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(target_cc) + " ";
-    command += std::string(KERNEL_DIR) + filename + " -o " + ptx_filename + " 2>&1";
+    command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())
         store_file(filename, program_string);
