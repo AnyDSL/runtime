@@ -164,13 +164,15 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, sizeof(buffer), &buffer, NULL);
             debug("      Device OpenCL Version: %", buffer);
             std::string version(buffer);
+            size_t version_offset;
+            cl_uint version_major = std::stoi(version.substr(7), &version_offset);
+            cl_uint version_minor = std::stoi(version.substr(7 + version_offset + 1));
             err |= clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, sizeof(buffer), &buffer, NULL);
             debug("      Device Driver Version: %", buffer);
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
-            cl_uint cl_version_major = std::stoi(version.substr(7));
-            if (cl_version_major >= 2) {
+            if (version_major >= 2) {
                 cl_device_svm_capabilities svm_caps;
                 err |= clGetDeviceInfo(devices[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(svm_caps), &svm_caps, NULL);
                 if (svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) svm_caps_str = "CL_DEVICE_SVM_COARSE_GRAIN_BUFFER";
@@ -190,6 +192,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_.resize(dev + 1);
             devices_[dev].platform = platform;
             devices_[dev].dev = device;
+            devices_[dev].version_major = version_major;
+            devices_[dev].version_minor = version_minor;
 
             // create context
             cl_context_properties ctx_props[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
@@ -199,7 +203,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             // create command queue
             devices_[dev].queue = NULL;
             #ifdef CL_VERSION_2_0
-            if (cl_version_major >= 2) {
+            if (version_major >= 2) {
                 cl_queue_properties queue_props[3] = { 0, 0, 0 };
                 if (runtime_->profiling_enabled()) {
                     queue_props[0] = CL_QUEUE_PROPERTIES;
@@ -356,7 +360,7 @@ cl_program OpenCLPlatform::compile_module(DeviceId dev, const std::string& filen
     std::string options = "-cl-fast-relaxed-math";
     const size_t program_length = program_string.length();
     const char* program_c_str = program_string.c_str();
-    options += " -cl-std=CL1.2";
+    options += " -cl-std=CL" + std::to_string(devices_[dev].version_major) + "." + std::to_string(devices_[dev].version_minor);
     cl_int err = CL_SUCCESS;
     cl_program program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
     CHECK_OPENCL(err, "clCreateProgramWithSource()");
