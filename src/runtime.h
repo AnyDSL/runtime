@@ -71,6 +71,11 @@ public:
         platforms_[plat]->release_host(dev, ptr);
     }
 
+    /// Associate a program string to a given filename.
+    void register_file(PlatformId plat, const char* filename, const char* program_string) {
+        platforms_[plat]->register_file(filename, program_string);
+    }
+
     /// Launches a kernel on the platform and device.
     void launch_kernel(PlatformId plat, DeviceId dev,
                        const char* file, const char* kernel,
@@ -127,5 +132,7 @@ private:
     ProfileLevel profile_;
     std::vector<Platform*> platforms_;
 };
+
+Runtime& runtime();
 
 #endif

@@ -14,10 +14,6 @@
 #include <string>
 #include <thread>
 
-#ifndef KERNEL_DIR
-#define KERNEL_DIR ""
-#endif
-
 #define CHECK_HSA(err, name)  check_hsa_error(err, name, __FILE__, __LINE__)
 
 inline void check_hsa_error(hsa_status_t err, const char* name, const char* file, const int line) {
@@ -346,7 +342,7 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
         hsa_dev.unlock();
         if (std::ifstream(filename).good()) {
             hsa_code_object_reader_t reader;
-            hsa_file_t file = open(std::string(KERNEL_DIR + filename).c_str(), O_RDONLY);
+            hsa_file_t file = open(filename.c_str(), O_RDONLY);
             status = hsa_code_object_reader_create_from_file(file, &reader);
             CHECK_HSA(status, "hsa_code_object_reader_create_from_file()");
 

@@ -31,6 +31,7 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
+    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -50,26 +51,31 @@ protected:
     struct DeviceData {
         cl_platform_id platform;
         cl_device_id dev;
-        bool isIntelFPGA = false;
         cl_command_queue queue;
         cl_context ctx;
+        bool is_intel_fpga = false;
+        cl_uint version_major;
+        cl_uint version_minor;
         std::atomic_int timings_counter;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
-        std::unordered_map<cl_kernel, cl_command_queue> kernels_queue; // FPGA, ordered
+        std::unordered_map<cl_kernel, cl_command_queue> kernels_queue;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
         DeviceData(DeviceData&& data)
             : platform(data.platform)
             , dev(data.dev)
-            , isIntelFPGA(data.isIntelFPGA)
             , queue(data.queue)
             , ctx(data.ctx)
+            , is_intel_fpga(data.is_intel_fpga)
+            , version_major(data.version_major)
+            , version_minor(data.version_minor)
             , timings_counter(0)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
+            , kernels_queue(std::move(data.kernels_queue))
         {}
 
         void lock() {
@@ -82,18 +88,12 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+    std::unordered_map<std::string, std::string> files_;
 
-    cl_program try_find_program(DeviceData& opencl_dev, const std::string& filename);
-    void insert_program_into_cache(DeviceData& opencl_dev, const std::string& filename, cl_program& program);
-    cl_kernel try_find_kernel(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program);
-    void insert_kernel_into_cache(DeviceData& opencl_dev, const std::string& kernelname, cl_program& program, cl_kernel& kernel);
-    void insert_kernelqueue_into_cache(DeviceData& opencl_dev, cl_kernel& kernel, cl_command_queue& kernel_queue);
-
-    cl_program create_program(DeviceData& opencl_dev, const std::string& filename, std::string& options);
-    cl_program create_programFPGA(DeviceData& opencl_dev, const std::string& filename, std::string& options);
-    cl_kernel create_kernel(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
-    cl_kernel create_kernelFPGA(DeviceData& opencl_dev, cl_program& program, const std::string& kernelname);
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
+
+    std::string load_file(const std::string& filename) const;
+    cl_program compile_program(DeviceId dev, const std::string& filename, const std::string& program_string) const;
 
     friend void time_kernel_callback(cl_event, cl_int, void*);
 };

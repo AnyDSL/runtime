@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 #include <memory>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -12,9 +13,10 @@
 #include <impala/ast.h>
 #include <thorin/world.h>
 #include <thorin/transform/codegen_prepare.h>
-#include <thorin/be/llvm/cpu.h>
+#include <thorin/be/llvm/llvm.h>
 
 #include "anydsl_runtime.h"
+#include "runtime.h"
 
 struct MemBuf : public std::streambuf {
     MemBuf(const char* string, uint32_t size) {
@@ -29,13 +31,20 @@ static const char runtime_srcs[] = {
 };
 
 struct JIT {
+    struct Program {
+        Program(llvm::ExecutionEngine* engine) : engine(engine) {}
+        llvm::ExecutionEngine* engine;
+    };
+
+    std::vector<Program> programs;
+
     JIT() {
         impala::init();
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    void* compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
+    int32_t compile(const char* program, uint32_t size, uint32_t opt) {
         static constexpr auto module_name = "jit";
         static constexpr bool debug = false;
         assert(opt <= 3);
@@ -54,7 +63,7 @@ struct JIT {
         std::unique_ptr<impala::TypeTable> typetable;
         impala::check(typetable, module.get(), false);
         if (impala::num_errors() != 0)
-            return nullptr;
+            return -1;
 
         thorin::World world(module_name);
         impala::emit(world, module.get());
@@ -62,25 +71,42 @@ struct JIT {
         world.cleanup();
         world.opt();
         world.cleanup();
-        thorin::codegen_prepare(world);
-        thorin::CPUCodeGen cg(world);
-        auto& llvm_module = cg.emit(opt, debug, false);
-        auto fn = llvm_module->getFunction(fn_name);
-        if (!fn)
-            return nullptr;
 
+        thorin::Backends backends(world);
+        auto& llvm_module = backends.cpu_cg->emit(opt, debug);
         auto engine = llvm::EngineBuilder(std::move(llvm_module))
             .setEngineKind(llvm::EngineKind::JIT)
             .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
                             opt == 1  ? llvm::CodeGenOpt::Less    :
                             opt == 2  ? llvm::CodeGenOpt::Default :
-                         /* opt == 3 */ llvm::CodeGenOpt::Aggressive)
+                        /* opt == 3 */ llvm::CodeGenOpt::Aggressive)
             .create();
         if (!engine)
-            return nullptr;
+            return -1;
 
         engine->finalizeObject();
-        return engine->getPointerToFunction(fn);
+        programs.push_back(Program(engine));
+
+        auto emit_to_string = [&](thorin::CodeGen* cg, PlatformId id, std::string ext) {
+            if (cg) {
+                std::ostringstream stream;
+                cg->emit(stream, opt, debug);
+                runtime().register_file(id, (std::string(module_name) + ext).c_str(), stream.str().c_str());
+            }
+        };
+        emit_to_string(backends.opencl_cg.get(), PlatformId(ANYDSL_OPENCL), ".cl");
+        emit_to_string(backends.cuda_cg.get(),   PlatformId(ANYDSL_CUDA),   ".cu");
+        emit_to_string(backends.nvvm_cg.get(),   PlatformId(ANYDSL_CUDA),   ".nvvm");
+        emit_to_string(backends.amdgpu_cg.get(), PlatformId(ANYDSL_HSA),    ".amdgpu");
+
+        return (int32_t)programs.size() - 1;
+    }
+
+    void* lookup_function(int32_t key, const char* fn_name) {
+        if (key == -1)
+            return nullptr;
+        
+        return (void *)programs[key].engine->getFunctionAddress(fn_name);
     }
 
     void link(const char* lib) {
@@ -97,6 +123,10 @@ void anydsl_link(const char* lib) {
     jit().link(lib);
 }
 
-void* anydsl_compile(const char* program, uint32_t size, const char* fn_name, uint32_t opt) {
-    return jit().compile(program, size, fn_name, opt);
+int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
+    return jit().compile(program, size, opt);
+}
+
+void* anydsl_lookup_function(int32_t key, const char* fn_name) {
+    return jit().lookup_function(key, fn_name);
 }

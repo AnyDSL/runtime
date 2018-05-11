@@ -76,7 +76,8 @@ void    anydsl_execute_graph(int32_t, int32_t);
 
 #ifdef RUNTIME_ENABLE_JIT
 void  anydsl_link(const char*);
-void* anydsl_compile(const char*, uint32_t, const char*, uint32_t);
+int32_t anydsl_compile(const char*, uint32_t, uint32_t);
+void *anydsl_lookup_function(int32_t, const char*);
 #endif
 
 #ifdef __cplusplus

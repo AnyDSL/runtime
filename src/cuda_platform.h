@@ -36,6 +36,7 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override;
 
+    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -82,6 +83,7 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+    std::unordered_map<std::string, std::string> files_;
 
     struct ProfileData {
         CudaPlatform* platform;
@@ -96,10 +98,11 @@ protected:
 
     CUfunction load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
-    std::string load_ptx(const std::string& filename) const;
-    CUmodule compile_nvvm(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
-    CUmodule compile_cuda(DeviceId dev, const std::string& filename, CUjit_target target_cc) const;
-    CUmodule create_module(DeviceId dev, const std::string& filename, CUjit_target target_cc, const void* ptx) const;
+    void store_file(const std::string& filename, const std::string& str) const;
+    std::string load_file(const std::string& filename) const;
+    std::string compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
+    std::string compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
+    CUmodule create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string, CUjit_target target_cc) const;
 };
 
 #endif
