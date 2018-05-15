@@ -157,9 +157,9 @@ fn @amdgpu_accelerator(dev: i32) -> Accelerator {
                         || amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z());
             amdgpu(dev, grid, block, || body(tid, bid, bdim, gdim, gid))
         },
-        sync          : || synchronize_hsa(dev),
-        alloc         : |size| alloc_hsa(dev, size),
-        alloc_unified : |size| alloc_hsa_unified(dev, size),
+        sync          : @|| synchronize_hsa(dev),
+        alloc         : @|size| alloc_hsa(dev, size),
+        alloc_unified : @|size| alloc_hsa_unified(dev, size),
         barrier       : amdgcn_s_barrier,
     }
 }

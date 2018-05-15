@@ -112,18 +112,18 @@ fn @hls_accelerator() -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
             hls(|| {
-                let tid  = (|| 1, || 1, || 1);
-                let bid  = (|| 1, || 1, || 1);
-                let bdim = (|| 1, || 1, || 1);
-                let gdim = (|| 1, || 1, || 1);
-                let gid  = (|| 1, || 1, || 1);
+                let tid  = (@|| 1, @|| 1, @|| 1);
+                let bid  = (@|| 1, @|| 1, @|| 1);
+                let bdim = (@|| 1, @|| 1, @|| 1);
+                let gdim = (@|| 1, @|| 1, @|| 1);
+                let gid  = (@|| 1, @|| 1, @|| 1);
                 body(tid, bid, bdim, gdim, gid)
             });
         },
-        sync          : || (),
-        alloc         : |size| alloc_cpu(size),
-        alloc_unified : |size| alloc_cpu(size),
-        barrier       : || ()
+        sync          : @|| (),
+        alloc         : @|size| alloc_cpu(size),
+        alloc_unified : @|size| alloc_cpu(size),
+        barrier       : @|| ()
     }
 };
 
