@@ -23,31 +23,6 @@ def patch_llvmir(rttype):
                         result.append('}\n')
                         continue
 
-                    # remove source_filename information
-                    if 'source_filename = ' in line:
-                        print("Removing 'source_filename' in {0}".format(filename))
-                        result.append(';{0}'.format(line))
-                        continue
-
-                    matched = True
-                    while matched:
-                        matched = False
-                        # patch unnamed_addr and local_unnamed_addr attributes
-                        m = re.match('^((declare|define) .* @.*\(.*\)) (unnamed_addr|local_unnamed_addr)(.*)\n$', line)
-                        if m is not None:
-                            first, decl, attr, last = m.groups()
-                            print("Patching '{0}' in {1}".format(attr, filename))
-                            line = '{0}{1}\n'.format(first, last)
-                            matched = True
-
-                        # patch readonly and writeonly attributes
-                        m = re.match('^((declare|define) .*@.*\(.*)(readonly|writeonly)(.*\).*)\n$', line)
-                        if m is not None:
-                            first, decl, attr, last = m.groups()
-                            print("Patching '{0}' in {1}".format(attr, filename))
-                            line = '{0}{1}\n'.format(first, last)
-                            matched = True
-
                     result.append(line)
         # we have the patched thing, write it
         with open(filename, "w") as f:
