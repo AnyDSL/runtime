@@ -286,7 +286,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
         // find the file extension
         auto ext_pos = file.rfind('.');
         std::string ext = ext_pos != std::string::npos ? file.substr(ext_pos + 1) : "";
-        if (ext != "cu" && ext != "nvvm")
+        if (ext != "ptx" && ext != "cu" && ext != "nvvm")
             error("Incorrect extension for kernel file '%' (should be '.nvvm' or '.cu')", file);
 
         // compile the given file
@@ -294,6 +294,8 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
         std::string filename = file;
         if (std::ifstream(file + ".ptx").good()) {
             filename += ".ptx";
+            ptx = load_file(filename);
+        } else if (ext == "ptx" && (std::ifstream(file).good() || files_.count(file))) {
             ptx = load_file(filename);
         } else if (ext == "cu" && (std::ifstream(file).good() || files_.count(file))) {
             ptx = compile_cuda(dev, filename, load_file(filename), target_cc);
