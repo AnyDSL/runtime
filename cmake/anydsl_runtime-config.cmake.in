@@ -168,11 +168,10 @@ function(anydsl_runtime_wrap outfiles)
     endif()
 
     # generate .ll file and patch it
-    set(_irfile ${_basepath}.nvvm)
     add_custom_command(OUTPUT ${_llfile}
         COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -o ${_basepath}
         COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
-        COMMAND ${CMAKE_COMMAND} -D_irfile=${_irfile} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_llvmir.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_amdgpuir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
