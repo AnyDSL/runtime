@@ -263,6 +263,11 @@ extern "device" {
     fn "llvm.nvvm.ull2f.rn" nvvm_ull2f_rn(i64) -> f32;
     fn "llvm.nvvm.ull2f.rp" nvvm_ull2f_rp(i64) -> f32;
     fn "llvm.nvvm.ull2f.rz" nvvm_ull2f_rz(i64) -> f32;
+    fn "llvm.nvvm.ldg.global.i.i8.p0i8" nvptx_ldg_u8_(&[1]u8, i32) -> u8;
+    fn "llvm.nvvm.ldg.global.i.i32.p0i32" nvptx_ldg_i32_(&[1]i32, i32) -> i32;
+    fn "llvm.nvvm.ldg.global.f.f32.p0f32" nvptx_ldg_f32_(&[1]f32, i32) -> f32;
+    fn "llvm.nvvm.ldg.global.i.v4i32.p0v4i32" nvptx_ldg4_i32_(&[1]simd[i32 * 4], i32) -> simd[i32 * 4];
+    fn "llvm.nvvm.ldg.global.f.v4f32.p0v4f32" nvptx_ldg4_f32_(&[1]simd[f32 * 4], i32) -> simd[f32 * 4];
 }
 
 extern "C" {
@@ -428,6 +433,12 @@ fn @nvvm_ballot(a: i32) -> i32 {
     );
     res
 }
+
+fn @nvptx_ldg_u8(addr: &[1]u8) -> u8 { nvptx_ldg_u8_(addr, 1) }
+fn @nvptx_ldg_i32(addr: &[1]i32) -> i32 { nvptx_ldg_i32_(addr, 4) }
+fn @nvptx_ldg_f32(addr: &[1]f32) -> f32 { nvptx_ldg_f32_(addr, 4) }
+fn @nvptx_ldg4_i32(addr: &[1]simd[i32 * 4]) -> simd[i32 * 4] { nvptx_ldg4_i32_(addr, 16) }
+fn @nvptx_ldg4_f32(addr: &[1]simd[f32 * 4]) -> simd[f32 * 4] { nvptx_ldg4_f32_(addr, 16) }
 
 fn @nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
