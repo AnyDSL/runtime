@@ -389,7 +389,7 @@ void CudaPlatform::store_file(const std::string& filename, const std::string& st
     dst_file.close();
 }
 
-std::string get_libdevice_filename() {
+std::string get_libdevice_filename(CUjit_target target_cc) {
     std::string libdevice_filename = "libdevice.10.bc";
 
     #if CUDA_VERSION < 9000
@@ -413,8 +413,8 @@ std::string get_libdevice_filename() {
     return libdevice_filename;
 }
 
-std::string get_libdevice_path() {
-    return std::string(LIBDEVICE_DIR) + get_libdevice_filename();
+std::string get_libdevice_path(CUjit_target target_cc) {
+    return std::string(LIBDEVICE_DIR) + get_libdevice_filename(target_cc);
 }
 
 #ifdef RUNTIME_ENABLE_JIT
@@ -483,7 +483,7 @@ static std::string emit_nvptx(const std::string&, const std::string&, const std:
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
     debug("Compiling NVVM to PTX using nvptx for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(target_cc);
-    return emit_nvptx(program_string, get_libdevice_path(), cpu, 3);
+    return emit_nvptx(program_string, get_libdevice_path(target_cc), cpu, 3);
 }
 
 std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
@@ -491,8 +491,8 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     nvvmResult err = nvvmCreateProgram(&program);
     CHECK_NVVM(err, "nvvmCreateProgram()");
 
-    std::string libdevice_string = load_file(get_libdevice_path());
-    err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename().c_str());
+    std::string libdevice_string = load_file(get_libdevice_path(target_cc));
+    err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename(target_cc).c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     err = nvvmAddModuleToProgram(program, program_string.c_str(), program_string.length(), filename.c_str());
