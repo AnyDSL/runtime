@@ -88,7 +88,7 @@ if(RUNTIME_JIT)
         ../platforms/intrinsics_amdgpu.impala
         ../platforms/intrinsics_cpu.impala
         ../platforms/intrinsics_cuda.impala
-        ../platforms/intrinsics_nvptx.impala
+        ../platforms/intrinsics_nvvm.impala
         ../platforms/intrinsics_opencl.impala
         ../platforms/intrinsics_thorin.impala
         ../platforms/intrinsics.impala

@@ -461,25 +461,6 @@ fn @nvvm_accelerator(dev: i32) -> Accelerator {
     }
 };
 
-fn @nvptx_accelerator(dev: i32) -> Accelerator {
-    Accelerator {
-        exec          : @|grid, block, body| {
-            let tid  = (nvvm_read_ptx_sreg_tid_x,    nvvm_read_ptx_sreg_tid_y,    nvvm_read_ptx_sreg_tid_z);
-            let bid  = (nvvm_read_ptx_sreg_ctaid_x,  nvvm_read_ptx_sreg_ctaid_y,  nvvm_read_ptx_sreg_ctaid_z);
-            let bdim = (nvvm_read_ptx_sreg_ntid_x,   nvvm_read_ptx_sreg_ntid_y,   nvvm_read_ptx_sreg_ntid_z);
-            let gdim = (nvvm_read_ptx_sreg_nctaid_x, nvvm_read_ptx_sreg_nctaid_y, nvvm_read_ptx_sreg_nctaid_z);
-            let gid  = (|| nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
-                        || nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
-                        || nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z());
-            nvptx(dev, grid, block, || body(tid, bid, bdim, gdim, gid))
-        },
-        sync          : @|| synchronize_cuda(dev),
-        alloc         : @|size| alloc_cuda(dev, size),
-        alloc_unified : @|size| alloc_cuda_unified(dev, size),
-        barrier       : nvvm_barrier
-    }
-};
-
 static nvvm_intrinsics = Intrinsics {
     expf        : nvvm_expf,
     exp2f       : nvvm_exp2f,
