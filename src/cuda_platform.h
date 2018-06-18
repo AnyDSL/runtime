@@ -100,6 +100,7 @@ protected:
 
     void store_file(const std::string& filename, const std::string& str) const;
     std::string load_file(const std::string& filename) const;
+    std::string compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
     std::string compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
     std::string compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
     CUmodule create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string, CUjit_target target_cc) const;

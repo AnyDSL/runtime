@@ -96,10 +96,8 @@ struct JIT {
         };
         emit_to_string(backends.opencl_cg.get(), PlatformId(ANYDSL_OPENCL), ".cl");
         emit_to_string(backends.cuda_cg.get(),   PlatformId(ANYDSL_CUDA),   ".cu");
-        emit_to_string(backends.nvptx_cg.get(),  PlatformId(ANYDSL_CUDA),   ".ptx");
+        emit_to_string(backends.nvvm_cg.get(),   PlatformId(ANYDSL_CUDA),   ".nvvm");
         emit_to_string(backends.amdgpu_cg.get(), PlatformId(ANYDSL_HSA),    ".amdgpu");
-        if (backends.nvvm_cg.get())
-            error("JIT compilation of nvvm not supported, use nvptx backend for JIT!");
         if (backends.hls_cg.get())
             error("JIT compilation of hls not supported!");
 

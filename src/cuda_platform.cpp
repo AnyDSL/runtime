@@ -8,7 +8,24 @@
 #include <cstring>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <thread>
+
+#ifdef RUNTIME_ENABLE_JIT
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Linker/Linker.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#endif
 
 #ifndef LIBDEVICE_DIR
 #define LIBDEVICE_DIR ""
@@ -299,6 +316,8 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
             ptx = load_file(filename);
         } else if (ext == "cu" && (std::ifstream(file).good() || files_.count(file))) {
             ptx = compile_cuda(dev, filename, load_file(filename), target_cc);
+        } else if (ext == "nvvm" && (std::ifstream(file).good() || files_.count(file))) {
+            ptx = compile_nvptx(dev, filename, load_file(filename), target_cc);
         } else if (ext == "nvvm" && (std::ifstream(file + ".bc").good() || files_.count(file))) {
             filename += ".bc";
             ptx = compile_nvvm(dev, filename, load_file(filename), target_cc);
@@ -370,7 +389,7 @@ void CudaPlatform::store_file(const std::string& filename, const std::string& st
     dst_file.close();
 }
 
-std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
+std::string get_libdevice_filename() {
     std::string libdevice_filename = "libdevice.10.bc";
 
     #if CUDA_VERSION < 9000
@@ -391,13 +410,89 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
         libdevice_filename = "libdevice.compute_30.10.bc";
     #endif
 
-    std::string libdevice_string = load_file(std::string(LIBDEVICE_DIR) + libdevice_filename);
+    return libdevice_filename;
+}
 
+std::string get_libdevice_path() {
+    return std::string(LIBDEVICE_DIR) + get_libdevice_filename();
+}
+
+#ifdef RUNTIME_ENABLE_JIT
+static std::string emit_nvptx(const std::string& kernel, const std::string& libdevice_file, const std::string& cpu, int opt) {
+    LLVMInitializeNVPTXTarget();
+    LLVMInitializeNVPTXTargetInfo();
+    LLVMInitializeNVPTXTargetMC();
+    LLVMInitializeNVPTXAsmPrinter();
+
+    llvm::LLVMContext llvm_context;
+    llvm::SMDiagnostic diagnostic_err;
+    std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(kernel)->getMemBufferRef(), diagnostic_err, llvm_context);
+
+    auto triple_str = llvm_module->getTargetTriple();
+    std::string error_str;
+    auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
+    llvm::TargetOptions options;
+    options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Default, llvm::CodeGenOpt::Aggressive));
+
+    // link libdevice
+    std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(libdevice_file, diagnostic_err, llvm_context));
+    if (libdevice_module == nullptr)
+        error("Can't create libdevice module for '%'", libdevice_file);
+
+    llvm::Linker linker(*llvm_module.get());
+    if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link libdevice into kernel module");
+
+    llvm_module->addModuleFlag(llvm::Module::Override, "nvvm-reflect-ftz", 1);
+    for (auto &fun : *llvm_module)
+        fun.addFnAttr("nvptx-f32ftz", "true");
+    llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
+    llvm::legacy::PassManager module_pass_manager;
+
+    module_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+    function_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+
+    llvm::PassManagerBuilder builder;
+    builder.OptLevel = opt;
+    builder.Inliner = llvm::createFunctionInliningPass(builder.OptLevel, 0, false);
+    machine->adjustPassManager(builder);
+    builder.populateFunctionPassManager(function_pass_manager);
+    builder.populateModulePassManager(module_pass_manager);
+
+    machine->Options.MCOptions.AsmVerbose = true;
+
+    llvm::SmallString<0> outstr;
+    llvm::raw_svector_ostream llvm_stream(outstr);
+
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_AssemblyFile, true);
+
+    function_pass_manager.doInitialization();
+    for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
+        function_pass_manager.run(*func);
+    function_pass_manager.doFinalization();
+    module_pass_manager.run(*llvm_module);
+    return outstr.c_str();
+}
+#else
+static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, int) {
+    error("Recompile runtime with RUNTIME_JIT enabled for nvptx support.");
+}
+#endif
+
+std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
+    debug("Compiling NVVM to PTX using nvptx for '%' on CUDA device %", filename, dev);
+    std::string cpu = "sm_" + std::to_string(target_cc);
+    return emit_nvptx(program_string, get_libdevice_path(), cpu, 3);
+}
+
+std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
     nvvmProgram program;
     nvvmResult err = nvvmCreateProgram(&program);
     CHECK_NVVM(err, "nvvmCreateProgram()");
 
-    err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), libdevice_filename.c_str());
+    std::string libdevice_string = load_file(get_libdevice_path());
+    err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename().c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     err = nvvmAddModuleToProgram(program, program_string.c_str(), program_string.length(), filename.c_str());
