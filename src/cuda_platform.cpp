@@ -304,7 +304,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
         auto ext_pos = file.rfind('.');
         std::string ext = ext_pos != std::string::npos ? file.substr(ext_pos + 1) : "";
         if (ext != "ptx" && ext != "cu" && ext != "nvvm")
-            error("Incorrect extension for kernel file '%' (should be '.nvvm' or '.cu')", file);
+            error("Incorrect extension for kernel file '%' (should be '.ptx', '.cu', or '.nvvm')", file);
 
         // compile the given file
         std::string ptx;
@@ -418,7 +418,7 @@ std::string get_libdevice_path(CUjit_target target_cc) {
 }
 
 #ifdef RUNTIME_ENABLE_JIT
-static std::string emit_nvptx(const std::string& kernel, const std::string& libdevice_file, const std::string& cpu, int opt) {
+static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, int opt) {
     LLVMInitializeNVPTXTarget();
     LLVMInitializeNVPTXTargetInfo();
     LLVMInitializeNVPTXTargetMC();
@@ -426,7 +426,7 @@ static std::string emit_nvptx(const std::string& kernel, const std::string& libd
 
     llvm::LLVMContext llvm_context;
     llvm::SMDiagnostic diagnostic_err;
-    std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(kernel)->getMemBufferRef(), diagnostic_err, llvm_context);
+    std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(program)->getMemBufferRef(), diagnostic_err, llvm_context);
 
     auto triple_str = llvm_module->getTargetTriple();
     std::string error_str;
@@ -442,7 +442,7 @@ static std::string emit_nvptx(const std::string& kernel, const std::string& libd
 
     llvm::Linker linker(*llvm_module.get());
     if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
-        error("Can't link libdevice into kernel module");
+        error("Can't link libdevice into module");
 
     llvm_module->addModuleFlag(llvm::Module::Override, "nvvm-reflect-ftz", 1);
     for (auto &fun : *llvm_module)
