@@ -27,7 +27,7 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
-    void register_file(const std::string& filename, const std::string& program_string) override {}
+    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -49,6 +49,7 @@ protected:
         hsa_agent_t agent;
         hsa_profile_t profile;
         hsa_default_float_rounding_mode_t float_mode;
+        std::string isa;
         hsa_queue_t* queue;
         hsa_signal_t signal;
         hsa_region_t kernarg_region, finegrained_region, coarsegrained_region;
@@ -82,11 +83,16 @@ protected:
 
     uint64_t frequency_;
     std::vector<DeviceData> devices_;
+    std::unordered_map<std::string, std::string> files_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
+    void store_file(const std::string&, const std::string&) const;
+    std::string load_file(const std::string&) const;
     std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId, const std::string&, const std::string&);
+    std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
+    std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
 };
 
 #endif

@@ -14,6 +14,23 @@
 #include <string>
 #include <thread>
 
+#ifdef RUNTIME_ENABLE_JIT
+#include <lld/Driver/Driver.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Linker/Linker.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#endif
+
 #define CHECK_HSA(err, name)  check_hsa_error(err, name, __FILE__, __LINE__)
 
 inline void check_hsa_error(hsa_status_t err, const char* name, const char* file, const int line) {
@@ -85,6 +102,9 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME_LENGTH, &name_length);
     status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, &name);
     debug("      Device ISA: %", name);
+    std::string name_string = name;
+    auto dash_pos = name_string.rfind('-');
+    std::string isa_name = dash_pos != std::string::npos ? name_string.substr(dash_pos + 1) : "";
 
     hsa_device_type_t device_type;
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_DEVICE, &device_type);
@@ -122,6 +142,7 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->agent = agent;
     device->profile = profile;
     device->float_mode = float_mode;
+    device->isa = isa_name;
     device->queue = queue;
     device->signal = signal;
     device->kernarg_region.handle = { 0 };
@@ -329,6 +350,30 @@ void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t o
     CHECK_HSA(status, "hsa_memory_copy()");
 }
 
+void HSAPlatform::register_file(const std::string& filename, const std::string& program_string) {
+    files_[filename] = program_string;
+}
+
+std::string HSAPlatform::load_file(const std::string& filename) const {
+    auto file_it = files_.find(filename);
+    if (file_it != files_.end())
+        return file_it->second;
+
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        error("Can't open source file '%'", filename);
+
+    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
+}
+
+void HSAPlatform::store_file(const std::string& filename, const std::string& str) const {
+    std::ofstream dst_file(filename);
+    if (!dst_file)
+        error("Can't open destination file '%'", filename);
+    dst_file << str;
+    dst_file.close();
+}
+
 std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;
@@ -340,45 +385,55 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
     auto prog_it = prog_cache.find(filename);
     if (prog_it == prog_cache.end()) {
         hsa_dev.unlock();
-        if (std::ifstream(filename).good()) {
-            hsa_code_object_reader_t reader;
-            hsa_file_t file = open(filename.c_str(), O_RDONLY);
-            status = hsa_code_object_reader_create_from_file(file, &reader);
-            CHECK_HSA(status, "hsa_code_object_reader_create_from_file()");
 
-            debug("Compiling '%' on HSA device %", filename, dev);
+        // find the file extension
+        auto ext_pos = filename.rfind('.');
+        std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
+        if (ext != "gcn" && ext != "amdgpu")
+            error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", filename);
 
-            status = hsa_executable_create_alt(HSA_PROFILE_FULL /* hsa_dev.profile */, hsa_dev.float_mode, NULL, &executable);
-            CHECK_HSA(status, "hsa_executable_create_alt()");
-
-            // TODO
-            //hsa_loaded_code_object_t program_code_object;
-            //status = hsa_executable_load_program_code_object(executable, reader, "", &program_code_object);
-            //CHECK_HSA(status, "hsa_executable_load_program_code_object()");
-            // -> hsa_executable_global_variable_define()
-            // -> hsa_executable_agent_variable_define()
-            // -> hsa_executable_readonly_variable_define()
-
-            hsa_loaded_code_object_t agent_code_object;
-            status = hsa_executable_load_agent_code_object(executable, hsa_dev.agent, reader, NULL, &agent_code_object);
-            CHECK_HSA(status, "hsa_executable_load_agent_code_object()");
-
-            status = hsa_executable_freeze(executable, NULL);
-            CHECK_HSA(status, "hsa_executable_freeze()");
-
-            status = hsa_code_object_reader_destroy(reader);
-            CHECK_HSA(status, "hsa_code_object_reader_destroy()");
-            close(file);
-
-            uint32_t validated;
-            status = hsa_executable_validate(executable, &validated);
-            CHECK_HSA(status, "hsa_executable_validate()");
-
-            if (validated != 0)
-                debug("HSA executable validation failed: %", validated);
+        std::string gcn;
+        if (ext == "gcn" && (std::ifstream(filename).good() || files_.count(filename))) {
+            gcn = load_file(filename);
+        } else if (ext == "amdgpu" && (std::ifstream(filename).good() || files_.count(filename))) {
+            gcn = compile_gcn(dev, filename, load_file(filename));
         } else {
             error("Could not find kernel file '%'", filename);
         }
+
+        hsa_code_object_reader_t reader;
+        status = hsa_code_object_reader_create_from_memory(gcn.data(), gcn.size(), &reader);
+        CHECK_HSA(status, "hsa_code_object_reader_create_from_file()");
+
+        debug("Compiling '%' on HSA device %", filename, dev);
+
+        status = hsa_executable_create_alt(HSA_PROFILE_FULL /* hsa_dev.profile */, hsa_dev.float_mode, NULL, &executable);
+        CHECK_HSA(status, "hsa_executable_create_alt()");
+
+        // TODO
+        //hsa_loaded_code_object_t program_code_object;
+        //status = hsa_executable_load_program_code_object(executable, reader, "", &program_code_object);
+        //CHECK_HSA(status, "hsa_executable_load_program_code_object()");
+        // -> hsa_executable_global_variable_define()
+        // -> hsa_executable_agent_variable_define()
+        // -> hsa_executable_readonly_variable_define()
+
+        hsa_loaded_code_object_t agent_code_object;
+        status = hsa_executable_load_agent_code_object(executable, hsa_dev.agent, reader, NULL, &agent_code_object);
+        CHECK_HSA(status, "hsa_executable_load_agent_code_object()");
+
+        status = hsa_executable_freeze(executable, NULL);
+        CHECK_HSA(status, "hsa_executable_freeze()");
+
+        status = hsa_code_object_reader_destroy(reader);
+        CHECK_HSA(status, "hsa_code_object_reader_destroy()");
+
+        uint32_t validated;
+        status = hsa_executable_validate(executable, &validated);
+        CHECK_HSA(status, "hsa_executable_validate()");
+
+        if (validated != 0)
+            debug("HSA executable validation failed: %", validated);
 
         hsa_dev.lock();
         prog_cache[filename] = executable;
@@ -420,4 +475,112 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
     hsa_dev.unlock();
 
     return std::make_tuple(kernel, kernarg_segment_size, group_segment_size, private_segment_size);
+}
+
+#ifdef RUNTIME_ENABLE_JIT
+static std::string get_ocml_config(int target) {
+    std::string config = R"(
+        ; Module anydsl ocml config
+        define i32 @__oclc_finite_only_opt() { ret i32 0 }
+        define i32 @__oclc_unsafe_math_opt() { ret i32 0 }
+        define i32 @__oclc_daz_opt() { ret i32 0 }
+        define i32 @__oclc_amd_opt() { ret i32 1 }
+        define i32 @__oclc_correctly_rounded_sqrt32() { ret i32 1 }
+        define i32 @__oclc_ISA_version() { ret i32 )";
+    return config + std::to_string(target) + " }";
+}
+
+std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
+    LLVMInitializeAMDGPUTarget();
+    LLVMInitializeAMDGPUTargetInfo();
+    LLVMInitializeAMDGPUTargetMC();
+    LLVMInitializeAMDGPUAsmPrinter();
+
+    llvm::LLVMContext llvm_context;
+    llvm::SMDiagnostic diagnostic_err;
+    std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(program)->getMemBufferRef(), diagnostic_err, llvm_context);
+
+    auto triple_str = llvm_module->getTargetTriple();
+    std::string error_str;
+    auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
+    llvm::TargetOptions options;
+    options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Default, llvm::CodeGenOpt::Aggressive));
+
+    // link ocml.amdgcn, irif.amdgcn, and ocml config
+    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
+    std::string irif_file = "/opt/rocm/lib/irif.amdgcn.bc";
+    if (cpu.compare(0, 3, "gfx"))
+        error("Expected gfx ISA, got %", cpu);
+    std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
+    std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
+    if (ocml_module == nullptr)
+        error("Can't create ocml module for '%'", ocml_file);
+    std::unique_ptr<llvm::Module> irif_module(llvm::parseIRFile(irif_file, diagnostic_err, llvm_context));
+    if (irif_module == nullptr)
+        error("Can't create irif module for '%'", irif_file);
+    std::unique_ptr<llvm::Module> config_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(ocml_config)->getMemBufferRef(), diagnostic_err, llvm_context);
+    if (config_module == nullptr)
+        error("Can't create ocml config module");
+
+    llvm::Linker linker(*llvm_module.get());
+    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link config into module");
+    if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link ocml into module");
+    if (linker.linkInModule(std::move(irif_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link irif into module");
+
+    llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
+    llvm::legacy::PassManager module_pass_manager;
+
+    module_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+    function_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+
+    llvm::PassManagerBuilder builder;
+    builder.OptLevel = opt;
+    builder.Inliner = llvm::createFunctionInliningPass(builder.OptLevel, 0, false);
+    machine->adjustPassManager(builder);
+    builder.populateFunctionPassManager(function_pass_manager);
+    builder.populateModulePassManager(module_pass_manager);
+
+    machine->Options.MCOptions.AsmVerbose = true;
+
+    llvm::SmallString<0> outstr;
+    llvm::raw_svector_ostream llvm_stream(outstr);
+
+    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_AssemblyFile, true);
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_ObjectFile, true);
+
+    function_pass_manager.doInitialization();
+    for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
+        function_pass_manager.run(*func);
+    function_pass_manager.doFinalization();
+    module_pass_manager.run(*llvm_module);
+
+    std::string obj(outstr.begin(), outstr.end());
+    std::string obj_file = filename + ".obj";
+    std::string gcn_file = filename + ".gcn";
+    store_file(obj_file, obj);
+    std::vector<const char*> lld_args = {
+        "ld",
+        "-shared",
+        obj_file.c_str(),
+        "-o",
+        gcn_file.c_str()
+    };
+    if (!lld::elf::link(lld_args, false))
+        error("Generating gcn using ld");
+
+    return load_file(gcn_file);
+}
+#else
+std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, int) const {
+    error("Recompile runtime with RUNTIME_JIT enabled for gcn support.");
+}
+#endif
+
+std::string HSAPlatform::compile_gcn(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+    debug("Compiling AMDGPU to GCN using amdgpu for '%' on HSA device %", filename, dev);
+    return emit_gcn(program_string, devices_[dev].isa, filename, 3);
 }
