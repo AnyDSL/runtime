@@ -56,7 +56,7 @@ protected:
         bool is_intel_fpga = false;
         cl_uint version_major;
         cl_uint version_minor;
-        std::atomic_int timings_counter;
+        std::atomic_int timings_counter{};
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
