@@ -32,7 +32,7 @@ endif()
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
-    include_directories(${OpenCL_INCLUDE_DIRS})
+    include_directories(BEFORE ${OpenCL_INCLUDE_DIRS}) # use header from specified path instead of CUDA's
     set(OPENCL_PLATFORM opencl_platform.cpp opencl_platform.h)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_OPENCL)
     list(APPEND CONF_RUNTIME_LIBRARIES ${OpenCL_LIBRARIES})
