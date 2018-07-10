@@ -175,8 +175,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
+            cl_device_svm_capabilities svm_caps;
             if (version_major >= 2) {
-                cl_device_svm_capabilities svm_caps;
                 err |= clGetDeviceInfo(devices[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(svm_caps), &svm_caps, NULL);
                 if (svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) svm_caps_str = "CL_DEVICE_SVM_COARSE_GRAIN_BUFFER";
                 if (svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)   svm_caps_str += " CL_DEVICE_SVM_FINE_GRAIN_BUFFER";
@@ -197,6 +197,9 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_[dev].dev = device;
             devices_[dev].version_major = version_major;
             devices_[dev].version_minor = version_minor;
+            #ifdef CL_VERSION_2_0
+            devices_[dev].svm_caps = svm_caps;
+            #endif
 
             if (platform_name.find("FPGA") != std::string::npos)
                 devices_[dev].is_intel_fpga = true;
@@ -255,8 +258,18 @@ OpenCLPlatform::~OpenCLPlatform() {
 }
 
 void* OpenCLPlatform::alloc(DeviceId dev, int64_t size) {
-    if (!size) return 0;
+    if (!size) return nullptr;
 
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev].version_major >= 2) {
+        cl_mem_flags flags = CL_MEM_READ_WRITE;
+        void* mem = clSVMAlloc(devices_[dev].ctx, flags, size, 0);
+        if (mem == nullptr)
+            error("clSVMAlloc() returned % for OpenCL device %", mem, dev);
+
+        return mem;
+    }
+    #endif
     cl_int err = CL_SUCCESS;
     cl_mem_flags flags = CL_MEM_READ_WRITE;
     cl_mem mem = clCreateBuffer(devices_[dev].ctx, flags, size, NULL, &err);
@@ -265,7 +278,32 @@ void* OpenCLPlatform::alloc(DeviceId dev, int64_t size) {
     return (void*)mem;
 }
 
-void OpenCLPlatform::release(DeviceId, void* ptr) {
+void* OpenCLPlatform::alloc_unified(DeviceId dev, int64_t size) {
+    if (!size) return nullptr;
+
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev].version_major >= 2) {
+        cl_mem_flags flags = CL_MEM_READ_WRITE;
+        if (devices_[dev].svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)
+            flags |= CL_MEM_SVM_FINE_GRAIN_BUFFER;
+        if (devices_[dev].svm_caps & CL_DEVICE_SVM_ATOMICS)
+            flags |= CL_MEM_SVM_ATOMICS;
+        void* mem = clSVMAlloc(devices_[dev].ctx, flags, size, 0);
+        if (mem == nullptr)
+            error("clSVMAlloc() returned % for OpenCL device %", mem, dev);
+
+        return mem;
+    }
+    #endif
+    error("clSVMAlloc() requires at least OpenCL 2.0 for OpenCL device %", dev);
+}
+
+void OpenCLPlatform::release(DeviceId dev, void* ptr) {
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev].version_major >= 2)
+        return clSVMFree(devices_[dev].ctx, ptr);
+    #endif
+    unused(dev);
     cl_int err = clReleaseMemObject((cl_mem)ptr);
     CHECK_OPENCL(err, "clReleaseMemObject()");
 }
@@ -304,6 +342,13 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
             kernel_structs[i] = struct_buf;
             clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
         } else {
+            #ifdef CL_VERSION_2_0
+            if (types[i] == KernelArgType::Ptr && devices_[dev].version_major >= 2) {
+                cl_int err = clSetKernelArgSVMPointer(kernel, i, *(void**)args[i]);
+                CHECK_OPENCL(err, "clSetKernelArgSVMPointer()");
+                continue;
+            }
+            #endif
             cl_int err = clSetKernelArg(kernel, i, types[i] == KernelArgType::Ptr ? sizeof(cl_mem) : sizes[i], args[i]);
             CHECK_OPENCL(err, "clSetKernelArg()");
         }
@@ -349,7 +394,7 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
         }
     } else {
         cl_int err = clFinish(devices_[dev].queue);
-        while (devices_[dev].timings_counter.load() != 0) ;
+        while (runtime_->profiling_enabled() && devices_[dev].timings_counter.load() != 0) ;
         CHECK_OPENCL(err, "clFinish()");
     }
 }
@@ -358,21 +403,41 @@ void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src,
     assert(dev_src == dev_dst);
     unused(dev_dst);
 
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev_src].version_major >= 2 && devices_[dev_dst].version_major >= 2)
+        return copy_svm(src, offset_src, dst, offset_dst, size);
+    if ((devices_[dev_src].version_major >= 2 && devices_[dev_dst].version_major == 1) ||
+        (devices_[dev_src].version_major == 1 && devices_[dev_dst].version_major >= 2))
+        error("copy between SVM and non-SVM OpenCL devices % and %", dev_src, dev_dst);
+    #endif
+
     cl_int err = clEnqueueCopyBuffer(devices_[dev_src].queue, (cl_mem)src, (cl_mem)dst, offset_src, offset_dst, size, 0, NULL, NULL);
     err |= clFinish(devices_[dev_src].queue);
     CHECK_OPENCL(err, "clEnqueueCopyBuffer()");
 }
 
 void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev_dst].version_major >= 2)
+        return copy_svm(src, offset_src, dst, offset_dst, size);
+    #endif
     cl_int err = clEnqueueWriteBuffer(devices_[dev_dst].queue, (cl_mem)dst, CL_FALSE, offset_dst, size, (char*)src + offset_src, 0, NULL, NULL);
     err |= clFinish(devices_[dev_dst].queue);
     CHECK_OPENCL(err, "clEnqueueWriteBuffer()");
 }
 
 void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev_src].version_major >= 2)
+        return copy_svm(src, offset_src, dst, offset_dst, size);
+    #endif
     cl_int err = clEnqueueReadBuffer(devices_[dev_src].queue, (cl_mem)src, CL_FALSE, offset_src, size, (char*)dst + offset_dst, 0, NULL, NULL);
     err |= clFinish(devices_[dev_src].queue);
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
+}
+
+void OpenCLPlatform::copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+    std::copy((char*)src + offset_src, (char*)src + offset_src + size, (char*)dst + offset_dst);
 }
 
 void OpenCLPlatform::register_file(const std::string& filename, const std::string& program_string) {
