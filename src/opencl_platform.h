@@ -26,7 +26,7 @@ public:
 protected:
     void* alloc(DeviceId dev, int64_t size) override;
     void* alloc_host(DeviceId, int64_t) override { command_unavailable("alloc_host"); }
-    void* alloc_unified(DeviceId, int64_t) override { command_unavailable("alloc_unified"); }
+    void* alloc_unified(DeviceId, int64_t) override;
     void* get_device_ptr(DeviceId, void*) override { command_unavailable("get_device_ptr"); }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
@@ -42,6 +42,7 @@ protected:
     void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }
@@ -56,7 +57,10 @@ protected:
         bool is_intel_fpga = false;
         cl_uint version_major;
         cl_uint version_minor;
-        std::atomic_int timings_counter;
+        #ifdef CL_VERSION_2_0
+        cl_device_svm_capabilities svm_caps;
+        #endif
+        std::atomic_int timings_counter{};
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
@@ -72,6 +76,9 @@ protected:
             , is_intel_fpga(data.is_intel_fpga)
             , version_major(data.version_major)
             , version_minor(data.version_minor)
+            #ifdef CL_VERSION_2_0
+            , svm_caps(data.svm_caps)
+            #endif
             , timings_counter(0)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
