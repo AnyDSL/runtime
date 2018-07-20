@@ -18,6 +18,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
@@ -418,11 +419,29 @@ std::string get_libdevice_path(CUjit_target target_cc) {
 }
 
 #ifdef RUNTIME_ENABLE_JIT
+bool llvm_initialized = false;
 static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, int opt) {
-    LLVMInitializeNVPTXTarget();
-    LLVMInitializeNVPTXTargetInfo();
-    LLVMInitializeNVPTXTargetMC();
-    LLVMInitializeNVPTXAsmPrinter();
+    if (!llvm_initialized) {
+        // ANYDSL_LLVM_ARGS="-nvptx-sched4reg -nvptx-fma-level=2 -nvptx-prec-divf32=0 -nvptx-prec-sqrtf32=0 -nvptx-f32ftz=1"
+        const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
+        if (env_var) {
+            std::vector<const char*> c_llvm_args;
+            std::vector<std::string> llvm_args;
+            std::istringstream stream(env_var);
+            std::string tmp;
+            while (stream >> tmp)
+                llvm_args.push_back(tmp);
+            for (auto &str : llvm_args)
+                c_llvm_args.push_back(str.c_str());
+            llvm::cl::ParseCommandLineOptions(c_llvm_args.size(), c_llvm_args.data(), "AnyDSL nvptx JIT compiler\n");
+        }
+
+        LLVMInitializeNVPTXTarget();
+        LLVMInitializeNVPTXTargetInfo();
+        LLVMInitializeNVPTXTargetMC();
+        LLVMInitializeNVPTXAsmPrinter();
+        llvm_initialized = true;
+    }
 
     llvm::LLVMContext llvm_context;
     llvm::SMDiagnostic diagnostic_err;
@@ -444,9 +463,6 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link libdevice into module");
 
-    llvm_module->addModuleFlag(llvm::Module::Override, "nvvm-reflect-ftz", 1);
-    for (auto &fun : *llvm_module)
-        fun.addFnAttr("nvptx-f32ftz", "true");
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
 
@@ -503,6 +519,10 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     const char* options[] = {
         compute_arch.c_str(),
         "-opt=3",
+        "-ftz=1",
+        "-prec-div=0",
+        "-prec-sqrt=0",
+        "-fma=1",
         "-g",
         "-generate-line-info" };
 
