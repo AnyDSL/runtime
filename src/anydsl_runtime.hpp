@@ -35,7 +35,7 @@ public:
     {}
 
     Array(int32_t dev, T* ptr, int64_t size)
-        : dev_(dev), data_(ptr), size_(size)
+        : dev_(dev), size_(size), data_(ptr)
     {}
 
     Array(Platform p, Device d, int64_t size)
@@ -97,9 +97,9 @@ protected:
         if (data_) anydsl_release(dev_, (void*)data_);
     }
 
-    T* data_;
-    int64_t size_;
     int32_t dev_;
+    int64_t size_;
+    T* data_;
 };
 
 template <typename T>
