@@ -463,6 +463,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link libdevice into module");
 
+    llvm_module->setDataLayout(machine->createDataLayout()); // override data layout with the one coming from the target machine
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
 
