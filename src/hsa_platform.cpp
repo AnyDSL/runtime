@@ -531,7 +531,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     if (linker.linkInModule(std::move(irif_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link irif into module");
 
-    llvm_module->setDataLayout(machine->createDataLayout()); // override data layout with the one coming from the target machine
+    // override data layout with the one coming from the target machine
+    llvm_module->setDataLayout(machine->createDataLayout());
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;

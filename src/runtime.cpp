@@ -47,7 +47,7 @@ Runtime& runtime() {
 
 Runtime::Runtime() {
     profile_ = ProfileLevel::None;
-    char* env_var = std::getenv("ANYDSL_PROFILE");
+    const char* env_var = std::getenv("ANYDSL_PROFILE");
     if (env_var) {
         std::string env_str = env_var;
         for (auto& c: env_str)
