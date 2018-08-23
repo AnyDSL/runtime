@@ -527,6 +527,15 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
         "-g",
         "-generate-line-info" };
 
+    err = nvvmVerifyProgram(program, num_options, options);
+    if (err != NVVM_SUCCESS) {
+        size_t log_size;
+        nvvmGetProgramLogSize(program, &log_size);
+        std::string error_log(log_size, '\0');
+        nvvmGetProgramLog(program, &error_log[0]);
+        info("Verify program error: %", error_log);
+    }
+
     debug("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
     err = nvvmCompileProgram(program, num_options, options);
     if (err != NVVM_SUCCESS) {
