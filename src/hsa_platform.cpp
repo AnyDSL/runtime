@@ -481,12 +481,12 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
 static std::string get_ocml_config(int target) {
     std::string config = R"(
         ; Module anydsl ocml config
-        define i32 @__oclc_finite_only_opt() { ret i32 0 }
-        define i32 @__oclc_unsafe_math_opt() { ret i32 0 }
-        define i32 @__oclc_daz_opt() { ret i32 0 }
-        define i32 @__oclc_amd_opt() { ret i32 1 }
-        define i32 @__oclc_correctly_rounded_sqrt32() { ret i32 1 }
-        define i32 @__oclc_ISA_version() { ret i32 )";
+        define i32 @__oclc_finite_only_opt() alwaysinline { ret i32 0 }
+        define i32 @__oclc_unsafe_math_opt() alwaysinline { ret i32 0 }
+        define i32 @__oclc_daz_opt() alwaysinline { ret i32 0 }
+        define i32 @__oclc_amd_opt() alwaysinline { ret i32 1 }
+        define i32 @__oclc_correctly_rounded_sqrt32() alwaysinline { ret i32 1 }
+        define i32 @__oclc_ISA_version() alwaysinline { ret i32 )";
     return config + std::to_string(target) + " }";
 }
 
@@ -505,7 +505,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Default, llvm::CodeGenOpt::Aggressive));
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn, irif.amdgcn, and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
@@ -523,15 +523,19 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     if (config_module == nullptr)
         error("Can't create ocml config module");
 
+    // override data layout with the one coming from the target machine
+    llvm_module->setDataLayout(machine->createDataLayout());
+    ocml_module->setDataLayout(machine->createDataLayout());
+    irif_module->setDataLayout(machine->createDataLayout());
+    config_module->setDataLayout(machine->createDataLayout());
+
     llvm::Linker linker(*llvm_module.get());
-    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::LinkOnlyNeeded))
+    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
         error("Can't link config into module");
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
     if (linker.linkInModule(std::move(irif_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link irif into module");
-
-    llvm_module->setDataLayout(machine->createDataLayout()); // override data layout with the one coming from the target machine
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
@@ -551,8 +555,13 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
 
+#if LLVM_VERSION_MAJOR >= 7
+    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_ObjectFile, true);
+#else
     //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_AssemblyFile, true);
     machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_ObjectFile, true);
+#endif
 
     function_pass_manager.doInitialization();
     for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)

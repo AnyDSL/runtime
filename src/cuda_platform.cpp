@@ -452,7 +452,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Default, llvm::CodeGenOpt::Aggressive));
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
 
     // link libdevice
     std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(libdevice_file, diagnostic_err, llvm_context));
@@ -463,7 +463,9 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link libdevice into module");
 
-    llvm_module->setDataLayout(machine->createDataLayout()); // override data layout with the one coming from the target machine
+    // override data layout with the one coming from the target machine
+    llvm_module->setDataLayout(machine->createDataLayout());
+
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
 
@@ -482,7 +484,11 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
 
+#if LLVM_VERSION_MAJOR >= 7
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
+#else
     machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_AssemblyFile, true);
+#endif
 
     function_pass_manager.doInitialization();
     for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)

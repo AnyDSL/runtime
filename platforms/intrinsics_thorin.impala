@@ -23,7 +23,7 @@ extern "thorin" {
     fn atomic[T](u32, &mut T, T) -> T; // only for integer data types
     fn cmpxchg[T](&mut T, T, T) -> (T, bool);  // only for integer data types
 
-    fn vectorize(vector_length: i32, alignment: i32, lower: i32, upper: i32, body: fn(i32) -> ()) -> ();
+    fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
 }
 
 // intrinsics for flow graphs

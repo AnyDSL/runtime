@@ -111,14 +111,15 @@ extern "device" {
 fn @hls_accelerator() -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
-            hls(|| {
-                let tid  = (@|| 1, @|| 1, @|| 1);
-                let bid  = (@|| 1, @|| 1, @|| 1);
-                let bdim = (@|| 1, @|| 1, @|| 1);
-                let gdim = (@|| 1, @|| 1, @|| 1);
-                let gid  = (@|| 1, @|| 1, @|| 1);
-                body(tid, bid, bdim, gdim, gid)
-            });
+            let work_item = WorkItem {
+                tidx  : @|| 0, tidy  : @|| 0, tidz  : @|| 0,
+                bidx  : @|| 0, bidy  : @|| 0, bidz  : @|| 0,
+                gidx  : @|| 0, gidy  : @|| 0, gidz  : @|| 0,
+                bdimx : @|| 1, bdimy : @|| 1, bdimz : @|| 1,
+                gdimx : @|| 1, gdimy : @|| 1, gdimz : @|| 1,
+                nblkx : @|| 1, nblky : @|| 1, nblkz : @|| 1
+            };
+            hls(|| @@body(work_item));
         },
         sync          : @|| (),
         alloc         : @|size| alloc_cpu(size),
