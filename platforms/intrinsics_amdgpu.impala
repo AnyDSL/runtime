@@ -146,16 +146,30 @@ struct hsa_dispatch_packet_t {
 }
 
 fn @amdgpu_accelerator(dev: i32) -> Accelerator {
+    fn @div_round_up(num: i32, multiple: i32) -> i32 { (num + multiple - 1) / multiple }
     Accelerator {
         exec          : @|grid, block, body| {
-            let tid  = (amdgcn_workitem_id_x,  amdgcn_workitem_id_y,  amdgcn_workitem_id_z);
-            let bid  = (amdgcn_workgroup_id_x, amdgcn_workgroup_id_y, amdgcn_workgroup_id_z);
-            let bdim = (|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32, || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32, || bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32);
-            let gdim = (|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32, || bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32, || bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32);
-            let gid  = (|| amdgcn_workitem_id_x() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
-                        || amdgcn_workitem_id_y() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
-                        || amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z());
-            amdgpu(dev, grid, block, || body(tid, bid, bdim, gdim, gid))
+            let work_item = WorkItem {
+                tidx  : amdgcn_workitem_id_x,
+                tidy  : amdgcn_workitem_id_y,
+                tidz  : amdgcn_workitem_id_z,
+                bidx  : amdgcn_workgroup_id_x,
+                bidy  : amdgcn_workgroup_id_y,
+                bidz  : amdgcn_workgroup_id_z,
+                gidx  : @|| amdgcn_workitem_id_x() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
+                gidy  : @|| amdgcn_workitem_id_y() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
+                gidz  : @|| amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
+                bdimx : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32,
+                bdimy : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32,
+                bdimz : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimx : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32,
+                gdimy : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimz : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32,
+                nblkx : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32),
+                nblky : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32),
+                nblkz : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32)
+            };
+            amdgpu(dev, grid, block, || body(work_item))
         },
         sync          : @|| synchronize_hsa(dev),
         alloc         : @|size| alloc_hsa(dev, size),

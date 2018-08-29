@@ -1,11 +1,28 @@
+struct WorkItem {
+    tidx  : fn() -> i32,
+    tidy  : fn() -> i32,
+    tidz  : fn() -> i32,
+    bidx  : fn() -> i32,
+    bidy  : fn() -> i32,
+    bidz  : fn() -> i32,
+    gidx  : fn() -> i32,
+    gidy  : fn() -> i32,
+    gidz  : fn() -> i32,
+    bdimx : fn() -> i32,
+    bdimy : fn() -> i32,
+    bdimz : fn() -> i32,
+    gdimx : fn() -> i32,
+    gdimy : fn() -> i32,
+    gdimz : fn() -> i32,
+    nblkx : fn() -> i32,
+    nblky : fn() -> i32,
+    nblkz : fn() -> i32
+}
+
 struct Accelerator {
     exec          : fn((i32, i32, i32), // grid
                        (i32, i32, i32), // block
-                       fn((fn() -> i32, fn() -> i32, fn() -> i32), // tid
-                          (fn() -> i32, fn() -> i32, fn() -> i32), // bid
-                          (fn() -> i32, fn() -> i32, fn() -> i32), // bdim
-                          (fn() -> i32, fn() -> i32, fn() -> i32), // gdim
-                          (fn() -> i32, fn() -> i32, fn() -> i32)) -> ()) -> (), // gid
+                       fn(WorkItem) -> ()) -> (),
     sync          : fn() -> (),
     alloc         : fn(i32) -> Buffer,
     alloc_unified : fn(i32) -> Buffer,
