@@ -459,12 +459,14 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     if (libdevice_module == nullptr)
         error("Can't create libdevice module for '%'", libdevice_file);
 
+    // override data layout with the one coming from the target machine
+    llvm_module->setDataLayout(machine->createDataLayout());
+    libdevice_module->setDataLayout(machine->createDataLayout());
+    libdevice_module->setTargetTriple(triple_str);
+
     llvm::Linker linker(*llvm_module.get());
     if (linker.linkInModule(std::move(libdevice_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link libdevice into module");
-
-    // override data layout with the one coming from the target machine
-    llvm_module->setDataLayout(machine->createDataLayout());
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
