@@ -10,8 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <hsa/hsa.h>
-#include <hsa/hsa_ext_amd.h>
+#include <hsa.h>
+#include <hsa_ext_amd.h>
 
 /// HSA platform. Has the same number of devices as that of the HSA implementation.
 class HSAPlatform : public Platform {
