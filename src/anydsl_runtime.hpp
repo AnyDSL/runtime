@@ -27,7 +27,7 @@ template <typename T>
 class Array {
 public:
     Array()
-        : dev_(0), size_(0), data_(nullptr)
+        : data_(nullptr), size_(0), dev_(0)
     {}
 
     Array(int64_t size)
@@ -35,7 +35,7 @@ public:
     {}
 
     Array(int32_t dev, T* ptr, int64_t size)
-        : dev_(dev), data_(ptr), size_(size)
+        : data_(ptr), size_(size), dev_(dev)
     {}
 
     Array(Platform p, Device d, int64_t size)
@@ -44,9 +44,9 @@ public:
     }
 
     Array(Array&& other)
-        : dev_(other.dev_),
+        : data_(other.data_),
           size_(other.size_),
-          data_(other.data_) {
+          dev_(other.dev_) {
         other.data_ = nullptr;
     }
 
