@@ -71,6 +71,18 @@ public:
         platforms_[plat]->release_host(dev, ptr);
     }
 
+    /// Allocates a texture on a device
+    void* alloc_tex(PlatformId plat, DeviceId dev, void* data, const TextureDesc& desc) {
+        check_device(plat, dev);
+        return platforms_[plat]->alloc_tex(dev, data, desc);
+    }
+
+    /// Release a texture on the device
+    void release_tex(PlatformId plat, DeviceId dev, void* tex) {
+        check_device(plat, dev);
+        platforms_[plat]->release_tex(dev, tex);
+    }
+
     /// Associate a program string to a given filename.
     void register_file(PlatformId plat, const char* filename, const char* program_string) {
         platforms_[plat]->register_file(filename, program_string);

@@ -27,6 +27,13 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
+    void no_texture[[noreturn]]() {
+        error("Textures are not supported on this platform");
+    }
+
+    void* alloc_tex(DeviceId dev, void*, const TextureDesc&) override { no_texture(); }
+    void release_tex(DeviceId dev, void*) override { no_texture(); }
+
     void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,

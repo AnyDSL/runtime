@@ -36,6 +36,9 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override;
 
+    void* alloc_tex(DeviceId dev, void* data, const TextureDesc&) override;
+    void release_tex(DeviceId dev, void* tex) override;
+
     void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,

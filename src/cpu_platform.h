@@ -38,7 +38,14 @@ protected:
         release(dev, ptr);
     }
 
-    void no_kernel() {
+    void no_texture[[noreturn]]() {
+        error("Textures are not supported on the CPU");
+    }
+
+    void* alloc_tex(DeviceId, void*, const TextureDesc&) override { no_texture(); }
+    void release_tex(DeviceId, void*) override { no_texture(); }
+
+    void no_kernel[[noreturn]]() {
         error("Kernels are not supported on the CPU");
     }
 

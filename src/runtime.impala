@@ -4,10 +4,12 @@ extern "C" {
     fn "anydsl_alloc"          runtime_alloc(i32, i64) -> &[i8];
     fn "anydsl_alloc_host"     runtime_alloc_host(i32, i64) -> &[i8];
     fn "anydsl_alloc_unified"  runtime_alloc_unified(i32, i64) -> &[i8];
+    fn "anydsl_alloc_tex"      runtime_alloc_tex(i32, &[i8], i32, i32, i32, i32, i32, i32, i32, i32) -> &[i8];
     fn "anydsl_copy"           runtime_copy(i32, &[i8], i64, i32, &[i8], i64, i64) -> ();
     fn "anydsl_get_device_ptr" runtime_get_device_ptr(i32, &[i8]) -> &[i8];
     fn "anydsl_release"        runtime_release(i32, &[i8]) -> ();
     fn "anydsl_release_host"   runtime_release_host(i32, &[i8]) -> ();
+    fn "anydsl_release_tex"    runtime_release_tex(i32, &[i8]) -> ();
     fn "anydsl_synchronize"    runtime_synchronize(i32) -> ();
 
     fn "anydsl_random_seed"     random_seed(u32) -> ();
@@ -33,6 +35,23 @@ struct Buffer {
     device : i32
 }
 
+struct TexDesc {
+    data     : &[i8],
+    width    : i32,
+    height   : i32,
+    pitch    : i32,
+    channels : i32,
+    format   : i32,
+    border_x : i32,
+    border_y : i32,
+    filter   : i32
+}
+
+struct Tex {
+    device : i32,
+    handle : i64
+}
+
 fn @alloc(dev: i32, size: i32) -> Buffer {
     Buffer {
         device : dev,
@@ -54,9 +73,20 @@ fn @alloc_unified(dev: i32, size: i32) -> Buffer {
         size : size as i64
     }
 }
+fn @alloc_tex(dev: i32, desc: TexDesc) -> Tex {
+    Tex {
+        device : dev,
+        handle : runtime_alloc_tex(dev, desc.data, desc.width, desc.height, desc.pitch, desc.channels, desc.format, desc.border_x, desc.border_y, desc.filter) as i64
+    }
+}
 fn @release(buf: Buffer) -> () { runtime_release(buf.device, buf.data) }
+fn @release_tex(tex: Tex) -> () { runtime_release_tex(tex.device, tex.handle as &[i8]) }
 
 fn @runtime_device(platform: i32, device: i32) -> i32 { platform | (device << 4) }
+fn @cpu_device   (device: i32) -> i32 { runtime_device(0, device) }
+fn @cuda_device  (device: i32) -> i32 { runtime_device(1, device) }
+fn @opencl_device(device: i32) -> i32 { runtime_device(2, device) }
+fn @hsa_device   (device: i32) -> i32 { runtime_device(3, device) }
 
 fn @alloc_cpu(size: i32) -> Buffer { alloc(0, size) }
 fn @alloc_cuda(dev: i32, size: i32) -> Buffer { alloc(runtime_device(1, dev), size) }

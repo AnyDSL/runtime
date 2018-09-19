@@ -21,6 +21,9 @@ protected:
     void release(DeviceId, void*) override { platform_error(); }
     void release_host(DeviceId, void*) override { platform_error(); }
 
+    void* alloc_tex(DeviceId, void*, const TextureDesc&) override { platform_error(); }
+    void release_tex(DeviceId, void*) override { platform_error(); }
+
     void register_file(const std::string&, const std::string&) override { platform_error(); }
     void launch_kernel(DeviceId,
                        const char*, const char*,

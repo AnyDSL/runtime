@@ -110,6 +110,23 @@ void anydsl_release_host(int32_t mask, void* ptr) {
     runtime().release_host(to_platform(mask), to_device(mask), ptr);
 }
 
+void* anydsl_alloc_tex(int32_t mask, void* data, int32_t width, int32_t height, int32_t pitch, int32_t num_channels, int32_t format, int32_t border_x, int32_t border_y, int32_t filter) {
+    TextureDesc desc;
+    desc.width  = width;
+    desc.height = height;
+    desc.pitch  = pitch;
+    desc.num_channels = num_channels;
+    desc.format = TextureFormat(format);
+    desc.border_x = BorderMode(border_x);
+    desc.border_y = BorderMode(border_y);
+    desc.filter = FilterMode(filter);
+    return runtime().alloc_tex(to_platform(mask), to_device(mask), data, desc);
+}
+
+void anydsl_release_tex(int32_t mask, void* tex) {
+    runtime().release_tex(to_platform(mask), to_device(mask), tex);
+}
+
 void anydsl_copy(int32_t mask_src, const void* src, int64_t offset_src,
                  int32_t mask_dst, void* dst, int64_t offset_dst, int64_t size) {
     runtime().copy(to_platform(mask_src), to_device(mask_src), src, offset_src,

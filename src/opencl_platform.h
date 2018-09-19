@@ -31,6 +31,9 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
+    void* alloc_tex(DeviceId, void*, const TextureDesc&) override { command_unavailable("alloc_tex"); }
+    void release_tex(DeviceId, void*) override { command_unavailable("release_tex"); }
+
     void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,

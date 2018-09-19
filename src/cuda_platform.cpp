@@ -129,7 +129,7 @@ void CudaPlatform::erase_profiles(bool erase_all) {
             cuEventDestroy(profile->end);
             delete profile;
         }
-        cuCtxPopCurrent(NULL);
+        cuCtxPopCurrent(nullptr);
         return erased;
     });
 }
@@ -147,7 +147,7 @@ void* CudaPlatform::alloc(DeviceId dev, int64_t size) {
     CUresult err = cuMemAlloc(&mem, size);
     CHECK_CUDA(err, "cuMemAlloc()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
     return (void*)mem;
 }
 
@@ -158,7 +158,7 @@ void* CudaPlatform::alloc_host(DeviceId dev, int64_t size) {
     CUresult err = cuMemHostAlloc(&mem, size, CU_MEMHOSTALLOC_DEVICEMAP);
     CHECK_CUDA(err, "cuMemHostAlloc()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
     return mem;
 }
 
@@ -169,7 +169,7 @@ void* CudaPlatform::alloc_unified(DeviceId dev, int64_t size) {
     CUresult err = cuMemAllocManaged(&mem, size, CU_MEM_ATTACH_GLOBAL);
     CHECK_CUDA(err, "cuMemAllocManaged()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
     return (void*)mem;
 }
 
@@ -180,7 +180,7 @@ void* CudaPlatform::get_device_ptr(DeviceId dev, void* ptr) {
     CUresult err = cuMemHostGetDevicePointer(&mem, ptr, 0);
     CHECK_CUDA(err, "cuMemHostGetDevicePointer()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
     return (void*)mem;
 }
 
@@ -188,14 +188,134 @@ void CudaPlatform::release(DeviceId dev, void* ptr) {
     cuCtxPushCurrent(devices_[dev].ctx);
     CUresult err = cuMemFree((CUdeviceptr)ptr);
     CHECK_CUDA(err, "cuMemFree()");
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
 }
 
 void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPushCurrent(devices_[dev].ctx);
     CUresult err = cuMemFreeHost(ptr);
     CHECK_CUDA(err, "cuMemFreeHost()");
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
+}
+
+static CUaddress_mode cuda_border_mode(BorderMode mode) {
+    switch (mode) {
+        case BorderMode::Clamp:  return CU_TR_ADDRESS_MODE_CLAMP;
+        case BorderMode::Repeat: return CU_TR_ADDRESS_MODE_WRAP;
+        case BorderMode::Mirror: return CU_TR_ADDRESS_MODE_MIRROR;
+        default:
+            error("Unsupported border mode");
+            break;
+    }
+}
+
+static size_t component_size(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::Int8:    return 1;
+        case TextureFormat::Int16:   return 2;
+        case TextureFormat::Int32:   return 4;
+        case TextureFormat::Uint8:   return 1;
+        case TextureFormat::Uint16:  return 2;
+        case TextureFormat::Uint32:  return 4;
+        case TextureFormat::Float32: return 4;
+        default:
+            error("Unsupported texture format");
+            break;
+    }
+}
+
+void* CudaPlatform::alloc_tex(DeviceId dev, void* data, const TextureDesc& desc) {
+    CUDA_RESOURCE_DESC res_desc;
+    memset(&res_desc, 0, sizeof(CUDA_RESOURCE_DESC));
+    res_desc.resType = CU_RESOURCE_TYPE_PITCH2D;
+    res_desc.flags = 0;
+    switch (desc.format) {
+        case TextureFormat::Int8:    res_desc.res.pitch2D.format = CU_AD_FORMAT_SIGNED_INT8;    break;
+        case TextureFormat::Int16:   res_desc.res.pitch2D.format = CU_AD_FORMAT_SIGNED_INT16;   break;
+        case TextureFormat::Int32:   res_desc.res.pitch2D.format = CU_AD_FORMAT_SIGNED_INT32;   break;
+        case TextureFormat::Uint8:   res_desc.res.pitch2D.format = CU_AD_FORMAT_UNSIGNED_INT8;  break;
+        case TextureFormat::Uint16:  res_desc.res.pitch2D.format = CU_AD_FORMAT_UNSIGNED_INT16; break;
+        case TextureFormat::Uint32:  res_desc.res.pitch2D.format = CU_AD_FORMAT_UNSIGNED_INT32; break;
+        case TextureFormat::Float32: res_desc.res.pitch2D.format = CU_AD_FORMAT_FLOAT;          break;
+        default:
+            error("Unsupported texture format");
+            break;
+    }
+    res_desc.res.pitch2D.numChannels  = desc.num_channels;
+    res_desc.res.pitch2D.width        = desc.width;
+    res_desc.res.pitch2D.height       = desc.height;
+    res_desc.res.pitch2D.pitchInBytes = desc.pitch;
+    res_desc.res.pitch2D.devPtr       = (CUdeviceptr)data;
+
+    int align = 1;
+    CUresult err = cuDeviceGetAttribute(&align, CU_DEVICE_ATTRIBUTE_TEXTURE_PITCH_ALIGNMENT, devices_[dev].dev);
+    CHECK_CUDA(err, "cuDeviceGetAttribute()");
+    if (desc.pitch % align != 0) {
+        // Need to allocate aligned texture
+        size_t width_in_bytes = desc.width * desc.num_channels * component_size(desc.format);
+        size_t aligned_pitch = width_in_bytes + (width_in_bytes % align == 0 ? 0 : align - width_in_bytes % align);
+
+        CUdeviceptr aligned_mem;
+        err = cuMemAlloc(&aligned_mem, aligned_pitch * desc.height);
+        CHECK_CUDA(err, "cuMemAlloc()");
+
+        CUDA_MEMCPY2D copy;
+
+        copy.srcXInBytes = 0;
+        copy.srcY = 0;
+        copy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+        copy.srcDevice = (CUdeviceptr)data;
+        copy.srcPitch = desc.pitch;
+
+        copy.dstXInBytes = 0;
+        copy.dstY = 0;
+        copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+        copy.dstDevice = aligned_mem;
+        copy.dstPitch = aligned_pitch;
+
+        copy.WidthInBytes = width_in_bytes;
+        copy.Height = desc.height;
+
+        err = cuMemcpy2D(&copy);
+        CHECK_CUDA(err, "cuMemcpy2D()");
+        res_desc.res.pitch2D.pitchInBytes = aligned_pitch;
+        res_desc.res.pitch2D.devPtr = aligned_mem;
+        // TODO: This is obviously leaking memory
+    }
+
+    CUDA_TEXTURE_DESC tex_desc;
+    memset(&tex_desc, 0, sizeof(CUDA_TEXTURE_DESC));
+    tex_desc.flags = CU_TRSF_NORMALIZED_COORDINATES;
+    tex_desc.addressMode[0] = cuda_border_mode(desc.border_x);
+    tex_desc.addressMode[1] = cuda_border_mode(desc.border_y);
+    switch (desc.filter) {
+        case FilterMode::Nearest: tex_desc.filterMode = CU_TR_FILTER_MODE_POINT;  break;
+        case FilterMode::Linear:  tex_desc.filterMode = CU_TR_FILTER_MODE_LINEAR; break;
+        default:
+            error("Unsupported filter mode");
+            break;
+    }
+    tex_desc.maxAnisotropy = 1;
+    tex_desc.mipmapFilterMode = CU_TR_FILTER_MODE_LINEAR;
+    tex_desc.mipmapLevelBias  = 0;
+    tex_desc.minMipmapLevelClamp = 0;
+    tex_desc.maxMipmapLevelClamp = 0;
+
+    CUtexObject tex_object;
+
+    cuCtxPushCurrent(devices_[dev].ctx);
+    err = cuTexObjectCreate(&tex_object, &res_desc, &tex_desc, nullptr);
+    CHECK_CUDA(err, "cuTexObjectCreate()");
+    cuCtxPopCurrent(nullptr);
+
+    return (void*)tex_object;
+}
+
+void CudaPlatform::release_tex(DeviceId dev, void* tex) {
+    cuCtxPushCurrent(devices_[dev].ctx);
+    CUresult err = cuTexObjectDestroy(reinterpret_cast<CUtexObject>(tex));
+    CHECK_CUDA(err, "cuTexObjectDestroy()");
+    cuCtxPopCurrent(nullptr);
 }
 
 void CudaPlatform::register_file(const std::string& filename, const std::string& program_string) {
@@ -236,7 +356,7 @@ void CudaPlatform::launch_kernel(DeviceId dev,
         CHECK_CUDA(cuEventRecord(end, 0), "cuEventRecord()");
         profiles_.push_front(new ProfileData { this, devices_[dev].ctx, start, end });
     }
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
 }
 
 void CudaPlatform::synchronize(DeviceId dev) {
@@ -246,7 +366,7 @@ void CudaPlatform::synchronize(DeviceId dev) {
     CUresult err = cuCtxSynchronize();
     CHECK_CUDA(err, "cuCtxSynchronize()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
     erase_profiles(false);
 }
 
@@ -261,7 +381,7 @@ void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, D
     CUresult err = cuMemcpyDtoD(dst_mem + offset_dst, src_mem + offset_src, size);
     CHECK_CUDA(err, "cuMemcpyDtoD()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
 }
 
 void CudaPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
@@ -272,7 +392,7 @@ void CudaPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId 
     CUresult err = cuMemcpyHtoD(dst_mem + offset_dst, (char*)src + offset_src, size);
     CHECK_CUDA(err, "cuMemcpyHtoD()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
 }
 
 void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
@@ -282,7 +402,7 @@ void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offse
     CUresult err = cuMemcpyDtoH((char*)dst + offset_dst, src_mem + offset_src, size);
     CHECK_CUDA(err, "cuMemcpyDtoH()");
 
-    cuCtxPopCurrent(NULL);
+    cuCtxPopCurrent(nullptr);
 }
 
 CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernelname) {
@@ -393,7 +513,7 @@ void CudaPlatform::store_file(const std::string& filename, const std::string& st
 std::string get_libdevice_filename(CUjit_target target_cc) {
     std::string libdevice_filename = "libdevice.10.bc";
 
-    #if CUDA_VERSION < 9000
+#if CUDA_VERSION < 9000
     // select libdevice module according to documentation
     if (target_cc < 30)
         libdevice_filename = "libdevice.compute_20.10.bc";
@@ -409,7 +529,9 @@ std::string get_libdevice_filename(CUjit_target target_cc) {
         libdevice_filename = "libdevice.compute_50.10.bc";
     else
         libdevice_filename = "libdevice.compute_30.10.bc";
-    #endif
+#else
+    (void)target_cc;
+#endif
 
     return libdevice_filename;
 }
@@ -575,7 +697,7 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
 #endif
 std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
     nvrtcProgram program;
-    nvrtcResult err = nvrtcCreateProgram(&program, program_string.c_str(), filename.c_str(), 0, NULL, NULL);
+    nvrtcResult err = nvrtcCreateProgram(&program, program_string.c_str(), filename.c_str(), 0, nullptr, nullptr);
     CHECK_NVRTC(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(target_cc));

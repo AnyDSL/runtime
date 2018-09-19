@@ -12,6 +12,38 @@ enum PlatformId : uint32_t {};
 
 enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
 
+enum class BorderMode {
+    Clamp = 0,
+    Repeat,
+    Mirror
+};
+
+enum class TextureFormat {
+    Int8 = 0,
+    Int16,
+    Int32,
+    Uint8,
+    Uint16,
+    Uint32,
+    Float32
+};
+
+enum class FilterMode {
+    Nearest = 0,
+    Linear
+};
+
+struct TextureDesc {
+    TextureFormat format;
+    BorderMode border_x;
+    BorderMode border_y;
+    FilterMode filter;
+    size_t width;
+    size_t height;
+    size_t pitch;
+    size_t num_channels;
+};
+
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.
 class Platform {
@@ -34,6 +66,11 @@ public:
     virtual void release(DeviceId dev, void* ptr) = 0;
     /// Releases page-locked host memory for a device on this platform.
     virtual void release_host(DeviceId dev, void* ptr) = 0;
+
+    /// Allocates a texture on a device, using a device memory pointer
+    virtual void* alloc_tex(DeviceId dev, void* data, const TextureDesc&) = 0;
+    /// Release a texture on the device
+    virtual void release_tex(DeviceId dev, void* tex) = 0;
 
     /// Associate a program string to a given filename.
     virtual void register_file(const std::string& filename, const std::string& program_string) = 0;

@@ -22,9 +22,11 @@ void anydsl_info(void);
 void* anydsl_alloc(int32_t, int64_t);
 void* anydsl_alloc_host(int32_t, int64_t);
 void* anydsl_alloc_unified(int32_t, int64_t);
+void* anydsl_alloc_tex(int32_t, void*, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
 void* anydsl_get_device_ptr(int32_t, void*);
 void  anydsl_release(int32_t, void*);
 void  anydsl_release_host(int32_t, void*);
+void  anydsl_release_tex(int32_t, void*);
 
 void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t);
 
