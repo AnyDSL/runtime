@@ -512,7 +512,7 @@ std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filenam
 }
 
 #if CUDA_VERSION < 10000
-#define nvvmLazyAddModuleToProgram(a) nvvmAddModuleToProgram(a)
+#define nvvmLazyAddModuleToProgram(prog, buffer, size, name) nvvmAddModuleToProgram(prog, buffer, size, name)
 #endif
 std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
     nvvmProgram program;
