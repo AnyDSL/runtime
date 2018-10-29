@@ -79,14 +79,14 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     err = cuDriverGetVersion(&driver_version);
     CHECK_CUDA(err, "cuDriverGetVersion()");
 
-    nvvmResult errNvvm = nvvmVersion(&nvvm_major, &nvvm_minor);
-    CHECK_NVVM(errNvvm, "nvvmVersion()");
+    nvvmResult err_nvvm = nvvmVersion(&nvvm_major, &nvvm_minor);
+    CHECK_NVVM(err_nvvm, "nvvmVersion()");
 
     debug("CUDA Driver Version %.%", driver_version/1000, (driver_version%100)/10);
     #ifdef CUDA_NVRTC
     int nvrtc_major = 0, nvrtc_minor = 0;
-    nvrtcResult errNvrtc = nvrtcVersion(&nvrtc_major, &nvrtc_minor);
-    CHECK_NVRTC(errNvrtc, "nvrtcVersion()");
+    nvrtcResult err_nvrtc = nvrtcVersion(&nvrtc_major, &nvrtc_minor);
+    CHECK_NVRTC(err_nvrtc, "nvrtcVersion()");
     debug("NVRTC Version %.%", nvrtc_major, nvrtc_minor);
     #endif
     debug("NVVM Version %.%", nvvm_major, nvvm_minor);
