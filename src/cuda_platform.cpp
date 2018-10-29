@@ -511,13 +511,16 @@ std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filenam
     return emit_nvptx(program_string, get_libdevice_path(target_cc), cpu, 3);
 }
 
+#if CUDA_VERSION < 10000
+#define nvvmLazyAddModuleToProgram(a) nvvmAddModuleToProgram(a)
+#endif
 std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const {
     nvvmProgram program;
     nvvmResult err = nvvmCreateProgram(&program);
     CHECK_NVVM(err, "nvvmCreateProgram()");
 
     std::string libdevice_string = load_file(get_libdevice_path(target_cc));
-    err = nvvmAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename(target_cc).c_str());
+    err = nvvmLazyAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename(target_cc).c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     err = nvvmAddModuleToProgram(program, program_string.c_str(), program_string.length(), filename.c_str());
