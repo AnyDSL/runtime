@@ -8,8 +8,8 @@
 #  HSA_LIBRARIES    - where to find HSA libs
 #  HSA_FOUND        - True if HSA is found
 
-find_path(HSA_INCLUDE_DIR hsa.h         PATHS ${HSA_DIR} PATH_SUFFIXES include/hsa)
-find_library(HSA_LIBRARY  hsa-runtime64 PATHS ${HSA_DIR} PATH_SUFFIXES lib)
+find_path(HSA_INCLUDE_DIR hsa.h         HINTS ${HSA_DIR} PATHS /opt/rocm PATH_SUFFIXES include/hsa)
+find_library(HSA_LIBRARY  hsa-runtime64 HINTS ${HSA_DIR} PATHS /opt/rocm PATH_SUFFIXES lib)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(HSA DEFAULT_MSG HSA_INCLUDE_DIR HSA_LIBRARY)
