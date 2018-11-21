@@ -251,37 +251,32 @@ extern std::atomic<uint64_t> anydsl_kernel_time;
 void HSAPlatform::launch_kernel(DeviceId dev,
                                 const char* file, const char* name,
                                 const uint32_t* grid, const uint32_t* block,
-                                void** args, const uint32_t* sizes, const KernelArgType*,
+                                void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType*,
                                 uint32_t num_args) {
     auto queue = devices_[dev].queue;
     if (!queue)
         error("The selected HSA device '%' cannot execute kernels", dev);
 
-    uint64_t kernel;
-    uint32_t kernarg_segment_size;
-    uint32_t group_segment_size;
-    uint32_t private_segment_size;
-    std::tie(kernel, kernarg_segment_size, group_segment_size, private_segment_size) = load_kernel(dev, file, name);
+    auto kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
     hsa_status_t status;
     void* kernarg_address = nullptr;
-    status = hsa_memory_allocate(devices_[dev].kernarg_region, kernarg_segment_size, &kernarg_address);
+    status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernarg_address);
     CHECK_HSA(status, "hsa_memory_allocate()");
-    size_t offset = 0;
-    auto align_address = [] (size_t base, size_t align) {
-        if (align > 8)
-            align = 8;
-        return ((base + align - 1) / align) * align;
-    };
+
+    void*  cur   = kernarg_address;
+    size_t space = kernel_info.kernarg_segment_size;
     for (uint32_t i = 0; i < num_args; i++) {
         // align base address for next kernel argument
-        offset = align_address(offset, sizes[i]);
-        std::memcpy((void*)((char*)kernarg_address + offset), args[i], sizes[i]);
-        offset += sizes[i];
+        if (!std::align(aligns[i], sizes[i], cur, space))
+            debug("Incorrect kernel argument alignment detected");
+        std::memcpy(cur, args[i], sizes[i]);
+        cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
     }
-    if (offset != kernarg_segment_size)
-        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernarg_segment_size, offset);
+    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernarg_address);
+    if (total != kernel_info.kernarg_segment_size)
+        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
@@ -307,11 +302,11 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     aql.grid_size_x = grid[0];
     aql.grid_size_y = grid[1];
     aql.grid_size_z = grid[2];
-    aql.completion_signal = launch_signal;
-    aql.kernel_object = kernel;
-    aql.kernarg_address = kernarg_address;
-    aql.private_segment_size = private_segment_size;
-    aql.group_segment_size = group_segment_size;
+    aql.completion_signal    = launch_signal;
+    aql.kernarg_address      = kernarg_address;
+    aql.kernel_object        = kernel_info.kernel;
+    aql.private_segment_size = kernel_info.private_segment_size;
+    aql.group_segment_size   = kernel_info.group_segment_size;
 
     // write to command queue
     const uint64_t index = hsa_queue_load_write_index_relaxed(queue);
@@ -374,7 +369,7 @@ void HSAPlatform::store_file(const std::string& filename, const std::string& str
     dst_file.close();
 }
 
-std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
+HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;
 
@@ -447,6 +442,7 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
     auto kernel_it = kernel_map.find(kernelname);
     uint64_t kernel = 0;
     uint32_t kernarg_segment_size = 0;
+    uint32_t kernarg_segment_align = 0;
     uint32_t group_segment_size = 0;
     uint32_t private_segment_size = 0;
     if (kernel_it == kernel_map.end()) {
@@ -461,6 +457,8 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE, &kernarg_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_ALIGNMENT, &kernarg_segment_align);
+        CHECK_HSA(status, "hsa_executable_symbol_get_info()");
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE, &group_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &private_segment_size);
@@ -474,7 +472,7 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
 
     hsa_dev.unlock();
 
-    return std::make_tuple(kernel, kernarg_segment_size, group_segment_size, private_segment_size);
+    return KernelInfo { kernel, kernarg_segment_size, kernarg_segment_align, group_segment_size, private_segment_size };
 }
 
 #ifdef RUNTIME_ENABLE_JIT

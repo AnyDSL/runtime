@@ -31,7 +31,7 @@ void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t
 void anydsl_launch_kernel(int32_t,
                           const char*, const char*,
                           const uint32_t*, const uint32_t*,
-                          void**, const uint32_t*, const uint8_t*,
+                          void**, const uint32_t*, const uint32_t*, const uint8_t*,
                           uint32_t);
 void anydsl_synchronize(int32_t);
 

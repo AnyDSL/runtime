@@ -31,7 +31,7 @@ protected:
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType* types,
                        uint32_t num_args) override;
     void synchronize(DeviceId dev) override;
 
@@ -81,6 +81,14 @@ protected:
         }
     };
 
+    struct KernelInfo {
+        uint64_t kernel;
+        uint32_t kernarg_segment_size;
+        uint32_t kernarg_segment_align;
+        uint32_t group_segment_size;
+        uint32_t private_segment_size;
+    };
+
     uint64_t frequency_;
     std::vector<DeviceData> devices_;
     std::unordered_map<std::string, std::string> files_;
@@ -90,7 +98,7 @@ protected:
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
     void store_file(const std::string&, const std::string&) const;
     std::string load_file(const std::string&) const;
-    std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId, const std::string&, const std::string&);
+    KernelInfo load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
     std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
 };

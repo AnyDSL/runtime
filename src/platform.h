@@ -42,7 +42,7 @@ public:
     virtual void launch_kernel(DeviceId dev,
                                const char* file, const char* kernel,
                                const uint32_t* grid, const uint32_t* block,
-                               void** args, const uint32_t* size, const KernelArgType* types,
+                               void** args, const uint32_t* size, const uint32_t* aligns, const KernelArgType* types,
                                uint32_t num_args) = 0;
     /// Waits for the completion of all the launched kernels on the given device.
     virtual void synchronize(DeviceId dev) = 0;

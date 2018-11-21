@@ -205,7 +205,7 @@ void CudaPlatform::register_file(const std::string& filename, const std::string&
 void CudaPlatform::launch_kernel(DeviceId dev,
                                  const char* file, const char* kernel,
                                  const uint32_t* grid, const uint32_t* block,
-                                 void** args, const uint32_t*, const KernelArgType*,
+                                 void** args, const uint32_t*, const uint32_t*, const KernelArgType*,
                                  uint32_t) {
     cuCtxPushCurrent(devices_[dev].ctx);
 

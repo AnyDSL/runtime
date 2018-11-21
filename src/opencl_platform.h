@@ -35,7 +35,7 @@ protected:
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType* types,
                        uint32_t num_args) override;
     void synchronize(DeviceId dev) override;
 

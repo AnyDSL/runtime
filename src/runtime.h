@@ -80,13 +80,13 @@ public:
     void launch_kernel(PlatformId plat, DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType* types,
                        uint32_t num_args) {
         check_device(plat, dev);
         platforms_[plat]->launch_kernel(dev,
                                         file, kernel,
                                         grid, block,
-                                        args, sizes, types,
+                                        args, sizes, aligns, types,
                                         num_args);
     }
 
