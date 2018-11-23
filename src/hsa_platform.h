@@ -43,7 +43,15 @@ protected:
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
 
-    typedef std::unordered_map<std::string, std::tuple<uint64_t, uint32_t, uint32_t, uint32_t>> KernelMap;
+    struct KernelInfo {
+        uint64_t kernel;
+        uint32_t kernarg_segment_size;
+        uint32_t group_segment_size;
+        uint32_t private_segment_size;
+        void*    kernarg_segment;
+    };
+
+    typedef std::unordered_map<std::string, KernelInfo> KernelMap;
 
     struct DeviceData {
         hsa_agent_t agent;
@@ -79,14 +87,6 @@ protected:
         void unlock() {
             locked.clear(std::memory_order_release);
         }
-    };
-
-    struct KernelInfo {
-        uint64_t kernel;
-        uint32_t kernarg_segment_size;
-        uint32_t kernarg_segment_align;
-        uint32_t group_segment_size;
-        uint32_t private_segment_size;
     };
 
     uint64_t frequency_;

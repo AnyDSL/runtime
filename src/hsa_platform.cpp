@@ -225,6 +225,12 @@ HSAPlatform::~HSAPlatform() {
         }
         status = hsa_signal_destroy(devices_[i].signal);
         CHECK_HSA(status, "hsa_signal_destroy()");
+        for (auto kernel_pair : devices_[i].kernels) {
+            for (auto kernel : kernel_pair.second) {
+                status = hsa_memory_free(kernel.second.kernarg_segment);
+                CHECK_HSA(status, "hsa_memory_free()");
+            }
+        }
     }
 
     hsa_shut_down();
@@ -260,12 +266,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
-    hsa_status_t status;
-    void* kernarg_address = nullptr;
-    status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernarg_address);
-    CHECK_HSA(status, "hsa_memory_allocate()");
-
-    void*  cur   = kernarg_address;
+    void*  cur   = kernel_info.kernarg_segment;
     size_t space = kernel_info.kernarg_segment_size;
     for (uint32_t i = 0; i < num_args; i++) {
         // align base address for next kernel argument
@@ -274,7 +275,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         std::memcpy(cur, args[i], sizes[i]);
         cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
     }
-    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernarg_address);
+    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
     if (total != kernel_info.kernarg_segment_size)
         debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
@@ -283,7 +284,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
 
     hsa_signal_t launch_signal;
     if (runtime_->profiling_enabled()) {
-        status = hsa_signal_create(1, 0, NULL, &launch_signal);
+        hsa_status_t status = hsa_signal_create(1, 0, NULL, &launch_signal);
         CHECK_HSA(status, "hsa_signal_create()");
     } else
         launch_signal = signal;
@@ -303,8 +304,8 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     aql.grid_size_y = grid[1];
     aql.grid_size_z = grid[2];
     aql.completion_signal    = launch_signal;
-    aql.kernarg_address      = kernarg_address;
     aql.kernel_object        = kernel_info.kernel;
+    aql.kernarg_address      = kernel_info.kernarg_segment;
     aql.private_segment_size = kernel_info.private_segment_size;
     aql.group_segment_size   = kernel_info.group_segment_size;
 
@@ -437,14 +438,10 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
     }
 
     // checks that the kernel exists
+    KernelInfo kernel_info;
     auto& kernel_cache = hsa_dev.kernels;
     auto& kernel_map = kernel_cache[executable.handle];
     auto kernel_it = kernel_map.find(kernelname);
-    uint64_t kernel = 0;
-    uint32_t kernarg_segment_size = 0;
-    uint32_t kernarg_segment_align = 0;
-    uint32_t group_segment_size = 0;
-    uint32_t private_segment_size = 0;
     if (kernel_it == kernel_map.end()) {
         hsa_dev.unlock();
 
@@ -453,26 +450,27 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         status = hsa_executable_get_symbol_by_name(executable, kernelname.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
 
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel_info.kernel);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE, &kernarg_segment_size);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE, &kernel_info.kernarg_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_ALIGNMENT, &kernarg_segment_align);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE, &kernel_info.group_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE, &group_segment_size);
-        CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &private_segment_size);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
+        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        CHECK_HSA(status, "hsa_memory_allocate()");
+
         hsa_dev.lock();
-        kernel_cache[executable.handle].emplace(kernelname, std::make_tuple(kernel, kernarg_segment_size, group_segment_size, private_segment_size));
+        kernel_cache[executable.handle].emplace(kernelname, kernel_info);
     } else {
-        std::tie(kernel, kernarg_segment_size, group_segment_size, private_segment_size) = kernel_it->second;
+        kernel_info = kernel_it->second;
     }
 
     hsa_dev.unlock();
 
-    return KernelInfo { kernel, kernarg_segment_size, kernarg_segment_align, group_segment_size, private_segment_size };
+    return kernel_info;
 }
 
 #ifdef RUNTIME_ENABLE_JIT
