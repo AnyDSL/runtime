@@ -426,7 +426,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
         if (env_var) {
             std::vector<const char*> c_llvm_args;
-            std::vector<std::string> llvm_args;
+            std::vector<std::string> llvm_args = { "nvptx" };
             std::istringstream stream(env_var);
             std::string tmp;
             while (stream >> tmp)
