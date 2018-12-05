@@ -344,10 +344,8 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
         } else {
             error("Cannot find kernel file '%'", file);
         }
-        if (cache_ptx) {
-            std::ofstream of(ptx_path, std::ios::binary);
-            of.write(ptx.c_str(), ptx.length());
-        }
+        if (cache_ptx)
+            store_file(ptx_path, ptx);
         mod = create_module(dev, src_path, ptx, target_cc);
 
         cuda_dev.lock();
