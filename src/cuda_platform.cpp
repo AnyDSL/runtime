@@ -411,33 +411,28 @@ void CudaPlatform::store_file(const std::string& filename, const std::string& st
     dst_file.close();
 }
 
-std::string get_libdevice_filename(CUjit_target target_cc) {
-    std::string libdevice_filename = "libdevice.10.bc";
-
-    #if CUDA_VERSION < 9000
+#if CUDA_VERSION < 9000
+std::string get_libdevice_path(CUjit_target target_cc) {
     // select libdevice module according to documentation
     if (target_cc < 30)
-        libdevice_filename = "libdevice.compute_20.10.bc";
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_20.10.bc";
     else if (target_cc == 30)
-        libdevice_filename = "libdevice.compute_30.10.bc";
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_30.10.bc";
     else if (target_cc <  35)
-        libdevice_filename = "libdevice.compute_20.10.bc";
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_20.10.bc";
     else if (target_cc <= 37)
-        libdevice_filename = "libdevice.compute_35.10.bc";
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_35.10.bc";
     else if (target_cc <  50)
-        libdevice_filename = "libdevice.compute_30.10.bc";
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_30.10.bc";
     else if (target_cc <= 53)
-        libdevice_filename = "libdevice.compute_50.10.bc";
-    else
-        libdevice_filename = "libdevice.compute_30.10.bc";
-    #endif
-
-    return libdevice_filename;
+        return std::string(LIBDEVICE_DIR) + "libdevice.compute_50.10.bc";
+    return std::string(LIBDEVICE_DIR) + "libdevice.compute_30.10.bc";
 }
-
-std::string get_libdevice_path(CUjit_target target_cc) {
-    return std::string(LIBDEVICE_DIR) + get_libdevice_filename(target_cc);
+#else
+std::string get_libdevice_path(CUjit_target) {
+    return std::string(LIBDEVICE_DIR) + "libdevice.10.bc";
 }
+#endif
 
 #ifdef RUNTIME_ENABLE_JIT
 bool llvm_initialized = false;
@@ -540,8 +535,9 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     nvvmResult err = nvvmCreateProgram(&program);
     CHECK_NVVM(err, "nvvmCreateProgram()");
 
-    std::string libdevice_string = load_file(get_libdevice_path(target_cc));
-    err = nvvmLazyAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), get_libdevice_filename(target_cc).c_str());
+    std::string libdevice_filename = get_libdevice_path(target_cc);
+    std::string libdevice_string = load_file(libdevice_filename);
+    err = nvvmLazyAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), libdevice_filename.c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     err = nvvmAddModuleToProgram(program, program_string.c_str(), program_string.length(), filename.c_str());
