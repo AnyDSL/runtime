@@ -71,6 +71,7 @@ protected:
             : agent(data.agent)
             , profile(data.profile)
             , float_mode(data.float_mode)
+            , isa(data.isa)
             , queue(data.queue)
             , signal(data.signal)
             , kernarg_region(data.kernarg_region)
