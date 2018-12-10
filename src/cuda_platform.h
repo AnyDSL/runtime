@@ -56,8 +56,7 @@ protected:
     struct DeviceData {
         CUdevice dev;
         CUcontext ctx;
-        int compute_minor;
-        int compute_major;
+        CUjit_target compute_capability;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
@@ -67,8 +66,7 @@ protected:
         DeviceData(DeviceData&& data)
             : dev(data.dev)
             , ctx(data.ctx)
-            , compute_minor(data.compute_minor)
-            , compute_major(data.compute_major)
+            , compute_capability(data.compute_capability)
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
         {}
@@ -100,10 +98,10 @@ protected:
 
     void store_file(const std::string& filename, const std::string& str) const;
     std::string load_file(const std::string& filename) const;
-    std::string compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
-    std::string compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
-    std::string compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string, CUjit_target target_cc) const;
-    CUmodule create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string, CUjit_target target_cc) const;
+    std::string compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    std::string compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    std::string compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    CUmodule create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const;
 };
 
 #endif
