@@ -6,6 +6,8 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 enum class ProfileLevel : uint8_t { None = 0, Full };
@@ -72,9 +74,15 @@ public:
     }
 
     /// Associate a program string to a given filename.
-    void register_file(PlatformId plat, const char* filename, const char* program_string) {
-        platforms_[plat]->register_file(filename, program_string);
+    void register_file(const std::string& filename, const std::string& program_string) {
+        files_[filename] = program_string;
     }
+
+    std::string load_file(const std::string& filename) const;
+    void store_file(const std::string& filename, const std::string& str) const;
+
+    std::string load_cache(const std::string& str, const std::string& ext=".bin") const;
+    void store_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
     /// Launches a kernel on the platform and device.
     void launch_kernel(PlatformId plat, DeviceId dev,
@@ -131,6 +139,7 @@ private:
 
     ProfileLevel profile_;
     std::vector<Platform*> platforms_;
+    std::unordered_map<std::string, std::string> files_;
 };
 
 Runtime& runtime();

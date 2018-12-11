@@ -6,8 +6,11 @@
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/RuntimeDyld.h>
 #include <llvm/IR/Module.h>
-#include <llvm/Support/TargetSelect.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/DynamicLibrary.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/TargetSelect.h>
 
 #include <impala/impala.h>
 #include <impala/ast.h>
@@ -45,35 +48,75 @@ struct JIT {
     }
 
     int32_t compile(const char* program, uint32_t size, uint32_t opt) {
-        static constexpr auto module_name = "jit";
-        static constexpr bool debug = false;
-        assert(opt <= 3);
+        std::unique_ptr<llvm::LLVMContext> llvm_context;
+        std::unique_ptr<llvm::Module> llvm_module;
+        std::string cached_llvm = runtime().load_cache(std::string(program), ".llvm");
+        std::string module_name = "jit";
+        if (cached_llvm.empty()) {
+            bool debug = false;
+            assert(opt <= 3);
 
-        impala::Items items;
-        MemBuf program_buf(program, size);
-        MemBuf runtime_buf(runtime_srcs, sizeof(runtime_srcs));
-        std::istream program_is(&program_buf);
-        std::istream runtime_is(&runtime_buf);
-        impala::parse(items, runtime_is, "runtime");
-        impala::parse(items, program_is, module_name);
+            impala::Items items;
+            MemBuf program_buf(program, size);
+            MemBuf runtime_buf(runtime_srcs, sizeof(runtime_srcs));
+            std::istream program_is(&program_buf);
+            std::istream runtime_is(&runtime_buf);
+            impala::parse(items, runtime_is, "runtime");
+            impala::parse(items, program_is, module_name.c_str());
 
-        auto module = std::make_unique<impala::Module>(module_name, std::move(items));
-        impala::num_warnings() = 0;
-        impala::num_errors()   = 0;
-        std::unique_ptr<impala::TypeTable> typetable;
-        impala::check(typetable, module.get(), false);
-        if (impala::num_errors() != 0)
-            return -1;
+            auto module = std::make_unique<impala::Module>(module_name.c_str(), std::move(items));
+            impala::num_warnings() = 0;
+            impala::num_errors()   = 0;
+            std::unique_ptr<impala::TypeTable> typetable;
+            impala::check(typetable, module.get(), false);
+            if (impala::num_errors() != 0)
+                return -1;
 
-        thorin::World world(module_name);
-        impala::emit(world, module.get());
+            thorin::World world(module_name);
+            impala::emit(world, module.get());
 
-        world.cleanup();
-        world.opt();
-        world.cleanup();
+            world.cleanup();
+            world.opt();
+            world.cleanup();
 
-        thorin::Backends backends(world);
-        auto& llvm_module = backends.cpu_cg->emit(opt, debug);
+            thorin::Backends backends(world);
+            llvm_module = std::move(backends.cpu_cg->emit(opt, debug));
+            llvm_context = std::move(backends.cpu_cg->context());
+            std::stringstream stream;
+            llvm::raw_os_ostream llvm_stream(stream);
+            llvm_module->print(llvm_stream, nullptr);
+            runtime().store_cache(std::string(program), stream.str(), ".llvm");
+
+            auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
+                if (cg) {
+                    std::ostringstream stream;
+                    cg->emit(stream, opt, debug);
+                    runtime().store_cache(ext + std::string(program), stream.str(), ext);
+                    runtime().register_file(std::string(module_name) + ext, stream.str());
+                }
+            };
+            emit_to_string(backends.opencl_cg.get(), ".cl");
+            emit_to_string(backends.cuda_cg.get(),   ".cu");
+            emit_to_string(backends.nvvm_cg.get(),   ".nvvm");
+            emit_to_string(backends.amdgpu_cg.get(), ".amdgpu");
+            if (backends.hls_cg.get())
+                error("JIT compilation of hls not supported!");
+        } else {
+            llvm::SMDiagnostic diagnostic_err;
+            llvm_context.reset(new llvm::LLVMContext());
+            llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, *llvm_context);
+
+            auto load_backend_src = [&](std::string ext) {
+                std::string cached_src = runtime().load_cache(ext + std::string(program), ext);
+                if (!cached_src.empty())
+                    runtime().register_file(module_name + ext, cached_src);
+            };
+            load_backend_src(".cl");
+            load_backend_src(".cu");
+            load_backend_src(".nvvm");
+            load_backend_src(".amdgpu");
+        }
+
         auto engine = llvm::EngineBuilder(std::move(llvm_module))
             .setEngineKind(llvm::EngineKind::JIT)
             .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
@@ -87,27 +130,13 @@ struct JIT {
         engine->finalizeObject();
         programs.push_back(Program(engine));
 
-        auto emit_to_string = [&](thorin::CodeGen* cg, PlatformId id, std::string ext) {
-            if (cg) {
-                std::ostringstream stream;
-                cg->emit(stream, opt, debug);
-                runtime().register_file(id, (std::string(module_name) + ext).c_str(), stream.str().c_str());
-            }
-        };
-        emit_to_string(backends.opencl_cg.get(), PlatformId(ANYDSL_OPENCL), ".cl");
-        emit_to_string(backends.cuda_cg.get(),   PlatformId(ANYDSL_CUDA),   ".cu");
-        emit_to_string(backends.nvvm_cg.get(),   PlatformId(ANYDSL_CUDA),   ".nvvm");
-        emit_to_string(backends.amdgpu_cg.get(), PlatformId(ANYDSL_HSA),    ".amdgpu");
-        if (backends.hls_cg.get())
-            error("JIT compilation of hls not supported!");
-
         return (int32_t)programs.size() - 1;
     }
 
     void* lookup_function(int32_t key, const char* fn_name) {
         if (key == -1)
             return nullptr;
-        
+
         return (void *)programs[key].engine->getFunctionAddress(fn_name);
     }
 

@@ -27,7 +27,6 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
-    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -97,8 +96,6 @@ protected:
     void* alloc_hsa(int64_t, hsa_region_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
-    void store_file(const std::string&, const std::string&) const;
-    std::string load_file(const std::string&) const;
     KernelInfo load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
     std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;

@@ -346,30 +346,6 @@ void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t o
     CHECK_HSA(status, "hsa_memory_copy()");
 }
 
-void HSAPlatform::register_file(const std::string& filename, const std::string& program_string) {
-    files_[filename] = program_string;
-}
-
-std::string HSAPlatform::load_file(const std::string& filename) const {
-    auto file_it = files_.find(filename);
-    if (file_it != files_.end())
-        return file_it->second;
-
-    std::ifstream src_file(filename);
-    if (!src_file.is_open())
-        error("Can't open source file '%'", filename);
-
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-}
-
-void HSAPlatform::store_file(const std::string& filename, const std::string& str) const {
-    std::ofstream dst_file(filename);
-    if (!dst_file)
-        error("Can't open destination file '%'", filename);
-    dst_file << str;
-    dst_file.close();
-}
-
 HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;
@@ -390,9 +366,9 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 
         std::string gcn;
         if (ext == "gcn" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = load_file(filename);
+            gcn = runtime().load_file(filename);
         } else if (ext == "amdgpu" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = compile_gcn(dev, filename, load_file(filename));
+            gcn = compile_gcn(dev, filename, runtime().load_file(filename));
         } else {
             error("Could not find kernel file '%'", filename);
         }
@@ -568,12 +544,12 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj(outstr.begin(), outstr.end());
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
-    store_file(obj_file, obj);
+    runtime().store_file(obj_file, obj);
     std::string lld_cmd = "ld.lld -shared " + obj_file + " -o " + gcn_file;
     if (std::system(lld_cmd.c_str()))
         error("Generating gcn using lld");
 
-    return load_file(gcn_file);
+    return runtime().load_file(gcn_file);
 }
 #else
 std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, int) const {

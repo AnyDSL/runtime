@@ -35,9 +35,6 @@ public:
     /// Releases page-locked host memory for a device on this platform.
     virtual void release_host(DeviceId dev, void* ptr) = 0;
 
-    /// Associate a program string to a given filename.
-    virtual void register_file(const std::string& filename, const std::string& program_string) = 0;
-
     /// Launches a kernel with the given block/grid size and arguments.
     virtual void launch_kernel(DeviceId dev,
                                const char* file, const char* kernel,

@@ -3,14 +3,19 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
+#include <fstream>
+#include <functional>
 #include <iostream>
 #include <locale>
 #include <memory>
 #include <random>
+#include <string>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
+#include <limits.h>
 #include <unistd.h>
 #endif
 
@@ -72,6 +77,84 @@ Runtime::Runtime() {
 #else
     register_platform<DummyPlatform>("HSA");
 #endif
+}
+
+#ifdef _WIN32
+#include <direct.h>
+#define create_directory(d) _mkdir(d)
+#else
+#include <sys/stat.h>
+#define create_directory(d) { umask(0); mkdir(d, 0755); }
+#endif
+
+#if _XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L || /* Glibc versions <= 2.19: */ _BSD_SOURCE
+std::string get_self_directory() {
+    char buff[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buff, sizeof(buff)-1);
+    if (len != -1) {
+        buff[len] = '\0';
+
+        for (int i = len-1; i >= 0; --i) {
+            if (buff[i] == '/')
+                return std::string(&buff[0], i);
+        }
+    }
+    return std::string();
+}
+#else
+std::string get_self_directory() {
+    return std::string();
+}
+#endif
+
+std::string get_cache_directory() {
+    std::string cache_path = get_self_directory();
+    if (!cache_path.empty())
+        cache_path += "/";
+    return cache_path + "cache";
+}
+
+std::string get_cached_filename(const std::string& str, const std::string& ext) {
+    size_t key = std::hash<std::string>{}(str);
+    std::stringstream hex_stream;
+    hex_stream << std::hex << key;
+    return get_cache_directory() + "/" + hex_stream.str() + ext;
+}
+
+std::string Runtime::load_file(const std::string& filename) const {
+    auto file_it = files_.find(filename);
+    if (file_it != files_.end())
+        return file_it->second;
+
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        error("Can't open source file '%'", filename);
+
+    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
+}
+
+void Runtime::store_file(const std::string& filename, const std::string& str) const {
+    std::ofstream dst_file(filename);
+    if (!dst_file)
+        error("Can't open destination file '%'", filename);
+    dst_file << str;
+    dst_file.close();
+}
+
+std::string Runtime::load_cache(const std::string& str, const std::string& ext) const {
+    std::string filename = get_cached_filename(str, ext);
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        return std::string();
+    debug("Loading from cache: %", filename);
+    return load_file(filename);
+}
+
+void Runtime::store_cache(const std::string& key, const std::string& str, const std::string ext) const {
+    std::string filename = get_cached_filename(key, ext);
+    create_directory(get_cache_directory().c_str());
+    debug("Storing to cache: %", filename);
+    store_file(filename, str);
 }
 
 inline PlatformId to_platform(int32_t m) {

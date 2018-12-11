@@ -31,7 +31,6 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
-    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
@@ -99,7 +98,6 @@ protected:
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
-    std::string load_file(const std::string& filename) const;
     cl_program compile_program(DeviceId dev, const std::string& filename, const std::string& program_string) const;
 
     friend void time_kernel_callback(cl_event, cl_int, void*);

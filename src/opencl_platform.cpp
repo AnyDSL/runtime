@@ -437,22 +437,6 @@ void OpenCLPlatform::copy_svm(const void* src, int64_t offset_src, void* dst, in
     std::copy((char*)src + offset_src, (char*)src + offset_src + size, (char*)dst + offset_dst);
 }
 
-void OpenCLPlatform::register_file(const std::string& filename, const std::string& program_string) {
-    files_[filename] = program_string;
-}
-
-std::string OpenCLPlatform::load_file(const std::string& filename) const {
-    auto file_it = files_.find(filename);
-    if (file_it != files_.end())
-        return file_it->second;
-
-    std::ifstream src_file(filename);
-    if (!src_file.is_open())
-        error("Can't open source file '%'", filename);
-
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-}
-
 cl_program OpenCLPlatform::compile_program(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     cl_program program;
     const size_t program_length = program_string.length();
@@ -523,7 +507,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         std::string file = filename;
         if (opencl_dev.is_intel_fpga)
             file = filename.substr(0, ext_pos) + ".aocx";
-        program = compile_program(dev, file, load_file(file));
+        program = compile_program(dev, file, runtime().load_file(file));
 
         opencl_dev.lock();
         prog_cache[filename] = program;
