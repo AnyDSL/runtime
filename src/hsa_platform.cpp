@@ -364,13 +364,16 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         if (ext != "gcn" && ext != "amdgpu")
             error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", filename);
 
-        std::string gcn;
-        if (ext == "gcn" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = runtime().load_file(filename);
-        } else if (ext == "amdgpu" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = compile_gcn(dev, filename, runtime().load_file(filename));
-        } else {
-            error("Could not find kernel file '%'", filename);
+        // load file from disk or cache
+        std::string src_code = runtime().load_file(filename);
+
+        // compile src or load from cache
+        std::string gcn = ext == "gcn" ? src_code : runtime().load_cache(devices_[dev].isa + src_code);
+        if (gcn.empty()) {
+            if (ext == "amdgpu") {
+                gcn = compile_gcn(dev, filename, src_code);
+            }
+            runtime().store_cache(devices_[dev].isa + src_code, gcn);
         }
 
         hsa_code_object_reader_t reader;
