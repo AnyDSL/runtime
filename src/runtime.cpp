@@ -89,14 +89,31 @@ Runtime::Runtime() {
 
 #if _XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L || /* Glibc versions <= 2.19: */ _BSD_SOURCE
 std::string get_self_directory() {
-    char buff[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", buff, sizeof(buff)-1);
+    char path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path)-1);
     if (len != -1) {
-        buff[len] = '\0';
+        path[len] = '\0';
 
         for (int i = len-1; i >= 0; --i) {
-            if (buff[i] == '/')
-                return std::string(&buff[0], i);
+            if (path[i] == '/')
+                return std::string(&path[0], i);
+        }
+    }
+    return std::string();
+}
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+std::string get_self_directory() {
+    char path[PATH_MAX];
+    uint32_t size = (uint32_t)sizeof(path);
+    if (_NSGetExecutablePath(path, &size) == 0) {
+        char resolved[PATH_MAX];
+        if (realpath(path, resolved)) {
+            std::string resolved_path = std::string(resolved);
+            for (int i = resolved_path.size()-1; i >= 0; --i) {
+                if (resolved_path[i] == '/')
+                    return std::string(resolved_path, 0, i);
+            }
         }
     }
     return std::string();
