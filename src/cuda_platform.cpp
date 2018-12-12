@@ -394,7 +394,7 @@ std::string get_libdevice_path(CUjit_target) {
 
 #ifdef RUNTIME_ENABLE_JIT
 bool llvm_initialized = false;
-static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, int opt) {
+static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, int opt) {
     if (!llvm_initialized) {
         // ANYDSL_LLVM_ARGS="-nvptx-sched4reg -nvptx-fma-level=2 -nvptx-prec-divf32=0 -nvptx-prec-sqrtf32=0 -nvptx-f32ftz=1"
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
@@ -481,7 +481,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     return outstr.c_str();
 }
 #else
-static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, int) {
+static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, const std::string&, int) {
     error("Recompile runtime with RUNTIME_JIT enabled for nvptx support.");
 }
 #endif
@@ -489,7 +489,7 @@ static std::string emit_nvptx(const std::string&, const std::string&, const std:
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     debug("Compiling NVVM to PTX using nvptx for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(devices_[dev].compute_capability);
-    return emit_nvptx(program_string, get_libdevice_path(devices_[dev].compute_capability), cpu, 3);
+    return emit_nvptx(program_string, get_libdevice_path(devices_[dev].compute_capability), cpu, filename, 3);
 }
 
 #if CUDA_VERSION < 10000
