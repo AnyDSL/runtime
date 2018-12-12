@@ -1,11 +1,6 @@
 #include "hsa_platform.h"
 #include "runtime.h"
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstdlib>
