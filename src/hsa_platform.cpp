@@ -475,6 +475,13 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SMDiagnostic diagnostic_err;
     std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(program)->getMemBufferRef(), diagnostic_err, llvm_context);
 
+    if (!llvm_module) {
+        std::string stream;
+        llvm::raw_string_ostream llvm_stream(stream);
+        diagnostic_err.print("", llvm_stream);
+        error("Parsing IR file %: %", filename, llvm_stream.str());
+    }
+
     auto triple_str = llvm_module->getTargetTriple();
     std::string error_str;
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
