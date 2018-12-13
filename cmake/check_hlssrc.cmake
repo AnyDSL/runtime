@@ -10,7 +10,7 @@ if(EXISTS ${_basename}.hls)
                                  "add_files ${_basename}_hls.cpp\n"
                                  "add_files -tb ${_basename}_tb.cpp\n"
                                  "open_solution ${_basename}_${kernel}\n"
-                                 "set_part {xc7z020clg484-1}\n"
+                                 "set_part {${HLS_PART}}\n"
                                  "create_clock -period 10 -name default\n"
                                  "csim_design -compiler clang -ldflags {-lrt} -clean\n"
                                  "csynth_design\n"
