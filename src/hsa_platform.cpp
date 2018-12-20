@@ -487,7 +487,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
 
     // link ocml.amdgcn, irif.amdgcn, and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
-    std::string irif_file = "/opt/rocm/lib/irif.amdgcn.bc";
+    std::string irif_file = "/opt/rocm/opencl/lib/x86_64/bitcode/irif.amdgcn.bc";
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
     std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
