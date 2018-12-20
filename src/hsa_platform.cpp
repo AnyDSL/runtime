@@ -485,18 +485,14 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     options.NoTrappingFPMath = true;
     std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "-trap-handler" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
 
-    // link ocml.amdgcn, irif.amdgcn, and ocml config
+    // link ocml.amdgcn and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
-    std::string irif_file = "/opt/rocm/opencl/lib/x86_64/bitcode/irif.amdgcn.bc";
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
     std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
     std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
     if (ocml_module == nullptr)
         error("Can't create ocml module for '%'", ocml_file);
-    std::unique_ptr<llvm::Module> irif_module(llvm::parseIRFile(irif_file, diagnostic_err, llvm_context));
-    if (irif_module == nullptr)
-        error("Can't create irif module for '%'", irif_file);
     std::unique_ptr<llvm::Module> config_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(ocml_config)->getMemBufferRef(), diagnostic_err, llvm_context);
     if (config_module == nullptr)
         error("Can't create ocml config module");
@@ -504,7 +500,6 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
     ocml_module->setDataLayout(machine->createDataLayout());
-    irif_module->setDataLayout(machine->createDataLayout());
     config_module->setDataLayout(machine->createDataLayout());
 
     llvm::Linker linker(*llvm_module.get());
@@ -512,8 +507,6 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         error("Can't link config into module");
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
-    if (linker.linkInModule(std::move(irif_module), llvm::Linker::Flags::LinkOnlyNeeded))
-        error("Can't link irif into module");
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
