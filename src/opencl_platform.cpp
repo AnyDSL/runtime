@@ -536,7 +536,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         std::string src_path = filename;
         if (opencl_dev.is_intel_fpga)
             src_path = filename.substr(0, ext_pos) + ".aocx";
-        std::string src_code = runtime().load_file(filename);
+        std::string src_code = runtime().load_file(src_path);
 
         // compile src or load from cache
         std::string bin = opencl_dev.is_intel_fpga ? src_code : runtime().load_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
