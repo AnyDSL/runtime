@@ -56,6 +56,7 @@ void anydsl_print_f32(float);
 void anydsl_print_f64(double);
 void anydsl_print_char(char);
 void anydsl_print_string(char*);
+void anydsl_print_flush();
 
 void* anydsl_aligned_malloc(size_t, size_t);
 void anydsl_aligned_free(void*);
