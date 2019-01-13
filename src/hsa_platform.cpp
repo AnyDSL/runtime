@@ -69,6 +69,17 @@ std::string get_region_segment_str(hsa_region_segment_t region_segment) {
     }
 }
 
+std::string get_memory_pool_segment_str(hsa_amd_segment_t amd_segment) {
+    #define HSA_AMD_SEGMENT(TYPE) case TYPE: return #TYPE;
+    switch (amd_segment) {
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_GLOBAL)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_READONLY)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_PRIVATE)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_GROUP)
+        default: return "unknown HSA AMD segment";
+    }
+}
+
 hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data) {
     auto devices_ = static_cast<std::vector<DeviceData>*>(data);
     hsa_status_t status;
@@ -143,9 +154,14 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->kernarg_region.handle = { 0 };
     device->finegrained_region.handle = { 0 };
     device->coarsegrained_region.handle = { 0 };
+    device->amd_kernarg_pool.handle = { 0 };
+    device->amd_finegrained_pool.handle = { 0 };
+    device->amd_coarsegrained_pool.handle = { 0 };
 
     status = hsa_agent_iterate_regions(agent, iterate_regions_callback, device);
     CHECK_HSA(status, "hsa_agent_iterate_regions()");
+    status = hsa_amd_agent_iterate_memory_pools(agent, iterate_memory_pools_callback, device);
+    CHECK_HSA(status, "hsa_amd_agent_iterate_memory_pools()");
 
     return HSA_STATUS_SUCCESS;
 }
@@ -182,6 +198,42 @@ hsa_status_t HSAPlatform::iterate_regions_callback(hsa_region_t region, void* da
     status = hsa_region_get_info(region, HSA_REGION_INFO_RUNTIME_ALLOC_ALLOWED, &runtime_alloc_allowed);
     CHECK_HSA(status, "hsa_region_get_info()");
     debug("      Region Runtime Alloc Allowed: %", runtime_alloc_allowed);
+
+    return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSAPlatform::iterate_memory_pools_callback(hsa_amd_memory_pool_t memory_pool, void* data) {
+    DeviceData* device = static_cast<DeviceData*>(data);
+    hsa_status_t status;
+
+    hsa_amd_segment_t segment;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_SEGMENT, &segment);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+    debug("      AMD Memory Pool Segment: %", get_memory_pool_segment_str(segment));
+
+    hsa_amd_memory_pool_global_flag_t flags;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_GLOBAL_FLAGS, &flags);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+
+    std::string global_flags;
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_KERNARG_INIT) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_KERNARG_INIT ";
+        device->amd_kernarg_pool = memory_pool;
+    }
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_FINE_GRAINED) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_FINE_GRAINED ";
+        device->amd_finegrained_pool = memory_pool;
+    }
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED ";
+        device->amd_coarsegrained_pool = memory_pool;
+    }
+    debug("      AMD Memory Pool Global Flags: %", global_flags);
+
+    bool runtime_alloc_allowed;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_RUNTIME_ALLOC_ALLOWED, &runtime_alloc_allowed);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+    debug("      AMD Memory Pool Runtime Alloc Allowed: %", runtime_alloc_allowed);
 
     return HSA_STATUS_SUCCESS;
 }
@@ -242,9 +294,20 @@ void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
     return (void*)mem;
 }
 
+void* HSAPlatform::alloc_hsa(int64_t size, hsa_amd_memory_pool_t memory_pool) {
+    if (!size)
+        return nullptr;
+
+    char* mem;
+    hsa_status_t status = hsa_amd_memory_pool_allocate(memory_pool, size, 0, (void**) &mem);
+    CHECK_HSA(status, "hsa_amd_memory_pool_allocate()");
+
+    return (void*)mem;
+}
+
 void HSAPlatform::release(DeviceId, void* ptr) {
-    hsa_status_t status = hsa_memory_free(ptr);
-    CHECK_HSA(status, "hsa_memory_free()");
+    hsa_status_t status = hsa_amd_memory_pool_free(ptr);
+    CHECK_HSA(status, "hsa_amd_memory_pool_free()");
 }
 
 extern std::atomic<uint64_t> anydsl_kernel_time;

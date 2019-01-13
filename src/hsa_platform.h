@@ -20,9 +20,9 @@ public:
     ~HSAPlatform();
 
 protected:
-    void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
-    void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
-    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].finegrained_region); }
+    void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
+    void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
+    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_finegrained_pool); }
     void* get_device_ptr(DeviceId, void* ptr) override { return ptr; }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
@@ -60,6 +60,7 @@ protected:
         hsa_queue_t* queue;
         hsa_signal_t signal;
         hsa_region_t kernarg_region, finegrained_region, coarsegrained_region;
+        hsa_amd_memory_pool_t amd_kernarg_pool, amd_finegrained_pool, amd_coarsegrained_pool;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, hsa_executable_t> programs;
         std::unordered_map<uint64_t, KernelMap> kernels;
@@ -76,6 +77,9 @@ protected:
             , kernarg_region(data.kernarg_region)
             , finegrained_region(data.finegrained_region)
             , coarsegrained_region(data.coarsegrained_region)
+            , amd_kernarg_pool(data.amd_kernarg_pool)
+            , amd_finegrained_pool(data.amd_finegrained_pool)
+            , amd_coarsegrained_pool(data.amd_finegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
         {}
@@ -94,8 +98,10 @@ protected:
     std::unordered_map<std::string, std::string> files_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
+    void* alloc_hsa(int64_t, hsa_amd_memory_pool_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
+    static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
     KernelInfo load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
     std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
