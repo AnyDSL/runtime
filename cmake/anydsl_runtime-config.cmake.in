@@ -102,7 +102,7 @@ endif()
 find_program(OPT_BIN opt
     PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
     PATH_SUFFIXES @CMAKE_CONFIGURATION_TYPES@)
-if(LLVM_OPT_BIN)
+if(OPT_BIN)
     message(STATUS "Found opt: ${OPT_BIN}")
 else()
     message(STATUS "Could not find opt binary.")
