@@ -514,13 +514,12 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 static std::string get_ocml_config(int target) {
     std::string config = R"(
         ; Module anydsl ocml config
-        define internal i32 @__oclc_finite_only_opt() alwaysinline { ret i32 0 }
-        define internal i32 @__oclc_unsafe_math_opt() alwaysinline { ret i32 0 }
-        define internal i32 @__oclc_daz_opt() alwaysinline { ret i32 0 }
-        define internal i32 @__oclc_amd_opt() alwaysinline { ret i32 1 }
-        define internal i32 @__oclc_correctly_rounded_sqrt32() alwaysinline { ret i32 1 }
-        define internal i32 @__oclc_ISA_version() alwaysinline { ret i32 )";
-    return config + std::to_string(target) + " }";
+        @__oclc_finite_only_opt = addrspace(4) constant i8 0
+        @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
+        @__oclc_daz_opt = addrspace(4) constant i8 0
+        @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
+        @__oclc_ISA_version = addrspace(4) constant i32 )";
+    return config + std::to_string(target);
 }
 
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
