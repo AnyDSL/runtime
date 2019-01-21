@@ -99,6 +99,17 @@ else()
     message(STATUS "llvm-as version needs to match the required LLVM bitcode version from NVVM.")
 endif()
 
+find_program(OPT_BIN opt
+    PATHS ${LLVM_TOOLS_BINARY_DIR} ${LLVM_INSTALL_PREFIX}/bin
+    PATH_SUFFIXES @CMAKE_CONFIGURATION_TYPES@)
+if(OPT_BIN)
+    message(STATUS "Found opt: ${OPT_BIN}")
+else()
+    message(STATUS "Could not find opt binary.")
+    message(STATUS "opt is required to apply selective optimization passes for HLS code generation ")
+endif()
+
+
 # find python for post-patcher.py
 find_package(PythonInterp REQUIRED)
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
@@ -200,4 +211,4 @@ endfunction()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS)
 
-mark_as_advanced(AnyDSL_runtime_LIBRARIES AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR)
+mark_as_advanced(AnyDSL_runtime_LIBRARIES AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR OPT_BIN)
