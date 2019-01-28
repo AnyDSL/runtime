@@ -606,7 +606,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())
-        store_file(filename, program_string);
+        runtime().store_file(filename, program_string);
 
     debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {
