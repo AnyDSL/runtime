@@ -274,8 +274,10 @@ HSAPlatform::~HSAPlatform() {
         CHECK_HSA(status, "hsa_signal_destroy()");
         for (auto kernel_pair : devices_[i].kernels) {
             for (auto kernel : kernel_pair.second) {
-                status = hsa_memory_free(kernel.second.kernarg_segment);
-                CHECK_HSA(status, "hsa_memory_free()");
+                if (kernel.second.kernarg_segment) {
+                    status = hsa_memory_free(kernel.second.kernarg_segment);
+                    CHECK_HSA(status, "hsa_memory_free()");
+                }
             }
         }
     }
@@ -324,6 +326,17 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
+    if (!kernel_info.kernarg_segment) {
+        size_t total_size = 0;
+        for (uint32_t i = 0; i < num_args; i++) {
+            total_size += sizes[i];
+            if (i != num_args - 1 && total_size % aligns[i + 1])
+                total_size += aligns[i + 1] - total_size % aligns[i + 1];
+        }
+        kernel_info.kernarg_segment_size = total_size;
+        hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        CHECK_HSA(status, "hsa_memory_allocate()");
+    }
     void*  cur   = kernel_info.kernarg_segment;
     size_t space = kernel_info.kernarg_segment_size;
     for (uint32_t i = 0; i < num_args; i++) {
@@ -476,6 +489,7 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 
     // checks that the kernel exists
     KernelInfo kernel_info;
+    kernel_info.kernarg_segment = nullptr;
     auto& kernel_cache = hsa_dev.kernels;
     auto& kernel_map = kernel_cache[executable.handle];
     auto kernel_it = kernel_map.find(kernelname);
@@ -484,7 +498,8 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 
         hsa_executable_symbol_t kernel_symbol = { 0 };
         // DEPRECATED: use hsa_executable_get_symbol_by_linker_name if available
-        status = hsa_executable_get_symbol_by_name(executable, kernelname.c_str(), &hsa_dev.agent, &kernel_symbol);
+        std::string kernelname_kd = kernelname + ".kd";
+        status = hsa_executable_get_symbol_by_name(executable, kernelname_kd.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
 
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel_info.kernel);
@@ -496,8 +511,9 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
-        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        // ROCm 2.x reports always 0 for kernarg_segment_size
+        //status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        //CHECK_HSA(status, "hsa_memory_allocate()");
 
         hsa_dev.lock();
         kernel_cache[executable.handle].emplace(kernelname, kernel_info);
