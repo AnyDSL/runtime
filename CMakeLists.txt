@@ -26,6 +26,13 @@ find_path(Impala_DIR
     PATHS ${Impala_DIR} $ENV{Impala_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
 find_package(Impala)
 
+find_package(MPI)
+if (MPI_FOUND)
+    include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+else (MPI_FOUND)
+    message("MPI NOT FOUND!")
+endif (MPI_FOUND)
+
 add_subdirectory(src)
 
 message(STATUS "Using Debug flags: ${CMAKE_CXX_FLAGS_DEBUG}")

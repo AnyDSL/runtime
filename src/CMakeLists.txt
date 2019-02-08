@@ -116,4 +116,4 @@ add_library(runtime
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
 
-target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES})
+target_link_libraries(runtime ${CONF_RUNTIME_LIBRARIES} ${MPI_LIBRARIES})

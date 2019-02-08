@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <mpi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +80,18 @@ void  anydsl_link(const char*);
 int32_t anydsl_compile(const char*, uint32_t, uint32_t);
 void *anydsl_lookup_function(int32_t, const char*);
 #endif
+
+//COMMUNICATOR
+//TODO adjust
+int MPI_init();
+MPI_Op get_mpi_max();
+MPI_Op get_mpi_sum();
+MPI_Datatype get_mpi_int();
+MPI_Datatype get_mpi_double();
+MPI_Datatype get_mpi_char();
+MPI_Datatype get_mpi_byte();
+MPI_Comm get_mpi_comm_world();
+MPI_Status* get_mpi_status_ignore();
 
 #ifdef __cplusplus
 }
