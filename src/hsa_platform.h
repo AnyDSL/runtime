@@ -22,7 +22,7 @@ public:
 protected:
     void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
     void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
-    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_finegrained_pool); }
+    void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].finegrained_region); }
     void* get_device_ptr(DeviceId, void* ptr) override { return ptr; }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
