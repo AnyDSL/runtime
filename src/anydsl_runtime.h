@@ -83,6 +83,19 @@ void *anydsl_lookup_function(int32_t, const char*);
 
 //COMMUNICATOR
 //TODO adjust
+int anydsl_comm_init();
+MPI_Op anydsl_comm_get_max();
+MPI_Op anydsl_comm_get_sum();
+MPI_Datatype anydsl_comm_get_int();
+MPI_Datatype anydsl_comm_get_double();
+MPI_Datatype anydsl_comm_get_char();
+MPI_Datatype anydsl_comm_get_byte();
+MPI_Comm anydsl_comm_get_world();
+MPI_Status* anydsl_comm_get_status_ignore();
+
+const auto& anydsl_comm_initialized = MPI_Initialized;
+
+/*
 int MPI_init();
 MPI_Op get_mpi_max();
 MPI_Op get_mpi_sum();
@@ -92,6 +105,7 @@ MPI_Datatype get_mpi_char();
 MPI_Datatype get_mpi_byte();
 MPI_Comm get_mpi_comm_world();
 MPI_Status* get_mpi_status_ignore();
+*/
 
 #ifdef __cplusplus
 }

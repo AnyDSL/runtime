@@ -392,19 +392,24 @@ void anydsl_execute_graph(int32_t graph_id, int32_t root_id) {
 #endif
 
 //COMMUNICATOR
-#include <mpi.h>
 
 //TODO change function names!
 
-int MPI_init() { return MPI_Init(0, 0); }
-MPI_Op get_mpi_max() { return MPI_MAX; }
-MPI_Op get_mpi_sum() { return MPI_SUM; }
+#ifdef USING_MPI
 
-MPI_Datatype get_mpi_int() { return MPI_INT; }
-MPI_Datatype get_mpi_double() { return MPI_DOUBLE; }
-MPI_Datatype get_mpi_char() { return MPI_CHAR; }
-MPI_Datatype get_mpi_byte() { return MPI_BYTE; }
+#include <mpi.h>
 
-MPI_Comm get_mpi_comm_world() { return MPI_COMM_WORLD; }
+int anydsl_comm_init() { return MPI_Init(0,0); }
 
-MPI_Status* get_mpi_status_ignore() { return MPI_STATUS_IGNORE; }
+MPI_Op anydsl_comm_get_max() { return MPI_MAX; }
+MPI_Op anydsl_comm_get_sum() { return MPI_SUM; }
+MPI_Datatype anydsl_comm_get_int() { return MPI_INT; }
+MPI_Datatype anydsl_comm_get_double() { return MPI_DOUBLE; }
+MPI_Datatype anydsl_comm_get_char() { return MPI_CHAR; }
+MPI_Datatype anydsl_comm_get_byte() { return MPI_BYTE; }
+MPI_Comm anydsl_comm_get_world() { return MPI_COMM_WORLD; }
+MPI_Status* anydsl_comm_get_status_ignore() { return MPI_STATUS_IGNORE; }
+
+#else
+
+#endif
