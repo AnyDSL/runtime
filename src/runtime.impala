@@ -116,30 +116,30 @@ type COMM_MutBuf = &mut [i8];
 extern "C" {
     fn anydsl_comm_init() -> i32;
     fn anydsl_comm_initialized(&mut i32) -> i32;
-    fn MPI_Comm_size(COMM_COMM, &mut i32) -> i32;
-    fn MPI_Comm_rank(COMM_COMM, &mut i32) -> i32;
-    fn MPI_Allreduce(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, COMM_Op, COMM_COMM) -> i32;
-    fn MPI_Send(COMM_Buf, i32, COMM_Datatype, i32, i32, COMM_COMM) -> i32;
-    fn MPI_Recv(COMM_MutBuf, i32, COMM_Datatype, i32, i32, COMM_COMM, COMM_STATUS) -> i32;
-    fn MPI_Irecv(COMM_MutBuf, i32, COMM_Datatype, i32, i32, COMM_COMM, COMM_REQUEST) -> i32;
-    fn MPI_Wait(COMM_REQUEST, COMM_STATUS) -> i32;
-    fn MPI_Probe(i32, i32, COMM_COMM, COMM_STATUS) -> i32;
-    fn MPI_Get_count(COMM_STATUS, COMM_Datatype, &mut i32) -> i32;
-    fn MPI_Gather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, i32, COMM_COMM) -> i32;
-    fn MPI_Allgather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, COMM_COMM) -> i32;
-    fn MPI_Barrier(COMM_COMM) -> i32;
-    fn MPI_Wtime() -> f64;
-    fn MPI_Finalize() -> i32;
-    fn MPI_Finalized(&mut i32) -> i32;
-    // wrappers in mpi.cpp for getting MPI constants
+    fn anydsl_comm_size(COMM_COMM, &mut i32) -> i32;
+    fn anydsl_comm_rank(COMM_COMM, &mut i32) -> i32;
+    fn anydsl_comm_allreduce(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, COMM_Op, COMM_COMM) -> i32;
+    fn anydsl_comm_send(COMM_Buf, i32, COMM_Datatype, i32, i32, COMM_COMM) -> i32;
+    fn anydsl_comm_recv(COMM_MutBuf, i32, COMM_Datatype, i32, i32, COMM_COMM, COMM_STATUS) -> i32;
+    fn anydsl_comm_irecv(COMM_MutBuf, i32, COMM_Datatype, i32, i32, COMM_COMM, COMM_REQUEST) -> i32;
+    fn anydsl_comm_wait(COMM_REQUEST, COMM_STATUS) -> i32;
+    fn anydsl_comm_probe(i32, i32, COMM_COMM, COMM_STATUS) -> i32;
+    fn anydsl_comm_get_count(COMM_STATUS, COMM_Datatype, &mut i32) -> i32;
+    fn anydsl_comm_gather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, i32, COMM_COMM) -> i32;
+    fn anydsl_comm_allgather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, COMM_COMM) -> i32;
+    fn anydsl_comm_barrier(COMM_COMM) -> i32;
+    fn anydsl_comm_wtime() -> f64;
+    fn anydsl_comm_finalize() -> i32;
+    fn anydsl_comm_finalized(&mut i32) -> i32;
+    // wrappers for getting constants
     fn anydsl_comm_get_world() -> COMM_COMM;
     fn anydsl_comm_get_int() -> COMM_Datatype;
     fn anydsl_comm_get_double() -> COMM_Datatype;
     fn anydsl_comm_get_char() -> COMM_Datatype;
     fn anydsl_comm_get_byte() -> COMM_Datatype;
-    fn get_mpi_max() -> COMM_Op;
-    fn get_mpi_sum() -> COMM_Op;
-    fn get_mpi_status_ignore() -> COMM_STATUS;
+    fn anydsl_comm_get_max() -> COMM_Op;
+    fn anydsl_comm_get_sum() -> COMM_Op;
+    fn anydsl_comm_get_status_ignore() -> COMM_STATUS;
 }
 
 struct MPIComms {
@@ -213,11 +213,11 @@ fn @comm() -> Communicator {
             world : anydsl_comm_get_world(),
         },
         ops : MPIOps {
-            max : get_mpi_max(),
-            sum : get_mpi_sum(),
+            max : anydsl_comm_get_max(),
+            sum : anydsl_comm_get_sum(),
         },
         status : MPIStatuses {
-            ignore : get_mpi_status_ignore() as &mut MPIStatus,
+            ignore : anydsl_comm_get_status_ignore() as &mut MPIStatus,
         },
         double_t : anydsl_comm_get_double(),
         int_t : anydsl_comm_get_int(),
@@ -226,66 +226,66 @@ fn @comm() -> Communicator {
 
         init : @|numNodes,rank| {
             let status = start_COMM();
-            MPI_Comm_size(anydsl_comm_get_world(),numNodes);
-            MPI_Comm_rank(anydsl_comm_get_world(),rank);
+            anydsl_comm_size(anydsl_comm_get_world(),numNodes);
+            anydsl_comm_rank(anydsl_comm_get_world(),rank);
             status
         },
         initWithoutVars: || {
             start_COMM()
         },
         comm_size : @|numNodes| {
-            MPI_Comm_size(anydsl_comm_get_world(),numNodes)
+            anydsl_comm_size(anydsl_comm_get_world(),numNodes)
         },
         comm_rank : @|rank| {
-            MPI_Comm_rank(anydsl_comm_get_world(),rank)
+            anydsl_comm_rank(anydsl_comm_get_world(),rank)
         },
         get_cur_rank: @|| {
             let mut curRank = -1;
-            MPI_Comm_rank(anydsl_comm_get_world(),&mut curRank);
+            anydsl_comm_rank(anydsl_comm_get_world(),&mut curRank);
             curRank
         },
         get_number_of_nodes: @|| {
             let mut numNodes = -1;
-            MPI_Comm_size(anydsl_comm_get_world(),&mut numNodes);
+            anydsl_comm_size(anydsl_comm_get_world(),&mut numNodes);
             numNodes
         },
         allreduce : @|sendbuf, recvbuf, count, datatype, op| {
-            MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, anydsl_comm_get_world())
+            anydsl_comm_allreduce(sendbuf, recvbuf, count, datatype, op, anydsl_comm_get_world())
         },
         send : @|buf, count, datatype, dest, tag| {
-            MPI_Send(buf, count, datatype, dest, tag, anydsl_comm_get_world())
+            anydsl_comm_send(buf, count, datatype, dest, tag, anydsl_comm_get_world())
         },
         recv : @|buf, count, datatype, source, tag, status| {
-            MPI_Recv(buf, count, datatype, source, tag, anydsl_comm_get_world(), status as COMM_STATUS)
+            anydsl_comm_recv(buf, count, datatype, source, tag, anydsl_comm_get_world(), status as COMM_STATUS)
         },
         irecv : @|buf, count, datatype, source, tag, request| {
-            MPI_Irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), request)
+            anydsl_comm_irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), request)
         },
         wait : @|request, status| {
-            MPI_Wait(request, status as COMM_STATUS)
+            anydsl_comm_wait(request, status as COMM_STATUS)
         },
         probe: @|source, tag, status| {
-            MPI_Probe(source, tag, anydsl_comm_get_world(), status as COMM_STATUS)
+            anydsl_comm_probe(source, tag, anydsl_comm_get_world(), status as COMM_STATUS)
         },
         get_count: @|status, datatype, count| {
-            MPI_Get_count(status as COMM_STATUS, datatype, count)
+            anydsl_comm_get_count(status as COMM_STATUS, datatype, count)
         },
         gather: @|sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root| {
-            MPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, anydsl_comm_get_world())
+            anydsl_comm_gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, anydsl_comm_get_world())
         },
         allgather: @|sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype| {
-            MPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, anydsl_comm_get_world())
+            anydsl_comm_allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, anydsl_comm_get_world())
         },
         barrier : @|| {
-            MPI_Barrier(anydsl_comm_get_world())
+            anydsl_comm_barrier(anydsl_comm_get_world())
         },
-        wtime : MPI_Wtime,
+        wtime : anydsl_comm_wtime,
         finalize : @|| {
             //trick allows to call finalize multiple times
             let mut finalized = 0;
-            MPI_Finalized(&mut finalized);
+            anydsl_comm_finalized(&mut finalized);
             if(finalized == 0) {
-                MPI_Finalize()
+                anydsl_comm_finalize()
             }
             else {
                 0

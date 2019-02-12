@@ -390,26 +390,3 @@ void anydsl_execute_graph(int32_t graph_id, int32_t root_id) {
     }
 }
 #endif
-
-//COMMUNICATOR
-
-//TODO change function names!
-
-#ifdef USING_MPI
-
-#include <mpi.h>
-
-int anydsl_comm_init() { return MPI_Init(0,0); }
-
-MPI_Op anydsl_comm_get_max() { return MPI_MAX; }
-MPI_Op anydsl_comm_get_sum() { return MPI_SUM; }
-MPI_Datatype anydsl_comm_get_int() { return MPI_INT; }
-MPI_Datatype anydsl_comm_get_double() { return MPI_DOUBLE; }
-MPI_Datatype anydsl_comm_get_char() { return MPI_CHAR; }
-MPI_Datatype anydsl_comm_get_byte() { return MPI_BYTE; }
-MPI_Comm anydsl_comm_get_world() { return MPI_COMM_WORLD; }
-MPI_Status* anydsl_comm_get_status_ignore() { return MPI_STATUS_IGNORE; }
-
-#else
-
-#endif
