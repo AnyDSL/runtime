@@ -1,11 +1,6 @@
 #include "hsa_platform.h"
 #include "runtime.h"
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstdlib>
@@ -71,6 +66,17 @@ std::string get_region_segment_str(hsa_region_segment_t region_segment) {
         HSA_REGION_SEGMENT(HSA_REGION_SEGMENT_GROUP)
         HSA_REGION_SEGMENT(HSA_REGION_SEGMENT_KERNARG)
         default: return "unknown HSA region segment";
+    }
+}
+
+std::string get_memory_pool_segment_str(hsa_amd_segment_t amd_segment) {
+    #define HSA_AMD_SEGMENT(TYPE) case TYPE: return #TYPE;
+    switch (amd_segment) {
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_GLOBAL)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_READONLY)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_PRIVATE)
+        HSA_AMD_SEGMENT(HSA_AMD_SEGMENT_GROUP)
+        default: return "unknown HSA AMD segment";
     }
 }
 
@@ -148,9 +154,14 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->kernarg_region.handle = { 0 };
     device->finegrained_region.handle = { 0 };
     device->coarsegrained_region.handle = { 0 };
+    device->amd_kernarg_pool.handle = { 0 };
+    device->amd_finegrained_pool.handle = { 0 };
+    device->amd_coarsegrained_pool.handle = { 0 };
 
     status = hsa_agent_iterate_regions(agent, iterate_regions_callback, device);
     CHECK_HSA(status, "hsa_agent_iterate_regions()");
+    status = hsa_amd_agent_iterate_memory_pools(agent, iterate_memory_pools_callback, device);
+    CHECK_HSA(status, "hsa_amd_agent_iterate_memory_pools()");
 
     return HSA_STATUS_SUCCESS;
 }
@@ -191,6 +202,42 @@ hsa_status_t HSAPlatform::iterate_regions_callback(hsa_region_t region, void* da
     return HSA_STATUS_SUCCESS;
 }
 
+hsa_status_t HSAPlatform::iterate_memory_pools_callback(hsa_amd_memory_pool_t memory_pool, void* data) {
+    DeviceData* device = static_cast<DeviceData*>(data);
+    hsa_status_t status;
+
+    hsa_amd_segment_t segment;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_SEGMENT, &segment);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+    debug("      AMD Memory Pool Segment: %", get_memory_pool_segment_str(segment));
+
+    hsa_amd_memory_pool_global_flag_t flags;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_GLOBAL_FLAGS, &flags);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+
+    std::string global_flags;
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_KERNARG_INIT) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_KERNARG_INIT ";
+        device->amd_kernarg_pool = memory_pool;
+    }
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_FINE_GRAINED) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_FINE_GRAINED ";
+        device->amd_finegrained_pool = memory_pool;
+    }
+    if (flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED) {
+        global_flags += "HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED ";
+        device->amd_coarsegrained_pool = memory_pool;
+    }
+    debug("      AMD Memory Pool Global Flags: %", global_flags);
+
+    bool runtime_alloc_allowed;
+    status = hsa_amd_memory_pool_get_info(memory_pool, HSA_AMD_MEMORY_POOL_INFO_RUNTIME_ALLOC_ALLOWED, &runtime_alloc_allowed);
+    CHECK_HSA(status, "hsa_amd_memory_pool_get_info()");
+    debug("      AMD Memory Pool Runtime Alloc Allowed: %", runtime_alloc_allowed);
+
+    return HSA_STATUS_SUCCESS;
+}
+
 HSAPlatform::HSAPlatform(Runtime* runtime)
     : Platform(runtime)
 {
@@ -225,6 +272,14 @@ HSAPlatform::~HSAPlatform() {
         }
         status = hsa_signal_destroy(devices_[i].signal);
         CHECK_HSA(status, "hsa_signal_destroy()");
+        for (auto kernel_pair : devices_[i].kernels) {
+            for (auto kernel : kernel_pair.second) {
+                if (kernel.second.kernarg_segment) {
+                    status = hsa_memory_free(kernel.second.kernarg_segment);
+                    CHECK_HSA(status, "hsa_memory_free()");
+                }
+            }
+        }
     }
 
     hsa_shut_down();
@@ -241,9 +296,20 @@ void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
     return (void*)mem;
 }
 
+void* HSAPlatform::alloc_hsa(int64_t size, hsa_amd_memory_pool_t memory_pool) {
+    if (!size)
+        return nullptr;
+
+    char* mem;
+    hsa_status_t status = hsa_amd_memory_pool_allocate(memory_pool, size, 0, (void**) &mem);
+    CHECK_HSA(status, "hsa_amd_memory_pool_allocate()");
+
+    return (void*)mem;
+}
+
 void HSAPlatform::release(DeviceId, void* ptr) {
-    hsa_status_t status = hsa_memory_free(ptr);
-    CHECK_HSA(status, "hsa_memory_free()");
+    hsa_status_t status = hsa_amd_memory_pool_free(ptr);
+    CHECK_HSA(status, "hsa_amd_memory_pool_free()");
 }
 
 extern std::atomic<uint64_t> anydsl_kernel_time;
@@ -251,44 +317,45 @@ extern std::atomic<uint64_t> anydsl_kernel_time;
 void HSAPlatform::launch_kernel(DeviceId dev,
                                 const char* file, const char* name,
                                 const uint32_t* grid, const uint32_t* block,
-                                void** args, const uint32_t* sizes, const KernelArgType*,
+                                void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType*,
                                 uint32_t num_args) {
     auto queue = devices_[dev].queue;
     if (!queue)
         error("The selected HSA device '%' cannot execute kernels", dev);
 
-    uint64_t kernel;
-    uint32_t kernarg_segment_size;
-    uint32_t group_segment_size;
-    uint32_t private_segment_size;
-    std::tie(kernel, kernarg_segment_size, group_segment_size, private_segment_size) = load_kernel(dev, file, name);
+    auto kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
-    hsa_status_t status;
-    void* kernarg_address = nullptr;
-    status = hsa_memory_allocate(devices_[dev].kernarg_region, kernarg_segment_size, &kernarg_address);
-    CHECK_HSA(status, "hsa_memory_allocate()");
-    size_t offset = 0;
-    auto align_address = [] (size_t base, size_t align) {
-        if (align > 8)
-            align = 8;
-        return ((base + align - 1) / align) * align;
-    };
+    if (!kernel_info.kernarg_segment) {
+        size_t total_size = 0;
+        for (uint32_t i = 0; i < num_args; i++) {
+            total_size += sizes[i];
+            if (i != num_args - 1 && total_size % aligns[i + 1])
+                total_size += aligns[i + 1] - total_size % aligns[i + 1];
+        }
+        kernel_info.kernarg_segment_size = total_size;
+        hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        CHECK_HSA(status, "hsa_memory_allocate()");
+    }
+    void*  cur   = kernel_info.kernarg_segment;
+    size_t space = kernel_info.kernarg_segment_size;
     for (uint32_t i = 0; i < num_args; i++) {
         // align base address for next kernel argument
-        offset = align_address(offset, sizes[i]);
-        std::memcpy((void*)((char*)kernarg_address + offset), args[i], sizes[i]);
-        offset += sizes[i];
+        if (!std::align(aligns[i], sizes[i], cur, space))
+            debug("Incorrect kernel argument alignment detected");
+        std::memcpy(cur, args[i], sizes[i]);
+        cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
     }
-    if (offset != kernarg_segment_size)
-        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernarg_segment_size, offset);
+    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
+    if (total != kernel_info.kernarg_segment_size)
+        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
 
     hsa_signal_t launch_signal;
     if (runtime_->profiling_enabled()) {
-        status = hsa_signal_create(1, 0, NULL, &launch_signal);
+        hsa_status_t status = hsa_signal_create(1, 0, NULL, &launch_signal);
         CHECK_HSA(status, "hsa_signal_create()");
     } else
         launch_signal = signal;
@@ -307,11 +374,11 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     aql.grid_size_x = grid[0];
     aql.grid_size_y = grid[1];
     aql.grid_size_z = grid[2];
-    aql.completion_signal = launch_signal;
-    aql.kernel_object = kernel;
-    aql.kernarg_address = kernarg_address;
-    aql.private_segment_size = private_segment_size;
-    aql.group_segment_size = group_segment_size;
+    aql.completion_signal    = launch_signal;
+    aql.kernel_object        = kernel_info.kernel;
+    aql.kernarg_address      = kernel_info.kernarg_segment;
+    aql.private_segment_size = kernel_info.private_segment_size;
+    aql.group_segment_size   = kernel_info.group_segment_size;
 
     // write to command queue
     const uint64_t index = hsa_queue_load_write_index_relaxed(queue);
@@ -350,31 +417,7 @@ void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t o
     CHECK_HSA(status, "hsa_memory_copy()");
 }
 
-void HSAPlatform::register_file(const std::string& filename, const std::string& program_string) {
-    files_[filename] = program_string;
-}
-
-std::string HSAPlatform::load_file(const std::string& filename) const {
-    auto file_it = files_.find(filename);
-    if (file_it != files_.end())
-        return file_it->second;
-
-    std::ifstream src_file(filename);
-    if (!src_file.is_open())
-        error("Can't open source file '%'", filename);
-
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-}
-
-void HSAPlatform::store_file(const std::string& filename, const std::string& str) const {
-    std::ofstream dst_file(filename);
-    if (!dst_file)
-        error("Can't open destination file '%'", filename);
-    dst_file << str;
-    dst_file.close();
-}
-
-std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
+HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;
 
@@ -392,13 +435,16 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
         if (ext != "gcn" && ext != "amdgpu")
             error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", filename);
 
-        std::string gcn;
-        if (ext == "gcn" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = load_file(filename);
-        } else if (ext == "amdgpu" && (std::ifstream(filename).good() || files_.count(filename))) {
-            gcn = compile_gcn(dev, filename, load_file(filename));
-        } else {
-            error("Could not find kernel file '%'", filename);
+        // load file from disk or cache
+        std::string src_code = runtime().load_file(filename);
+
+        // compile src or load from cache
+        std::string gcn = ext == "gcn" ? src_code : runtime().load_cache(devices_[dev].isa + src_code);
+        if (gcn.empty()) {
+            if (ext == "amdgpu") {
+                gcn = compile_gcn(dev, filename, src_code);
+            }
+            runtime().store_cache(devices_[dev].isa + src_code, gcn);
         }
 
         hsa_code_object_reader_t reader;
@@ -442,52 +488,54 @@ std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> HSAPlatform::load_kernel(Devi
     }
 
     // checks that the kernel exists
+    KernelInfo kernel_info;
+    kernel_info.kernarg_segment = nullptr;
     auto& kernel_cache = hsa_dev.kernels;
     auto& kernel_map = kernel_cache[executable.handle];
     auto kernel_it = kernel_map.find(kernelname);
-    uint64_t kernel = 0;
-    uint32_t kernarg_segment_size = 0;
-    uint32_t group_segment_size = 0;
-    uint32_t private_segment_size = 0;
     if (kernel_it == kernel_map.end()) {
         hsa_dev.unlock();
 
         hsa_executable_symbol_t kernel_symbol = { 0 };
         // DEPRECATED: use hsa_executable_get_symbol_by_linker_name if available
-        status = hsa_executable_get_symbol_by_name(executable, kernelname.c_str(), &hsa_dev.agent, &kernel_symbol);
+        std::string kernelname_kd = kernelname + ".kd";
+        status = hsa_executable_get_symbol_by_name(executable, kernelname_kd.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
 
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel_info.kernel);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE, &kernarg_segment_size);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE, &kernel_info.kernarg_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE, &group_segment_size);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE, &kernel_info.group_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
-        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &private_segment_size);
+        status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
+        // ROCm 2.x reports always 0 for kernarg_segment_size
+        //status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        //CHECK_HSA(status, "hsa_memory_allocate()");
+
         hsa_dev.lock();
-        kernel_cache[executable.handle].emplace(kernelname, std::make_tuple(kernel, kernarg_segment_size, group_segment_size, private_segment_size));
+        kernel_cache[executable.handle].emplace(kernelname, kernel_info);
     } else {
-        std::tie(kernel, kernarg_segment_size, group_segment_size, private_segment_size) = kernel_it->second;
+        kernel_info = kernel_it->second;
     }
 
     hsa_dev.unlock();
 
-    return std::make_tuple(kernel, kernarg_segment_size, group_segment_size, private_segment_size);
+    return kernel_info;
 }
 
 #ifdef RUNTIME_ENABLE_JIT
 static std::string get_ocml_config(int target) {
     std::string config = R"(
         ; Module anydsl ocml config
-        define i32 @__oclc_finite_only_opt() alwaysinline { ret i32 0 }
-        define i32 @__oclc_unsafe_math_opt() alwaysinline { ret i32 0 }
-        define i32 @__oclc_daz_opt() alwaysinline { ret i32 0 }
-        define i32 @__oclc_amd_opt() alwaysinline { ret i32 1 }
-        define i32 @__oclc_correctly_rounded_sqrt32() alwaysinline { ret i32 1 }
-        define i32 @__oclc_ISA_version() alwaysinline { ret i32 )";
-    return config + std::to_string(target) + " }";
+        @__oclc_finite_only_opt = addrspace(4) constant i8 0
+        @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
+        @__oclc_daz_opt = addrspace(4) constant i8 0
+        @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
+        @__oclc_ISA_version = addrspace(4) constant i32 )";
+    return config + std::to_string(target);
 }
 
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
@@ -500,25 +548,29 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SMDiagnostic diagnostic_err;
     std::unique_ptr<llvm::Module> llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(program)->getMemBufferRef(), diagnostic_err, llvm_context);
 
+    if (!llvm_module) {
+        std::string stream;
+        llvm::raw_string_ostream llvm_stream(stream);
+        diagnostic_err.print("", llvm_stream);
+        error("Parsing IR file %: %", filename, llvm_stream.str());
+    }
+
     auto triple_str = llvm_module->getTargetTriple();
     std::string error_str;
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
+    options.NoTrappingFPMath = true;
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "-trap-handler" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
-    // link ocml.amdgcn, irif.amdgcn, and ocml config
+    // link ocml.amdgcn and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
-    std::string irif_file = "/opt/rocm/lib/irif.amdgcn.bc";
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
     std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
     std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
     if (ocml_module == nullptr)
         error("Can't create ocml module for '%'", ocml_file);
-    std::unique_ptr<llvm::Module> irif_module(llvm::parseIRFile(irif_file, diagnostic_err, llvm_context));
-    if (irif_module == nullptr)
-        error("Can't create irif module for '%'", irif_file);
     std::unique_ptr<llvm::Module> config_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(ocml_config)->getMemBufferRef(), diagnostic_err, llvm_context);
     if (config_module == nullptr)
         error("Can't create ocml config module");
@@ -526,7 +578,6 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
     ocml_module->setDataLayout(machine->createDataLayout());
-    irif_module->setDataLayout(machine->createDataLayout());
     config_module->setDataLayout(machine->createDataLayout());
 
     llvm::Linker linker(*llvm_module.get());
@@ -534,8 +585,6 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         error("Can't link config into module");
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
-    if (linker.linkInModule(std::move(irif_module), llvm::Linker::Flags::LinkOnlyNeeded))
-        error("Can't link irif into module");
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
@@ -555,13 +604,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
 
-#if LLVM_VERSION_MAJOR >= 7
     //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
     machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_ObjectFile, true);
-#else
-    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_AssemblyFile, true);
-    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, llvm::TargetMachine::CGFT_ObjectFile, true);
-#endif
 
     function_pass_manager.doInitialization();
     for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
@@ -572,12 +616,12 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj(outstr.begin(), outstr.end());
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
-    store_file(obj_file, obj);
+    runtime().store_file(obj_file, obj);
     std::string lld_cmd = "ld.lld -shared " + obj_file + " -o " + gcn_file;
     if (std::system(lld_cmd.c_str()))
         error("Generating gcn using lld");
 
-    return load_file(gcn_file);
+    return runtime().load_file(gcn_file);
 }
 #else
 std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, int) const {

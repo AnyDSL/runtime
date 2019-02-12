@@ -31,11 +31,10 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
-    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType* types,
                        uint32_t num_args) override;
     void synchronize(DeviceId dev) override;
 
@@ -54,9 +53,11 @@ protected:
         cl_device_id dev;
         cl_command_queue queue;
         cl_context ctx;
-        bool is_intel_fpga = false;
         cl_uint version_major;
         cl_uint version_minor;
+        std::string platform_name;
+        bool is_intel_fpga = false;
+        std::string device_name;
         #ifdef CL_VERSION_2_0
         cl_device_svm_capabilities svm_caps;
         #endif
@@ -73,9 +74,11 @@ protected:
             , dev(data.dev)
             , queue(data.queue)
             , ctx(data.ctx)
-            , is_intel_fpga(data.is_intel_fpga)
             , version_major(data.version_major)
             , version_minor(data.version_minor)
+            , platform_name(data.platform_name)
+            , is_intel_fpga(data.is_intel_fpga)
+            , device_name(data.device_name)
             #ifdef CL_VERSION_2_0
             , svm_caps(data.svm_caps)
             #endif
@@ -99,8 +102,9 @@ protected:
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
 
-    std::string load_file(const std::string& filename) const;
-    cl_program compile_program(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    cl_program load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    cl_program load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    cl_program compile_program(DeviceId dev, cl_program program, const std::string& filename) const;
 
     friend void time_kernel_callback(cl_event, cl_int, void*);
 };

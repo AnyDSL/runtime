@@ -3,14 +3,19 @@
 #include <cassert>
 #include <chrono>
 #include <cstdlib>
+#include <fstream>
+#include <functional>
 #include <iostream>
 #include <locale>
 #include <memory>
 #include <random>
+#include <string>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
+#include <limits.h>
 #include <unistd.h>
 #endif
 
@@ -74,6 +79,101 @@ Runtime::Runtime() {
 #endif
 }
 
+#ifdef _WIN32
+#include <direct.h>
+#define create_directory(d) _mkdir(d)
+#else
+#include <sys/stat.h>
+#define create_directory(d) { umask(0); mkdir(d, 0755); }
+#endif
+
+#if _XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L || /* Glibc versions <= 2.19: */ _BSD_SOURCE
+std::string get_self_directory() {
+    char path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path)-1);
+    if (len != -1) {
+        path[len] = '\0';
+
+        for (int i = len-1; i >= 0; --i) {
+            if (path[i] == '/')
+                return std::string(&path[0], i);
+        }
+    }
+    return std::string();
+}
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+std::string get_self_directory() {
+    char path[PATH_MAX];
+    uint32_t size = (uint32_t)sizeof(path);
+    if (_NSGetExecutablePath(path, &size) == 0) {
+        char resolved[PATH_MAX];
+        if (realpath(path, resolved)) {
+            std::string resolved_path = std::string(resolved);
+            for (int i = resolved_path.size()-1; i >= 0; --i) {
+                if (resolved_path[i] == '/')
+                    return std::string(resolved_path, 0, i);
+            }
+        }
+    }
+    return std::string();
+}
+#else
+std::string get_self_directory() {
+    return std::string();
+}
+#endif
+
+std::string get_cache_directory() {
+    std::string cache_path = get_self_directory();
+    if (!cache_path.empty())
+        cache_path += "/";
+    return cache_path + "cache";
+}
+
+std::string get_cached_filename(const std::string& str, const std::string& ext) {
+    size_t key = std::hash<std::string>{}(str);
+    std::stringstream hex_stream;
+    hex_stream << std::hex << key;
+    return get_cache_directory() + "/" + hex_stream.str() + ext;
+}
+
+std::string Runtime::load_file(const std::string& filename) const {
+    auto file_it = files_.find(filename);
+    if (file_it != files_.end())
+        return file_it->second;
+
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        error("Can't open source file '%'", filename);
+
+    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
+}
+
+void Runtime::store_file(const std::string& filename, const std::string& str) const {
+    std::ofstream dst_file(filename);
+    if (!dst_file)
+        error("Can't open destination file '%'", filename);
+    dst_file << str;
+    dst_file.close();
+}
+
+std::string Runtime::load_cache(const std::string& str, const std::string& ext) const {
+    std::string filename = get_cached_filename(str, ext);
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        return std::string();
+    debug("Loading from cache: %", filename);
+    return load_file(filename);
+}
+
+void Runtime::store_cache(const std::string& key, const std::string& str, const std::string ext) const {
+    std::string filename = get_cached_filename(key, ext);
+    create_directory(get_cache_directory().c_str());
+    debug("Storing to cache: %", filename);
+    store_file(filename, str);
+}
+
 inline PlatformId to_platform(int32_t m) {
     return PlatformId(m & 0x0F);
 }
@@ -119,12 +219,12 @@ void anydsl_copy(int32_t mask_src, const void* src, int64_t offset_src,
 void anydsl_launch_kernel(int32_t mask,
                           const char* file, const char* kernel,
                           const uint32_t* grid, const uint32_t* block,
-                          void** args, const uint32_t* sizes, const uint8_t* types,
+                          void** args, const uint32_t* sizes, const uint32_t* aligns, const uint8_t* types,
                           uint32_t num_args) {
     runtime().launch_kernel(to_platform(mask), to_device(mask),
                             file, kernel,
                             grid, block,
-                            args, sizes, reinterpret_cast<const KernelArgType*>(types),
+                            args, sizes, aligns, reinterpret_cast<const KernelArgType*>(types),
                             num_args);
 }
 

@@ -36,7 +36,7 @@ void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t
 void anydsl_launch_kernel(int32_t,
                           const char*, const char*,
                           const uint32_t*, const uint32_t*,
-                          void**, const uint32_t*, const uint8_t*,
+                          void**, const uint32_t*, const uint32_t*, const uint8_t*,
                           uint32_t);
 void anydsl_synchronize(int32_t);
 
@@ -61,6 +61,7 @@ void anydsl_print_f32(float);
 void anydsl_print_f64(double);
 void anydsl_print_char(char);
 void anydsl_print_string(char*);
+void anydsl_print_flush();
 
 void* anydsl_aligned_malloc(size_t, size_t);
 void anydsl_aligned_free(void*);

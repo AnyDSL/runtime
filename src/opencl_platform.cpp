@@ -161,6 +161,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             #endif
             if (dev_type & CL_DEVICE_TYPE_DEFAULT)     type_str += "|CL_DEVICE_TYPE_DEFAULT";
             debug("  (%) Device Name: % (%)", devices_.size(), buffer, type_str);
+            std::string device_name(buffer);
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_VENDOR, sizeof(buffer), &buffer, NULL);
             err |= clGetDeviceInfo(devices[j], CL_DEVICE_VENDOR_ID, sizeof(device_vendor_id), &device_vendor_id, NULL);
             debug("      Device Vendor: % (ID: %)", buffer, device_vendor_id);
@@ -197,6 +198,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_[dev].dev = device;
             devices_[dev].version_major = version_major;
             devices_[dev].version_minor = version_minor;
+            devices_[dev].platform_name = platform_name;
+            devices_[dev].device_name = device_name;
             #ifdef CL_VERSION_2_0
             devices_[dev].svm_caps = svm_caps;
             #endif
@@ -326,7 +329,7 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
 void OpenCLPlatform::launch_kernel(DeviceId dev,
                                    const char* file, const char* name,
                                    const uint32_t* grid, const uint32_t* block,
-                                   void** args, const uint32_t* sizes, const KernelArgType* types,
+                                   void** args, const uint32_t* sizes, const uint32_t*, const KernelArgType* types,
                                    uint32_t num_args) {
     auto kernel = load_kernel(dev, file, name);
 
@@ -358,16 +361,13 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     size_t local_work_size[]  = {block[0], block[1], block[2]};
 
     // launch the kernel
-    cl_event event;
-    cl_event* event_ptr = &event;
-    auto& queue = devices_[dev].queue;
-    if (devices_[dev].is_intel_fpga) {
+    cl_event event = 0;
+    auto queue = devices_[dev].queue;
+    if (devices_[dev].is_intel_fpga)
         queue = devices_[dev].kernels_queue[kernel];
-        event_ptr = nullptr;
-    }
-    cl_int err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, event_ptr);
+    cl_int err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
-    if (runtime_->profiling_enabled() && event_ptr) {
+    if (runtime_->profiling_enabled() && event) {
         err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
         devices_[dev].timings_counter.fetch_add(1);
         CHECK_OPENCL(err, "clSetEventCallback()");
@@ -440,44 +440,53 @@ void OpenCLPlatform::copy_svm(const void* src, int64_t offset_src, void* dst, in
     std::copy((char*)src + offset_src, (char*)src + offset_src + size, (char*)dst + offset_dst);
 }
 
-void OpenCLPlatform::register_file(const std::string& filename, const std::string& program_string) {
-    files_[filename] = program_string;
+static std::string program_as_string(cl_program program) {
+    size_t binary_size;
+    cl_int err = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &binary_size, NULL);
+    CHECK_OPENCL(err, "clGetProgramInfo()");
+    unsigned char** binaries = new unsigned char*[1];
+    binaries[0] = new unsigned char[binary_size];
+    err = clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(unsigned char *) * 1, binaries, NULL);
+    CHECK_OPENCL(err, "clGetProgramInfo()");
+    std::string binary((char*)binaries[0], binary_size);
+
+    delete[] binaries[0];
+    delete[] binaries;
+
+    return binary;
 }
 
-std::string OpenCLPlatform::load_file(const std::string& filename) const {
-    auto file_it = files_.find(filename);
-    if (file_it != files_.end())
-        return file_it->second;
-
-    std::ifstream src_file(filename);
-    if (!src_file.is_open())
-        error("Can't open source file '%'", filename);
-
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
-}
-
-cl_program OpenCLPlatform::compile_program(DeviceId dev, const std::string& filename, const std::string& program_string) const {
-    cl_program program;
+cl_program OpenCLPlatform::load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     const size_t program_length = program_string.length();
     const char* program_c_str = program_string.c_str();
     cl_int err = CL_SUCCESS;
-    if (devices_[dev].is_intel_fpga) {
-        cl_int binary_status;
-        program = clCreateProgramWithBinary(devices_[dev].ctx, 1, &devices_[dev].dev, &program_length, (const unsigned char**)&program_c_str, &binary_status, &err);
-        CHECK_OPENCL(err, "clCreateProgramWithBinary()");
-        CHECK_OPENCL(binary_status, "Binary status: clCreateProgramWithBinary()");
-        debug("Loading binary '%' for OpenCL device %", filename, dev);
-    } else {
-        program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
-        CHECK_OPENCL(err, "clCreateProgramWithSource()");
-    }
+    cl_int binary_status;
+    cl_program program = clCreateProgramWithBinary(devices_[dev].ctx, 1, &devices_[dev].dev, &program_length, (const unsigned char**)&program_c_str, &binary_status, &err);
+    CHECK_OPENCL(err, "clCreateProgramWithBinary()");
+    CHECK_OPENCL(binary_status, "Binary status: clCreateProgramWithBinary()");
+    debug("Loading binary '%' for OpenCL device %", filename, dev);
 
+    return program;
+}
+
+cl_program OpenCLPlatform::load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+    const size_t program_length = program_string.length();
+    const char* program_c_str = program_string.c_str();
+    cl_int err = CL_SUCCESS;
+    cl_program program = clCreateProgramWithSource(devices_[dev].ctx, 1, (const char**)&program_c_str, &program_length, &err);
+    CHECK_OPENCL(err, "clCreateProgramWithSource()");
+    debug("Loading source '%' for OpenCL device %", filename, dev);
+
+    return program;
+}
+
+cl_program OpenCLPlatform::compile_program(DeviceId dev, cl_program program, const std::string& filename) const {
     debug("Compiling '%' on OpenCL device %", filename, dev);
     std::string options = "-cl-fast-relaxed-math";
     options += " -cl-std=CL" + std::to_string(devices_[dev].version_major) + "." + std::to_string(devices_[dev].version_minor);
 
     cl_build_status build_status;
-    err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
+    cl_int err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
     err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
 
     if (build_status == CL_BUILD_ERROR || err != CL_SUCCESS) {
@@ -523,10 +532,22 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         if (ext != "cl")
             error("Incorrect extension for kernel file '%' (should be '.cl')", filename);
 
-        std::string file = filename;
+        // load file from disk or cache
+        std::string src_path = filename;
         if (opencl_dev.is_intel_fpga)
-            file = filename.substr(0, ext_pos) + ".aocx";
-        program = compile_program(dev, file, load_file(file));
+            src_path = filename.substr(0, ext_pos) + ".aocx";
+        std::string src_code = runtime().load_file(src_path);
+
+        // compile src or load from cache
+        std::string bin = opencl_dev.is_intel_fpga ? src_code : runtime().load_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
+        if (bin.empty()) {
+            program = load_program_source(dev, src_path, src_code);
+            program = compile_program(dev, program, src_path);
+            runtime().store_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code, program_as_string(program));
+        } else {
+            program = load_program_binary(dev, src_path, bin);
+            program = compile_program(dev, program, src_path);
+        }
 
         opencl_dev.lock();
         prog_cache[filename] = program;

@@ -29,8 +29,8 @@ extern "thorin" {
 }
 
 // intrinsics for flow graphs
-struct FlowGraph {};
-struct FlowTask {};
+struct FlowGraph { empty: i32 };
+struct FlowTask { empty: i32 };
 extern "thorin" {
     fn "anydsl_create_graph"  create_graph() -> FlowGraph;
     fn "anydsl_create_task"   create_task(FlowGraph, fn() -> ()) -> FlowTask;

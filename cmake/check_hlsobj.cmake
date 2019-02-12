@@ -1,5 +1,5 @@
 # ${_basename}.o + ${_basename}_hls.o -> ${_basename}.o
-if(EXISTS ${_basename}.hls)
+if(EXISTS "${_basename}.hls" AND EXISTS "./anydsl_fpga/")
     execute_process(COMMAND awk -F "[ (]+" "/void .*;/{ ORS=\";\"; print $2 }" ${_basename}.hls
                     COMMAND awk "{ ORS=\"\"; sub(/;$/,\"\"); print }" OUTPUT_VARIABLE kernels)
     # all kernels are contained in each library; take the first one

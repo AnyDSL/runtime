@@ -20,18 +20,17 @@ public:
     ~HSAPlatform();
 
 protected:
-    void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
-    void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].coarsegrained_region); }
+    void* alloc(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
+    void* alloc_host(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].amd_coarsegrained_pool); }
     void* alloc_unified(DeviceId dev, int64_t size) override { return alloc_hsa(size, devices_[dev].finegrained_region); }
     void* get_device_ptr(DeviceId, void* ptr) override { return ptr; }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
-    void register_file(const std::string& filename, const std::string& program_string) override;
     void launch_kernel(DeviceId dev,
                        const char* file, const char* kernel,
                        const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const KernelArgType* types,
+                       void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType* types,
                        uint32_t num_args) override;
     void synchronize(DeviceId dev) override;
 
@@ -43,7 +42,15 @@ protected:
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
 
-    typedef std::unordered_map<std::string, std::tuple<uint64_t, uint32_t, uint32_t, uint32_t>> KernelMap;
+    struct KernelInfo {
+        uint64_t kernel;
+        uint32_t kernarg_segment_size;
+        uint32_t group_segment_size;
+        uint32_t private_segment_size;
+        void*    kernarg_segment;
+    };
+
+    typedef std::unordered_map<std::string, KernelInfo> KernelMap;
 
     struct DeviceData {
         hsa_agent_t agent;
@@ -53,6 +60,7 @@ protected:
         hsa_queue_t* queue;
         hsa_signal_t signal;
         hsa_region_t kernarg_region, finegrained_region, coarsegrained_region;
+        hsa_amd_memory_pool_t amd_kernarg_pool, amd_finegrained_pool, amd_coarsegrained_pool;
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, hsa_executable_t> programs;
         std::unordered_map<uint64_t, KernelMap> kernels;
@@ -63,11 +71,15 @@ protected:
             : agent(data.agent)
             , profile(data.profile)
             , float_mode(data.float_mode)
+            , isa(data.isa)
             , queue(data.queue)
             , signal(data.signal)
             , kernarg_region(data.kernarg_region)
             , finegrained_region(data.finegrained_region)
             , coarsegrained_region(data.coarsegrained_region)
+            , amd_kernarg_pool(data.amd_kernarg_pool)
+            , amd_finegrained_pool(data.amd_finegrained_pool)
+            , amd_coarsegrained_pool(data.amd_finegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
         {}
@@ -86,11 +98,11 @@ protected:
     std::unordered_map<std::string, std::string> files_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
+    void* alloc_hsa(int64_t, hsa_amd_memory_pool_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
-    void store_file(const std::string&, const std::string&) const;
-    std::string load_file(const std::string&) const;
-    std::tuple<uint64_t, uint32_t, uint32_t, uint32_t> load_kernel(DeviceId, const std::string&, const std::string&);
+    static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
+    KernelInfo load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
     std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
 };

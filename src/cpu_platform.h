@@ -42,14 +42,10 @@ protected:
         error("Kernels are not supported on the CPU");
     }
 
-    void register_file(const std::string& /*filename*/, const std::string& /*program_string*/) override {
-        no_kernel();
-    }
-
     void launch_kernel(DeviceId,
                        const char*, const char*,
                        const uint32_t*, const uint32_t*,
-                       void**, const uint32_t*, const KernelArgType*,
+                       void**, const uint32_t*, const uint32_t*, const KernelArgType*,
                        uint32_t) override { no_kernel(); }
     void synchronize(DeviceId) override { no_kernel(); }
 
