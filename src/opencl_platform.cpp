@@ -126,22 +126,22 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
         auto platform = platforms[i];
 
         char buffer[1024];
-        err  = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(buffer), &buffer, NULL);
+        err  = clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(buffer), &buffer, NULL);
         debug("  Platform Name: %", buffer);
         std::string platform_name(buffer);
-        err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, sizeof(buffer), &buffer, NULL);
+        err |= clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, sizeof(buffer), &buffer, NULL);
         debug("  Platform Vendor: %", buffer);
-        err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VERSION, sizeof(buffer), &buffer, NULL);
+        err |= clGetPlatformInfo(platform, CL_PLATFORM_VERSION, sizeof(buffer), &buffer, NULL);
         debug("  Platform Version: %", buffer);
         CHECK_OPENCL(err, "clGetPlatformInfo()");
 
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
         if (err == CL_DEVICE_NOT_FOUND)
             continue;
         CHECK_OPENCL(err, "clGetDeviceIDs()");
 
         cl_device_id* devices = new cl_device_id[num_devices];
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
         CHECK_OPENCL(err, "clGetDeviceIDs()");
 
         // get device info for each device
