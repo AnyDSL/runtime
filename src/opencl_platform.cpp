@@ -176,7 +176,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
-            cl_device_svm_capabilities svm_caps;
+            cl_device_svm_capabilities svm_caps(0);
             if (version_major >= 2) {
                 err |= clGetDeviceInfo(devices[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(svm_caps), &svm_caps, NULL);
                 if (svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) svm_caps_str = "CL_DEVICE_SVM_COARSE_GRAIN_BUFFER";
