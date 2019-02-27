@@ -140,6 +140,12 @@ int anydsl_comm_finalize() {
 int anydsl_comm_finalized(int* flag) {
     return MPI_Finalized(flag);
 }
+int anydsl_comm_type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype* newtype) {
+    return MPI_Type_contiguous(count, oldtype, newtype);
+}
+int anydsl_comm_type_commit(MPI_Datatype* datatype) {
+    return MPI_Type_commit(datatype);
+}
 #else
 [[noreturn]] void anydsl_comm_not_available() {
     error("AnyDSL communicator only available if MPI is available!");

@@ -92,6 +92,7 @@ if(RUNTIME_JIT)
         ../platforms/intrinsics_opencl.impala
         ../platforms/intrinsics_thorin.impala
         ../platforms/intrinsics.impala
+        ../platforms/intrinsics_comm.impala
         runtime.impala)
     add_custom_command(OUTPUT ${RUNTIME_SOURCES_INC_FILE}
         COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > ${RUNTIME_SOURCES_INC_FILE}
