@@ -335,7 +335,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 
     // set up arguments
     std::vector<cl_mem> kernel_structs(num_args);
-    for (size_t i = 0; i < num_args; i++) {
+    for (cl_uint i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
