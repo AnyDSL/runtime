@@ -319,8 +319,8 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
     cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
     CHECK_OPENCL(err, "clGetEventProfilingInfo()");
-    float time = (end-start)*1.0e-6f;
-    anydsl_kernel_time.fetch_add(time * 1000);
+    cl_ulong time = (end - start) / 1000;
+    anydsl_kernel_time.fetch_add(time);
     dev->timings_counter.fetch_sub(1);
     err = clReleaseEvent(event);
     CHECK_OPENCL(err, "clReleaseEvent()");
