@@ -335,7 +335,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 
     // set up arguments
     std::vector<cl_mem> kernel_structs(num_args);
-    for (cl_uint i = 0; i < num_args; i++) {
+    for (uint32_t i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
@@ -377,7 +377,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     }
 
     // release temporary buffers for struct arguments
-    for (size_t i = 0; i < num_args; i++) {
+    for (uint32_t i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             cl_int err = clReleaseMemObject(kernel_structs[i]);
             CHECK_OPENCL(err, "clReleaseMemObject()");
