@@ -68,23 +68,21 @@ struct Communicator {
     char_t: COMM_Datatype,
     byte_t: COMM_Datatype,
 
-    //first parameter: &int for number of Nodes, second parameter: &int for current rank
-    init : fn() -> (i32 /* number of nodes */, i32 /* current rank */),
-    initWithoutVars: fn() -> (),
-    size : fn() -> i32,
-    rank : fn() -> i32,
-    allreduce : fn(COMM_Buf, COMM_MutBuf, i32, COMM_Op) -> (),
-    send : fn(COMM_Buf, i32, i32, i32) -> (),
-    recv : fn(COMM_MutBuf, i32, i32, i32) -> MPIStatus,
-    irecv : fn(COMM_MutBuf, i32, i32, i32) -> COMM_REQUEST,
-    wait : fn(COMM_REQUEST) -> MPIStatus,
-    probe: fn(i32, i32) -> MPIStatus,
-    get_count: fn(&mut MPIStatus, COMM_Datatype) -> i32,
-    gather: fn(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, i32) -> (),
-    allgather: fn(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype) -> (),
-    barrier : fn() -> (),
-    wtime : fn() -> f64,
-    finalize : fn() -> ()
+    init : fn() -> (i32 /* size */, i32 /* rank */),                            //DONE
+    size : fn() -> i32,                                                         //DONE
+    rank : fn() -> i32,                                                         //DONE
+    send : fn(COMM_Buf, i32, COMM_Datatype, i32, i32) -> (),                    //DONE
+    recv : fn(COMM_MutBuf, i32, COMM_Datatype, i32, i32) -> (),                 //DONE
+    irecv : fn(COMM_MutBuf, i32, COMM_Datatype, i32, i32) -> COMM_REQUEST,      //DONE
+    wait : fn(COMM_REQUEST) -> (),                                              //DONE
+    probe: fn(i32, i32) -> &mut MPIStatus,                                      //DONE
+    get_count: fn(&mut MPIStatus, COMM_Datatype) -> i32,                        //DONE
+    gather: fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, i32) -> (),           //DONE
+    allgather: fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype) -> (),             //DONE
+    allreduce : fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, COMM_Op) -> (),   //DONE
+    barrier : fn() -> (),                                                       //DONE
+    wtime : fn() -> f64,                                                        //DONE
+    finalize : fn() -> (),                                                      //DONE
 }
 
 fn anydsl_comm_create_request() -> COMM_REQUEST {
@@ -96,17 +94,6 @@ fn anydsl_comm_check_status(status: int) -> () {
         print_string("Received invalid status from MPI!");
         exit(255);
     }
-}
-
-extern fn start_COMM() -> () {
-    //trick allows two call init multiple times
-    let mut initialized = 0;
-    let mut status = 0;
-    anydsl_comm_initialized(&mut initialized);
-    if(initialized == 0) {
-        status = anydsl_comm_init();
-    }
-    anydsl_comm_check_status(status);
 }
 
 fn @comm() -> Communicator {
@@ -127,70 +114,62 @@ fn @comm() -> Communicator {
         byte_t: anydsl_comm_get_byte(),
 
         init : @|| {
-            start_COMM();
-            let mut numNodes = 0;
-            let mut rank = 0;
-            anydsl_comm_check_status(anydsl_comm_size(anydsl_comm_get_world(),&mut numNodes));
+            //trick allows two call init multiple times
+            let mut initialized = 0;
+            anydsl_comm_initialized(&mut initialized);
+            if(initialized == 0) {
+                anydsl_comm_check_status(anydsl_comm_init());
+            }
+            let mut size : i32;
+            let mut rank : i32;
+            anydsl_comm_check_status(anydsl_comm_size(anydsl_comm_get_world(),&mut size));
             anydsl_comm_check_status(anydsl_comm_rank(anydsl_comm_get_world(),&mut rank));
-            (numNodes, rank)
-        },
-        initWithoutVars: || {
-            start_COMM();
+            (size,rank)
         },
         size : @|| {
-            let mut numNodes = -1;
+            let mut numNodes : i32;
             anydsl_comm_check_status(anydsl_comm_size(anydsl_comm_get_world(),&mut numNodes));
             numNodes
         },
         rank : @|| {
-            let mut rank = -1;
+            let mut rank : i32;
             anydsl_comm_check_status(anydsl_comm_rank(anydsl_comm_get_world(),&mut rank));
             rank
         },
-        allreduce : @|sendbuf, recvbuf, count, op| {
-            let mut datatype = 0;
-            mpi_type(&sendbuf, &mut datatype);
-            anydsl_comm_check_status(anydsl_comm_allreduce(sendbuf, recvbuf, count, datatype, op, anydsl_comm_get_world()));
-        },
-        send : @|buf, count, dest, tag| {
-            let mut datatype = 0;
-            mpi_type(buf, &mut datatype);
+        send : @|buf, count, datatype, dest, tag| {
             anydsl_comm_check_status(anydsl_comm_send(buf, count, datatype, dest, tag, anydsl_comm_get_world()));
         },
-        recv : @|buf, count, source, tag| {
-            let mut datatype = 0;
+        recv : @|buf, count, datatype, source, tag| {
             let mut status : MPIStatus;
-            mpi_type(buf, &mut datatype);
             anydsl_comm_check_status(anydsl_comm_recv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut status as COMM_STATUS));
-            status
         },
-        irecv : @|buf, count, source, tag| {
-            let mut datatype = 0;
-            let request = anydsl_comm_create_request();
-            mpi_type(buf, &mut datatype);
-            anydsl_comm_check_status(anydsl_comm_irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), request));
-            request
+        irecv : @|buf, count, datatype, source, tag| {
+            let mut request : i32;
+            anydsl_comm_check_status(anydsl_comm_irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut request as COMM_REQUEST));
+            &mut request as COMM_REQUEST
         },
         wait : @|request| {
-            let mut status : MPIStatus;
+            let mut status: MPIStatus;
             anydsl_comm_check_status(anydsl_comm_wait(request, &mut status as COMM_STATUS));
-            status
         },
         probe: @|source, tag| {
             let mut status : MPIStatus;
             anydsl_comm_check_status(anydsl_comm_probe(source, tag, anydsl_comm_get_world(), &mut status as COMM_STATUS));
-            status
+            &mut status
         },
         get_count: @|status, datatype| {
-            let mut count = 0;
+            let mut count : i32;
             anydsl_comm_check_status(anydsl_comm_get_count(status as COMM_STATUS, datatype, &mut count));
             count
         },
-        gather: @|sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root| {
-            anydsl_comm_check_status(anydsl_comm_gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, anydsl_comm_get_world()));
+        gather: @|sendbuf, recvbuf, count_per_node, datatype, root| {
+            anydsl_comm_check_status(anydsl_comm_gather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, root, anydsl_comm_get_world()));
         },
-        allgather: @|sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype| {
-            anydsl_comm_check_status(anydsl_comm_allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, anydsl_comm_get_world()));
+        allgather: @|sendbuf, recvbuf, count_per_node, datatype| {
+            anydsl_comm_check_status(anydsl_comm_allgather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, anydsl_comm_get_world()));
+        },
+        allreduce : @|sendbuf, recvbuf, count_per_node, datatype, op| {
+            anydsl_comm_check_status(anydsl_comm_allreduce(sendbuf, recvbuf, count_per_node, datatype, op, anydsl_comm_get_world()));
         },
         barrier : @|| {
             anydsl_comm_check_status(anydsl_comm_barrier(anydsl_comm_get_world()));
@@ -199,7 +178,7 @@ fn @comm() -> Communicator {
         finalize : @|| {
             //trick allows to call finalize multiple times
             let mut finalized = 0;
-            anydsl_comm_check_status(anydsl_comm_finalized(&mut finalized));
+            anydsl_comm_finalized(&mut finalized);
             if(finalized == 0) {
                 anydsl_comm_check_status(anydsl_comm_finalize());
             }
