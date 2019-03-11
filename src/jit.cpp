@@ -2,10 +2,6 @@
 #include <sstream>
 #include <memory>
 
-#ifdef _MSC_VER
-#pragma warning( disable: 4267 4244; once: 4624 4291 4146 4141 )
-#endif
-
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/RuntimeDyld.h>
