@@ -50,7 +50,7 @@ extern "C" {
     fn "__ocml_log_f64"         ocml_log(f64) -> f64;
     fn "__ocml_log2_f64"        ocml_log2(f64) -> f64;
     fn "__ocml_powr_f64"        ocml_powr(f64, f64) -> f64;
-    fn "__ocml_pown_f64"        ocml_powr(f64, i32) -> f64;
+    fn "__ocml_pown_f64"        ocml_pown(f64, i32) -> f64;
     fn "__ocml_pow_f64"         ocml_pow(f64, f64) -> f64;
     fn "__ocml_rsqrt_f64"       ocml_rsqrt(f64) -> f64;
     fn "__ocml_sqrt_f64"        ocml_sqrt(f64) -> f64;
