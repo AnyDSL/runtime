@@ -433,7 +433,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link libdevice
     std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(libdevice_file, diagnostic_err, llvm_context));
@@ -606,7 +606,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())
-        store_file(filename, program_string);
+        runtime().store_file(filename, program_string);
 
     debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {

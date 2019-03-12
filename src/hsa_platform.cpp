@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <sstream>
 #include <thread>
 
 #ifdef RUNTIME_ENABLE_JIT
@@ -274,8 +275,10 @@ HSAPlatform::~HSAPlatform() {
         CHECK_HSA(status, "hsa_signal_destroy()");
         for (auto kernel_pair : devices_[i].kernels) {
             for (auto kernel : kernel_pair.second) {
-                status = hsa_memory_free(kernel.second.kernarg_segment);
-                CHECK_HSA(status, "hsa_memory_free()");
+                if (kernel.second.kernarg_segment) {
+                    status = hsa_memory_free(kernel.second.kernarg_segment);
+                    CHECK_HSA(status, "hsa_memory_free()");
+                }
             }
         }
     }
@@ -324,6 +327,17 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
+    if (!kernel_info.kernarg_segment) {
+        size_t total_size = 0;
+        for (uint32_t i = 0; i < num_args; i++) {
+            total_size += sizes[i];
+            if (i != num_args - 1 && total_size % aligns[i + 1])
+                total_size += aligns[i + 1] - total_size % aligns[i + 1];
+        }
+        kernel_info.kernarg_segment_size = total_size;
+        hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        CHECK_HSA(status, "hsa_memory_allocate()");
+    }
     void*  cur   = kernel_info.kernarg_segment;
     size_t space = kernel_info.kernarg_segment_size;
     for (uint32_t i = 0; i < num_args; i++) {
@@ -476,6 +490,7 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 
     // checks that the kernel exists
     KernelInfo kernel_info;
+    kernel_info.kernarg_segment = nullptr;
     auto& kernel_cache = hsa_dev.kernels;
     auto& kernel_map = kernel_cache[executable.handle];
     auto kernel_it = kernel_map.find(kernelname);
@@ -484,7 +499,8 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
 
         hsa_executable_symbol_t kernel_symbol = { 0 };
         // DEPRECATED: use hsa_executable_get_symbol_by_linker_name if available
-        status = hsa_executable_get_symbol_by_name(executable, kernelname.c_str(), &hsa_dev.agent, &kernel_symbol);
+        std::string kernelname_kd = kernelname + ".kd";
+        status = hsa_executable_get_symbol_by_name(executable, kernelname_kd.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
 
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel_info.kernel);
@@ -496,8 +512,9 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
-        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        // ROCm 2.x reports always 0 for kernarg_segment_size
+        //status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        //CHECK_HSA(status, "hsa_memory_allocate()");
 
         hsa_dev.lock();
         kernel_cache[executable.handle].emplace(kernelname, kernel_info);
@@ -522,11 +539,28 @@ static std::string get_ocml_config(int target) {
     return config + std::to_string(target);
 }
 
+bool llvm_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
-    LLVMInitializeAMDGPUTarget();
-    LLVMInitializeAMDGPUTargetInfo();
-    LLVMInitializeAMDGPUTargetMC();
-    LLVMInitializeAMDGPUAsmPrinter();
+    if (!llvm_initialized) {
+        // ANYDSL_LLVM_ARGS="-amdgpu-sroa -amdgpu-load-store-vectorizer -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments -amdgpu-atomic-optimizations -amdgpu-mode-register"
+        const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
+        if (env_var) {
+            std::vector<const char*> c_llvm_args;
+            std::vector<std::string> llvm_args = { "gcn" };
+            std::istringstream stream(env_var);
+            std::string tmp;
+            while (stream >> tmp)
+                llvm_args.push_back(tmp);
+            for (auto &str : llvm_args)
+                c_llvm_args.push_back(str.c_str());
+            llvm::cl::ParseCommandLineOptions(c_llvm_args.size(), c_llvm_args.data(), "AnyDSL gcn JIT compiler\n");
+        }
+        LLVMInitializeAMDGPUTarget();
+        LLVMInitializeAMDGPUTargetInfo();
+        LLVMInitializeAMDGPUTargetMC();
+        LLVMInitializeAMDGPUAsmPrinter();
+        llvm_initialized = true;
+    }
 
     llvm::LLVMContext llvm_context;
     llvm::SMDiagnostic diagnostic_err;
@@ -545,7 +579,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
     options.NoTrappingFPMath = true;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "-trap-handler" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Kernel, llvm::CodeGenOpt::Aggressive));
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "-trap-handler" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";

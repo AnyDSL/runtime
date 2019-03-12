@@ -126,22 +126,22 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
         auto platform = platforms[i];
 
         char buffer[1024];
-        err  = clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(buffer), &buffer, NULL);
+        err  = clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(buffer), &buffer, NULL);
         debug("  Platform Name: %", buffer);
         std::string platform_name(buffer);
-        err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, sizeof(buffer), &buffer, NULL);
+        err |= clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, sizeof(buffer), &buffer, NULL);
         debug("  Platform Vendor: %", buffer);
-        err |= clGetPlatformInfo(platforms[i], CL_PLATFORM_VERSION, sizeof(buffer), &buffer, NULL);
+        err |= clGetPlatformInfo(platform, CL_PLATFORM_VERSION, sizeof(buffer), &buffer, NULL);
         debug("  Platform Version: %", buffer);
         CHECK_OPENCL(err, "clGetPlatformInfo()");
 
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
         if (err == CL_DEVICE_NOT_FOUND)
             continue;
         CHECK_OPENCL(err, "clGetDeviceIDs()");
 
         cl_device_id* devices = new cl_device_id[num_devices];
-        err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
+        err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, num_devices, devices, &num_devices);
         CHECK_OPENCL(err, "clGetDeviceIDs()");
 
         // get device info for each device
@@ -176,7 +176,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             std::string svm_caps_str = "none";
             #ifdef CL_VERSION_2_0
-            cl_device_svm_capabilities svm_caps;
+            cl_device_svm_capabilities svm_caps(0);
             if (version_major >= 2) {
                 err |= clGetDeviceInfo(devices[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(svm_caps), &svm_caps, NULL);
                 if (svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) svm_caps_str = "CL_DEVICE_SVM_COARSE_GRAIN_BUFFER";
@@ -319,8 +319,8 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
     cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
     CHECK_OPENCL(err, "clGetEventProfilingInfo()");
-    float time = (end-start)*1.0e-6f;
-    anydsl_kernel_time.fetch_add(time * 1000);
+    cl_ulong time = (end - start) / 1000;
+    anydsl_kernel_time.fetch_add(time);
     dev->timings_counter.fetch_sub(1);
     err = clReleaseEvent(event);
     CHECK_OPENCL(err, "clReleaseEvent()");
@@ -335,7 +335,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
 
     // set up arguments
     std::vector<cl_mem> kernel_structs(num_args);
-    for (size_t i = 0; i < num_args; i++) {
+    for (uint32_t i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
@@ -377,7 +377,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     }
 
     // release temporary buffers for struct arguments
-    for (size_t i = 0; i < num_args; i++) {
+    for (uint32_t i = 0; i < num_args; i++) {
         if (types[i] == KernelArgType::Struct) {
             cl_int err = clReleaseMemObject(kernel_structs[i]);
             CHECK_OPENCL(err, "clReleaseMemObject()");

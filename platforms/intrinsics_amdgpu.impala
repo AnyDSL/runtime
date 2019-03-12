@@ -1,6 +1,6 @@
 extern "device" {
     fn "llvm.amdgcn.dispatch.id"    amdgcn_dispatch_id() -> i64;
-    fn "llvm.amdgcn.dispatch.ptr"   amdgcn_dispatch_ptr() -> &[2]i8;
+    fn "llvm.amdgcn.dispatch.ptr"   amdgcn_dispatch_ptr() -> &[4]i8;
     fn "llvm.amdgcn.s.barrier"      amdgcn_s_barrier() -> ();
     fn "llvm.amdgcn.wave.barrier"   amdgcn_wave_barrier() -> ();
     fn "llvm.amdgcn.workgroup.id.x" amdgcn_workgroup_id_x() -> i32;
@@ -160,18 +160,18 @@ fn @amdgpu_accelerator(dev: i32) -> Accelerator {
                 bidx  : amdgcn_workgroup_id_x,
                 bidy  : amdgcn_workgroup_id_y,
                 bidz  : amdgcn_workgroup_id_z,
-                gidx  : @|| amdgcn_workitem_id_x() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
-                gidy  : @|| amdgcn_workitem_id_y() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
-                gidz  : @|| amdgcn_workitem_id_z() + bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
-                bdimx : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32,
-                bdimy : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32,
-                bdimz : @|| bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32,
-                gdimx : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32,
-                gdimy : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32,
-                gdimz : @|| bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32,
-                nblkx : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(3) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(2) as i32),
-                nblky : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(3) as i32),
-                nblkz : @|| div_round_up(bitcast[&[2][u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&[2][u16]](amdgcn_dispatch_ptr())(4) as i32)
+                gidx  : @|| amdgcn_workitem_id_x() + bitcast[&[4][u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
+                gidy  : @|| amdgcn_workitem_id_y() + bitcast[&[4][u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
+                gidz  : @|| amdgcn_workitem_id_z() + bitcast[&[4][u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
+                bdimx : @|| bitcast[&[4][u16]](amdgcn_dispatch_ptr())(2) as i32,
+                bdimy : @|| bitcast[&[4][u16]](amdgcn_dispatch_ptr())(3) as i32,
+                bdimz : @|| bitcast[&[4][u16]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimx : @|| bitcast[&[4][u32]](amdgcn_dispatch_ptr())(3) as i32,
+                gdimy : @|| bitcast[&[4][u32]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimz : @|| bitcast[&[4][u32]](amdgcn_dispatch_ptr())(5) as i32,
+                nblkx : @|| div_round_up(bitcast[&[4][u32]](amdgcn_dispatch_ptr())(3) as i32, bitcast[&[4][u16]](amdgcn_dispatch_ptr())(2) as i32),
+                nblky : @|| div_round_up(bitcast[&[4][u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&[4][u16]](amdgcn_dispatch_ptr())(3) as i32),
+                nblkz : @|| div_round_up(bitcast[&[4][u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&[4][u16]](amdgcn_dispatch_ptr())(4) as i32)
             };
             amdgpu(dev, grid, block, || body(work_item))
         },
