@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#ifdef USING_MPI
+//TODO
+//#ifdef USING_MPI
 #include <mpi.h>
-#else
+/* #else
 #include "log.h"
-#endif
+#endif */
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,6 +147,7 @@ int anydsl_comm_type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype* n
 int anydsl_comm_type_commit(MPI_Datatype* datatype) {
     return MPI_Type_commit(datatype);
 }
+//TODO
 /*
 #else
 [[noreturn]] void anydsl_comm_not_available() {
