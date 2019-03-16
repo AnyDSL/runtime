@@ -87,7 +87,7 @@ void *anydsl_lookup_function(int32_t, const char*);
 #endif
 
 //COMMUNICATOR
-#ifdef USING_MPI
+//#ifdef USING_MPI
 MPI_Op anydsl_comm_get_max() { return MPI_MAX; }
 MPI_Op anydsl_comm_get_sum() { return MPI_SUM; }
 MPI_Datatype anydsl_comm_get_int() { return MPI_INT; }
@@ -146,6 +146,7 @@ int anydsl_comm_type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype* n
 int anydsl_comm_type_commit(MPI_Datatype* datatype) {
     return MPI_Type_commit(datatype);
 }
+/*
 #else
 [[noreturn]] void anydsl_comm_not_available() {
     error("AnyDSL communicator only available if MPI is available!");
@@ -210,6 +211,7 @@ int anydsl_comm_finalized() {
     anydsl_comm_not_available();
 }
 #endif
+*/
 
 #ifdef __cplusplus
 }
