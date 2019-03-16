@@ -21,6 +21,8 @@ extern "C" {
     fn "__ocml_exp2_f32"        ocml_exp2f(f32) -> f32;
     fn "__ocml_log_f32"         ocml_logf(f32) -> f32;
     fn "__ocml_log2_f32"        ocml_log2f(f32) -> f32;
+    fn "__ocml_powr_f32"        ocml_powrf(f32, f32) -> f32;
+    fn "__ocml_pown_f32"        ocml_pownf(f32, i32) -> f32;
     fn "__ocml_pow_f32"         ocml_powf(f32, f32) -> f32;
     fn "__ocml_rsqrt_f32"       ocml_rsqrtf(f32) -> f32;
     fn "__ocml_sqrt_f32"        ocml_sqrtf(f32) -> f32;
@@ -47,6 +49,8 @@ extern "C" {
     fn "__ocml_exp2_f64"        ocml_exp2(f64) -> f64;
     fn "__ocml_log_f64"         ocml_log(f64) -> f64;
     fn "__ocml_log2_f64"        ocml_log2(f64) -> f64;
+    fn "__ocml_powr_f64"        ocml_powr(f64, f64) -> f64;
+    fn "__ocml_pown_f64"        ocml_pown(f64, i32) -> f64;
     fn "__ocml_pow_f64"         ocml_pow(f64, f64) -> f64;
     fn "__ocml_rsqrt_f64"       ocml_rsqrt(f64) -> f64;
     fn "__ocml_sqrt_f64"        ocml_sqrt(f64) -> f64;
@@ -183,7 +187,11 @@ static amdgpu_intrinsics = Intrinsics {
     exp2f       : ocml_exp2f,
     logf        : ocml_logf,
     log2f       : ocml_log2f,
-    powf        : ocml_powf,
+    powf        : @ |x, p| {
+        if ?(p == ((p as i32) as f32)) { ocml_pownf(x, p as i32) }
+        else if ?(p >= 0.0f) { ocml_powrf(x, p) }
+        else { ocml_powf(x, p) }
+    },
     rsqrtf      : ocml_rsqrtf,
     sqrtf       : ocml_sqrtf,
     fabsf       : ocml_fabsf,
@@ -208,7 +216,11 @@ static amdgpu_intrinsics = Intrinsics {
     exp2        : ocml_exp2,
     log         : ocml_log,
     log2        : ocml_log2,
-    pow         : ocml_pow,
+    pow         : @ |x, p| {
+        if ?(p == ((p as i32) as f64)) { ocml_pown(x, p as i32) }
+        else if ?(p >= 0.0) { ocml_powr(x, p) }
+        else { ocml_pow(x, p) }
+    },
     rsqrt       : ocml_rsqrt,
     sqrt        : ocml_sqrt,
     fabs        : ocml_fabs,

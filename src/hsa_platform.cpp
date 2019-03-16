@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <sstream>
 #include <thread>
 
 #ifdef RUNTIME_ENABLE_JIT
@@ -538,11 +539,28 @@ static std::string get_ocml_config(int target) {
     return config + std::to_string(target);
 }
 
+bool llvm_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
-    LLVMInitializeAMDGPUTarget();
-    LLVMInitializeAMDGPUTargetInfo();
-    LLVMInitializeAMDGPUTargetMC();
-    LLVMInitializeAMDGPUAsmPrinter();
+    if (!llvm_initialized) {
+        // ANYDSL_LLVM_ARGS="-amdgpu-sroa -amdgpu-load-store-vectorizer -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments -amdgpu-atomic-optimizations -amdgpu-mode-register"
+        const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
+        if (env_var) {
+            std::vector<const char*> c_llvm_args;
+            std::vector<std::string> llvm_args = { "gcn" };
+            std::istringstream stream(env_var);
+            std::string tmp;
+            while (stream >> tmp)
+                llvm_args.push_back(tmp);
+            for (auto &str : llvm_args)
+                c_llvm_args.push_back(str.c_str());
+            llvm::cl::ParseCommandLineOptions(c_llvm_args.size(), c_llvm_args.data(), "AnyDSL gcn JIT compiler\n");
+        }
+        LLVMInitializeAMDGPUTarget();
+        LLVMInitializeAMDGPUTargetInfo();
+        LLVMInitializeAMDGPUTargetMC();
+        LLVMInitializeAMDGPUAsmPrinter();
+        llvm_initialized = true;
+    }
 
     llvm::LLVMContext llvm_context;
     llvm::SMDiagnostic diagnostic_err;

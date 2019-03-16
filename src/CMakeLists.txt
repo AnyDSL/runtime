@@ -63,7 +63,9 @@ if(TBB_FOUND)
     list(APPEND CONF_RUNTIME_LIBRARIES ${TBB_LIBRARIES})
 endif()
 
-if(NOT MSVC)
+if(MSVC)
+    add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
+else()
     add_definitions("-Wall -Wextra")
 endif()
 

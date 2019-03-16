@@ -18,6 +18,7 @@ extern "thorin" {
     fn reserve_shared[T](i32) -> &mut[3][T];
 
     fn hls(body: fn() -> ()) -> ();
+    fn pipeline (i32, i32, i32, fn (i32) -> ()) -> (); // only for HLS/OpenCL backend
     fn parallel(num_threads: i32, lower: i32, upper: i32, body: fn(i32) -> ()) -> ();
     fn spawn(body: fn() -> ()) -> i32;
     fn sync(id: i32) -> ();
