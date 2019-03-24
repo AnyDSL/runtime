@@ -110,6 +110,7 @@ add_library(runtime
             runtime.h
             anydsl_runtime.h
             anydsl_runtime.hpp
+            comm.cpp
             platform.h
             cpu_platform.h
             dummy_platform.h
