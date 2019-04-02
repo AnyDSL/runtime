@@ -120,6 +120,23 @@ std::string get_self_directory() {
     }
     return std::string();
 }
+#elif defined(_MSC_VER)
+#include <Windows.h>
+std::string get_self_directory() {
+    CHAR path[MAX_PATH];
+    DWORD nSize = (DWORD)sizeof(path);
+    DWORD length = GetModuleFileNameA(NULL, path, nSize);
+    if ((length == 0) || (length == MAX_PATH))
+        return std::string();
+
+    std::string resolved_path(path);
+    for (std::size_t i = resolved_path.size() - 1; i >= 0; --i) {
+        if (resolved_path[i] == PATH_DIR_SEPARATOR)
+            return std::string(resolved_path, 0, i);
+    }
+
+    return std::string();
+}
 #else
 std::string get_self_directory() {
     return std::string();
