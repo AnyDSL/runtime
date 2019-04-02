@@ -154,12 +154,13 @@ function(anydsl_runtime_wrap outfiles)
     set(_impala_platform_files
         ${AnyDSL_runtime_ROOT_DIR}/src/runtime.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_rv.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cpu.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_hls.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_cuda.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_nvvm.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_amdgpu.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala)
 
     set(_impala_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_IMPALA_FLAGS_RELEASE})

@@ -87,10 +87,12 @@ if(RUNTIME_JIT)
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
-        ../platforms/intrinsics_amdgpu.impala
+        ../platforms/intrinsics_rv.impala
         ../platforms/intrinsics_cpu.impala
+        ../platforms/intrinsics_hls.impala
         ../platforms/intrinsics_cuda.impala
         ../platforms/intrinsics_nvvm.impala
+        ../platforms/intrinsics_amdgpu.impala
         ../platforms/intrinsics_opencl.impala
         ../platforms/intrinsics_thorin.impala
         ../platforms/intrinsics.impala
