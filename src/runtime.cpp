@@ -81,9 +81,11 @@ Runtime::Runtime() {
 
 #ifdef _WIN32
 #include <direct.h>
+#define PATH_DIR_SEPARATOR '\\'
 #define create_directory(d) _mkdir(d)
 #else
 #include <sys/stat.h>
+#define PATH_DIR_SEPARATOR '/'
 #define create_directory(d) { umask(0); mkdir(d, 0755); }
 #endif
 
@@ -95,7 +97,7 @@ std::string get_self_directory() {
         path[len] = '\0';
 
         for (int i = len-1; i >= 0; --i) {
-            if (path[i] == '/')
+            if (path[i] == PATH_DIR_SEPARATOR)
                 return std::string(&path[0], i);
         }
     }
@@ -111,7 +113,7 @@ std::string get_self_directory() {
         if (realpath(path, resolved)) {
             std::string resolved_path = std::string(resolved);
             for (int i = resolved_path.size()-1; i >= 0; --i) {
-                if (resolved_path[i] == '/')
+                if (resolved_path[i] == PATH_DIR_SEPARATOR)
                     return std::string(resolved_path, 0, i);
             }
         }
@@ -127,7 +129,7 @@ std::string get_self_directory() {
 std::string get_cache_directory() {
     std::string cache_path = get_self_directory();
     if (!cache_path.empty())
-        cache_path += "/";
+        cache_path += PATH_DIR_SEPARATOR;
     return cache_path + "cache";
 }
 
@@ -135,7 +137,7 @@ std::string get_cached_filename(const std::string& str, const std::string& ext) 
     size_t key = std::hash<std::string>{}(str);
     std::stringstream hex_stream;
     hex_stream << std::hex << key;
-    return get_cache_directory() + "/" + hex_stream.str() + ext;
+    return get_cache_directory() + PATH_DIR_SEPARATOR + hex_stream.str() + ext;
 }
 
 std::string Runtime::load_file(const std::string& filename) const {
