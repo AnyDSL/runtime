@@ -56,11 +56,11 @@ int anydsl_comm_finalize() {
 int anydsl_comm_finalized(int* flag) {
     return MPI_Finalized(flag);
 }
-int anydsl_comm_type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype* newtype) {
-    return MPI_Type_contiguous(count, oldtype, newtype);
-}
-int anydsl_comm_type_commit(MPI_Datatype* datatype) {
-    return MPI_Type_commit(datatype);
+MPI_Datatype anydsl_create_datatype(int size) {
+    MPI_Datatype newtype;
+    MPI_Type_contiguous(size, MPI_BYTE, &newtype);
+    MPI_Type_commit(&newtype);
+    return newtype;
 }
 
 #ifdef __cplusplus

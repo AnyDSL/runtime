@@ -3,7 +3,7 @@ extern "thorin" {
 
     fn sizeof[T]() -> i32;
     fn deep_copy[T](&T, &mut T) -> ();
-    fn mpi_type[T](&T, &int) -> ();
+    fn comm_type[T](&T) -> (&int);
     fn undef[T]() -> T;
 
     fn bitcast[D, S](S) -> D;
