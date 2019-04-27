@@ -20,7 +20,7 @@ extern "C" {
     fn anydsl_comm_irecv(COMM_MutBuf, i32, COMM_Datatype, i32, i32, COMM_Comm, &COMM_Request) -> i32;
     fn anydsl_comm_wait(&COMM_Request, COMM_Status) -> i32;
     fn anydsl_comm_probe(i32, i32, COMM_Comm, COMM_Status) -> i32;
-    fn anydsl_comm_get_count(COMM_Status, COMM_Datatype, &mut i32) -> i32;
+    fn anydsl_comm_get_count(i32, i32, COMM_Datatype, &mut i32, COMM_Comm) -> i32;
     fn anydsl_comm_gather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, i32, COMM_Comm) -> i32;
     fn anydsl_comm_allgather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, COMM_Comm) -> i32;
     fn anydsl_comm_barrier(COMM_Comm) -> i32;
@@ -140,9 +140,7 @@ fn @comm() -> Communicator {
         },
         get_count: @|source, tag, datatype| {
             let mut count : i32;
-            let mut status : COMMStatus;
-            check_status(anydsl_comm_probe(source, tag, anydsl_comm_get_world(), &mut status as COMM_Status));
-            check_status(anydsl_comm_get_count((& mut status) as COMM_Status, datatype, &mut count));
+            check_status(anydsl_comm_get_count(source, tag, datatype, &mut count, anydsl_comm_get_world()));
             count
         },
         gather: @|sendbuf, recvbuf, count_per_node, datatype, root| {
