@@ -44,8 +44,6 @@ def patch_cfiles(rttype):
         filename = basename+"."+"cl"
     else:
         filename = basename+"."+"hls"
-        result.append('#include "hls_stream.h"\n')
-        result.append('#include "hls_math.h"\n')
 
     if os.path.isfile(filename):
         with open(filename) as f:
