@@ -138,8 +138,6 @@ def patch_cfiles(rttype):
         for name, line in channel_line.items():
             if rttype == "opencl":
                 result[line] = 'channel {0} {1};\n'.format(channel_type[name], name)
-            elif rttype == "hls":
-                result[line] = 'hls::stream<{0}> {1};\n'.format(channel_type[name], name)
             else:
                 continue
 
