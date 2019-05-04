@@ -6,12 +6,19 @@
 #include <iostream>
 #include <cstring>
 #include <chrono>
-#include <thread>
 #endif
+
+#include <thread>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int get_num_threads() {
+    int num_threads = std::thread::hardware_concurrency();
+    //num_threads may be 0 (see anydsl runtime.cpp)
+    return (num_threads > 0) ? num_threads : 1;
+}
 
 MPI_Op anydsl_comm_get_max() { return MPI_MAX; }
 MPI_Op anydsl_comm_get_sum() { return MPI_SUM; }

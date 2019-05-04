@@ -37,6 +37,7 @@ extern "C" {
     fn anydsl_comm_get_sum() -> COMM_Op;
     fn anydsl_comm_get_status_ignore() -> COMM_Status;
     fn exit(int) -> ();
+    fn get_num_threads() -> int;
 }
 
 struct COMMComms {
@@ -68,6 +69,9 @@ struct Communicator {
     status : COMMStatuses,
     int_t : COMM_Datatype,
     double_t : COMM_Datatype,
+    char_t: COMM_Datatype,
+    byte_t: COMM_Datatype,
+    parallel_reduction_buffer: Buffer,
     init : fn() -> (i32,i32),
     size : fn() -> i32,
     rank : fn() -> i32,
@@ -82,6 +86,7 @@ struct Communicator {
     barrier : fn() -> (),
     wtime : fn() -> f64,
     finalize : fn() -> (),
+    parallel_reduction: fn(Buffer, &mut [f64], &mut [f64], int, fn(double, double) -> double) -> double,
 }
 
 fn @comm() -> Communicator {
@@ -96,79 +101,115 @@ fn @comm() -> Communicator {
         status : COMMStatuses {
             ignore : anydsl_comm_get_status_ignore() as &mut COMMStatus,
         },
-        double_t : anydsl_comm_get_double(),
         int_t : anydsl_comm_get_int(),
+        double_t : anydsl_comm_get_double(),
+        char_t: anydsl_comm_get_char(),
+        byte_t: anydsl_comm_get_byte(),
+        parallel_reduction_buffer: alloc_cpu(get_num_threads() * sizeof[double]()),
         init : @|| {
             //check if already started
             let mut initialized : i32;
-            check_status(anydsl_comm_initialized(&mut initialized));
+            anydsl_comm_check_status(anydsl_comm_initialized(&mut initialized));
             if(initialized == 0) {
-                check_status(anydsl_comm_init());
+                anydsl_comm_check_status(anydsl_comm_init());
             }
             let mut size : i32;
             let mut rank : i32;
-            check_status(anydsl_comm_size(anydsl_comm_get_world(), &mut size));
-            check_status(anydsl_comm_rank(anydsl_comm_get_world(), &mut rank));
+            anydsl_comm_check_status(anydsl_comm_size(anydsl_comm_get_world(), &mut size));
+            anydsl_comm_check_status(anydsl_comm_rank(anydsl_comm_get_world(), &mut rank));
             (size,rank)
         },
         size : @|| {
             let mut size : i32;
-            check_status(anydsl_comm_size(anydsl_comm_get_world(), &mut size));
+            anydsl_comm_check_status(anydsl_comm_size(anydsl_comm_get_world(), &mut size));
             size
         },
         rank : @|| {
             let mut rank : i32;
-            check_status(anydsl_comm_rank(anydsl_comm_get_world(), &mut rank));
+            anydsl_comm_check_status(anydsl_comm_rank(anydsl_comm_get_world(), &mut rank));
             rank
         },
         send : @|buf, count, datatype, dest, tag| {
-            check_status(anydsl_comm_send(buf, count, datatype, dest, tag, anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_send(buf, count, datatype, dest, tag, anydsl_comm_get_world()));
         },
         recv : @|buf, count, datatype, source, tag| {
             let mut status : COMMStatus;
-            check_status(anydsl_comm_recv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut status as COMM_Status));
+            anydsl_comm_check_status(anydsl_comm_recv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut status as COMM_Status));
         },
         irecv : @|buf, count, datatype, source, tag| {
             let mut tmp : i32;
             let mut request : COMM_Request = &mut tmp as COMM_Request;
-            check_status(anydsl_comm_irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut request));
+            anydsl_comm_check_status(anydsl_comm_irecv(buf, count, datatype, source, tag, anydsl_comm_get_world(), &mut request));
             request
         },
         wait : @|request| {
             let mut status : COMMStatus;
-            check_status(anydsl_comm_wait(&request, &mut status as COMM_Status));
+            anydsl_comm_check_status(anydsl_comm_wait(&request, &mut status as COMM_Status));
         },
         get_count: @|source, tag, datatype| {
             let mut count : i32;
-            check_status(anydsl_comm_get_count(source, tag, datatype, &mut count, anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_get_count(source, tag, datatype, &mut count, anydsl_comm_get_world()));
             count
         },
         gather: @|sendbuf, recvbuf, count_per_node, datatype, root| {
-            check_status(anydsl_comm_gather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, root, anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_gather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, root, anydsl_comm_get_world()));
         },
         allgather: @|sendbuf, recvbuf, count_per_node, datatype| {
-            check_status(anydsl_comm_allgather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_allgather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, anydsl_comm_get_world()));
         },
         allreduce : @|sendbuf, recvbuf, count_per_node, datatype, op| {
-            check_status(anydsl_comm_allreduce(sendbuf, recvbuf, count_per_node, datatype, op, anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_allreduce(sendbuf, recvbuf, count_per_node, datatype, op, anydsl_comm_get_world()));
         },
         barrier : @|| {
-            check_status(anydsl_comm_barrier(anydsl_comm_get_world()));
+            anydsl_comm_check_status(anydsl_comm_barrier(anydsl_comm_get_world()));
         },
         wtime : anydsl_comm_wtime,
         finalize : @|| {
             //check if already finalized
             let mut finalized : i32;
-            check_status(anydsl_comm_finalized(&mut finalized));
+            anydsl_comm_check_status(anydsl_comm_finalized(&mut finalized));
             if(finalized == 0) {
-                check_status(anydsl_comm_finalize());
+                anydsl_comm_check_status(anydsl_comm_finalize());
             }
         },
+        parallel_reduction: @|buffer, v1, v2, localNumEntries, operator| {
+            let mut num_threads = get_num_threads();
+            if(num_threads > localNumEntries) {
+                num_threads = localNumEntries;
+            }
+            let num_thread_entries = localNumEntries / num_threads;
+            let parallel_reduction_buffer = bitcast[&mut[double]](buffer.data);
+
+            for curThreadIndex in parallel(num_threads, 0, num_threads) {
+
+                let mut temp = 0.0;
+                for curIndex in range(curThreadIndex * num_thread_entries, anydsl_comm_min(localNumEntries, (curThreadIndex + 1) * num_thread_entries)) {
+                    temp += operator(v1(curIndex),v2(curIndex));
+                }
+                parallel_reduction_buffer(curThreadIndex) = temp;
+            }
+
+            let mut result = 0.0;
+            for i in range(0, num_threads) {
+                result += parallel_reduction_buffer(i);
+            }
+
+            result
+        }
     }
 }
 ;
 
-fn check_status(status: i32) -> () {
+fn @anydsl_comm_min(a: int, b: int) -> int {
+    if(a < b) {
+        a
+    }
+    else {
+        b
+    }
+}
+
+fn anydsl_comm_check_status(status: i32) -> () {
     if(status!=0) {
         print_string("Received invalid status from MPI!");
         exit(255);
