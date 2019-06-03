@@ -82,8 +82,8 @@ if(RUNTIME_JIT)
     add_definitions(${LLVM_DEFINITIONS})
     add_definitions("-DLLVM_SUPPORT")
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY};${LLVM_JIT_LIBRARIES})
+    #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
@@ -121,3 +121,7 @@ add_library(runtime
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
+if(RUNTIME_JIT AND LLVM_FOUND)
+	llvm_config(runtime USE_SHARED all)
+endif()
+
