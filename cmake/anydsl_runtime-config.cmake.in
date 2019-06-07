@@ -117,6 +117,8 @@ set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 set(OPT_FLAGS_DEBUG "-g")
 set(OPT_FLAGS_RELEASE "-O3")
 
+set(ANYDSL_COMM_MODE @ANYDSL_COMM_MODE@)
+
 function(anydsl_runtime_wrap outfiles)
     cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES;HLS_FLAGS" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
