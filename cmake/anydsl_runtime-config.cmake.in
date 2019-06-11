@@ -118,7 +118,7 @@ set(OPT_FLAGS_DEBUG "-g")
 set(OPT_FLAGS_RELEASE "-O3")
 
 function(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES;HLS_FLAGS" ${ARGN})
+    cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES;HLS_FLAGS;CODE_TARGET" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -145,6 +145,16 @@ function(anydsl_runtime_wrap outfiles)
         get_filename_component(_basename ${_lastfile} NAME_WE)
     else()
         set(_basename ${PARGS_NAME})
+    endif()
+
+    # configure compilation target
+    if(NOT PARGS_CODE_TARGET)
+        set(_impala_target_flags "")
+        set(_clang_target_flags "")
+    endif()
+    if("${PARGS_CODE_TARGET}" STREQUAL "ve")
+        set(_impala_target_flags -llvm-target aurora)
+        set(_clang_target_flags --target=ve)
     endif()
 
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
@@ -181,7 +191,7 @@ function(anydsl_runtime_wrap outfiles)
 
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -o ${_basepath}
+        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} ${_impala_target_flags} -o ${_basepath}
         COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
@@ -201,7 +211,7 @@ function(anydsl_runtime_wrap outfiles)
 
     # run clang on the .ll file to get the .o
     add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+        COMMAND ${Clang_BIN} ${_clang_target_flags} ${_clang_flags} -c -o ${_objfile} ${_llfile}
         COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
         DEPENDS ${_llfile} VERBATIM)
 
