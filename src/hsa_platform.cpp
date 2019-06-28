@@ -521,9 +521,12 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         std::tie(kernel_it, std::ignore) = kernel_cache[executable.handle].emplace(kernelname, kernel_info);
     }
 
+    // We need to get the reference now, while we have the lock, since re-hashing
+    // may impact the validity of the iterator (but references are *not* invalidated)
+    KernelInfo& kernel_info = kernel_it->second;
     hsa_dev.unlock();
 
-    return kernel_it->second;
+    return kernel_info;
 }
 
 #ifdef RUNTIME_ENABLE_JIT
