@@ -24,6 +24,7 @@ extern "C" {
     fn anydsl_comm_gather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, i32, COMM_Comm) -> i32;
     fn anydsl_comm_allgather(COMM_Buf, i32, COMM_Datatype, COMM_MutBuf, i32, COMM_Datatype, COMM_Comm) -> i32;
     fn anydsl_comm_barrier(COMM_Comm) -> i32;
+    fn anydsl_comm_bcast(COMM_MutBuf, i32, COMM_Datatype, i32, COMM_Comm) -> i32;
     fn anydsl_comm_wtime() -> f64;
     fn anydsl_comm_finalize() -> i32;
     fn anydsl_comm_finalized(&mut i32) -> i32;
@@ -83,6 +84,7 @@ struct Communicator {
     gather: fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, i32) -> (),
     allgather: fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype) -> (),
     allreduce : fn(COMM_Buf, COMM_MutBuf, i32, COMM_Datatype, COMM_Op) -> (),
+    broadcast: fn(COMM_MutBuf, i32, COMM_Datatype, i32) -> (),
     barrier : fn() -> (),
     wtime : fn() -> f64,
     finalize : fn() -> (),
@@ -157,13 +159,16 @@ fn @comm() -> Communicator {
         allgather: @|sendbuf, recvbuf, count_per_node, datatype| {
             anydsl_comm_check_status(anydsl_comm_allgather(sendbuf, count_per_node, datatype, recvbuf, count_per_node, datatype, anydsl_comm_get_world()));
         },
-        allreduce : @|sendbuf, recvbuf, count_per_node, datatype, op| {
+        allreduce: @|sendbuf, recvbuf, count_per_node, datatype, op| {
             anydsl_comm_check_status(anydsl_comm_allreduce(sendbuf, recvbuf, count_per_node, datatype, op, anydsl_comm_get_world()));
         },
-        barrier : @|| {
+        broadcast: @|buf, count, datatype, root| {
+            anydsl_comm_bcast(buf, count, datatype, root, anydsl_comm_get_world());
+        },
+        barrier: @|| {
             anydsl_comm_check_status(anydsl_comm_barrier(anydsl_comm_get_world()));
         },
-        wtime : anydsl_comm_wtime,
+        wtime: anydsl_comm_wtime,
         finalize : @|| {
             //check if already finalized
             let mut finalized : i32;

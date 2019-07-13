@@ -59,6 +59,9 @@ int anydsl_comm_gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype
 int anydsl_comm_allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm) {
     return MPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 }
+int anydsl_comm_bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
+    return MPI_Bcast(buffer, count, datatype, root, comm);
+}
 int anydsl_comm_barrier(MPI_Comm comm) {
     return MPI_Barrier(comm);
 }
@@ -200,6 +203,14 @@ int anydsl_comm_allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Dat
       return comm==0;
 }
 int anydsl_comm_barrier(MPI_Comm comm) {
+    return comm==0;
+}
+int anydsl_comm_bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
+    if(root != 0) {
+        std::cerr << "Invalid root rank! ABORT!" << std::endl;
+        exit(1);
+    }
+    //nothing to do
     return comm==0;
 }
 double anydsl_comm_wtime() {
