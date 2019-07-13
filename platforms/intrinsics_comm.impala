@@ -216,7 +216,9 @@ fn @anydsl_comm_min(a: int, b: int) -> int {
 
 fn anydsl_comm_check_status(status: i32) -> () {
     if(status!=0) {
-        print_string("Received invalid status from MPI!");
+        print_string("Received invalid status ");
+        print_int(status);
+        print_string(" from MPI!");
         exit(255);
     }
 }

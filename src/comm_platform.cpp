@@ -98,11 +98,11 @@ int anydsl_comm_initialized(int* flag) {
 }
 int anydsl_comm_size(MPI_Comm comm, int* size) {
     *size = 1;
-    return comm == 0;
+    return comm != 0;
 }
 int anydsl_comm_rank(MPI_Comm comm, int* rank) {
     *rank = 0;
-    return comm == 0;
+    return comm != 0;
 }
 int anydsl_comm_send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
     checkRank(dest);
@@ -119,7 +119,7 @@ int anydsl_comm_send(const void *buf, int count, MPI_Datatype datatype, int dest
     }
 
     tagLookup[tag] = dt;
-    return comm==0;
+    return comm != 0;
 }
 int anydsl_comm_recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status) {
     checkRank(source);
@@ -141,11 +141,11 @@ int anydsl_comm_recv(void *buf, int count, MPI_Datatype datatype, int source, in
     free(dt->data);
     free(dt);
     //TODO status
-    return (comm==0) && (status!=0);
+    return (comm!=0) && (status==0);
 }
 int anydsl_comm_irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request) {
     checkRank(source);
-    uintptr_t lookup = reinterpret_cast<uintptr_t>(request);
+    uintptr_t lookup = reinterpret_cast<uintptr_t>(*request);
     iRecvItem* cur_item = (iRecvItem*) malloc(sizeof(iRecvItem));
     cur_item->buffer = buf;
     cur_item->count = count;
@@ -153,14 +153,15 @@ int anydsl_comm_irecv(void *buf, int count, MPI_Datatype datatype, int source, i
     cur_item->tag = tag;
 
     iRecvLookup[lookup] = cur_item;
-    return comm==0;
+    return comm != 0;
 }
 
 int anydsl_comm_wait(MPI_Request *request, MPI_Status *status) {
-    uintptr_t lookup = reinterpret_cast<uintptr_t>(request);
+    uintptr_t lookup = reinterpret_cast<uintptr_t>(*request);
 
     while(iRecvLookup.count(lookup) == 0) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_LOOKUP));
+        std::cout << "WAIT!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_LOOKUP));
     }
 
     iRecvItem* cur_item = iRecvLookup[lookup];
@@ -175,7 +176,7 @@ int anydsl_comm_get_count(int source, int tag, MPI_Datatype datatype, int* count
         std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_LOOKUP));
     }
     *count = (tagLookup[tag]->numBytes / datatypeSize(datatype, std::string("get_count()")));
-    return comm==0;
+    return comm != 0;
 }
 
 int anydsl_comm_gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
@@ -189,7 +190,7 @@ int anydsl_comm_gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype
         exit(1);
     }
     copyBuffer(recvbuf, sendbuf, sendcount * datatypeSize(sendtype,std::string("gather()")));
-    return comm==0;
+    return comm != 0;
 }
 int anydsl_comm_allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm) {
     return anydsl_comm_gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, 0, comm);
@@ -200,10 +201,10 @@ int anydsl_comm_allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Dat
           exit(1);
       }
       copyBuffer(recvbuf, sendbuf, count * datatypeSize(datatype, std::string("allreduce()")));
-      return comm==0;
+      return comm != 0;
 }
 int anydsl_comm_barrier(MPI_Comm comm) {
-    return comm==0;
+    return comm != 0;
 }
 int anydsl_comm_bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
     if(root != 0) {
@@ -262,12 +263,13 @@ void copyBuffer(void* destination, const void* source, int size) {
 }
 
 int datatypeSize(int datatype, std::string method) {
-    if(datatypeSizeLookup.find(datatype) == datatypeSizeLookup.end()) {
-        std::cerr << "Invalid datatype in " << method << "! ABORT!" << std::endl;
-        exit(1);
+    for (std::pair<int, int> curEl : datatypeSizeLookup)
+    {
+        if(curEl.first == datatype) {
+            return curEl.second;
+        }
     }
-    else {
-        return datatypeSizeLookup[datatype];
-    }
+    std::cerr << "Invalid datatype " << datatype << " in " << method << "! ABORT!" << std::endl;
+    exit(1);
 }
 #endif
