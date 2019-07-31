@@ -324,7 +324,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     if (!queue)
         error("The selected HSA device '%' cannot execute kernels", dev);
 
-    auto kernel_info = load_kernel(dev, file, name);
+    auto& kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
     if (!kernel_info.kernarg_segment) {
@@ -418,7 +418,7 @@ void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t o
     CHECK_HSA(status, "hsa_memory_copy()");
 }
 
-HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
+HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& hsa_dev = devices_[dev];
     hsa_status_t status;
 
@@ -489,8 +489,6 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
     }
 
     // checks that the kernel exists
-    KernelInfo kernel_info;
-    kernel_info.kernarg_segment = nullptr;
     auto& kernel_cache = hsa_dev.kernels;
     auto& kernel_map = kernel_cache[executable.handle];
     auto kernel_it = kernel_map.find(kernelname);
@@ -502,6 +500,9 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         std::string kernelname_kd = kernelname + ".kd";
         status = hsa_executable_get_symbol_by_name(executable, kernelname_kd.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
+
+        KernelInfo kernel_info;
+        kernel_info.kernarg_segment = nullptr;
 
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT, &kernel_info.kernel);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
@@ -517,11 +518,12 @@ HSAPlatform::KernelInfo HSAPlatform::load_kernel(DeviceId dev, const std::string
         //CHECK_HSA(status, "hsa_memory_allocate()");
 
         hsa_dev.lock();
-        kernel_cache[executable.handle].emplace(kernelname, kernel_info);
-    } else {
-        kernel_info = kernel_it->second;
+        std::tie(kernel_it, std::ignore) = kernel_cache[executable.handle].emplace(kernelname, kernel_info);
     }
 
+    // We need to get the reference now, while we have the lock, since re-hashing
+    // may impact the validity of the iterator (but references are *not* invalidated)
+    KernelInfo& kernel_info = kernel_it->second;
     hsa_dev.unlock();
 
     return kernel_info;
