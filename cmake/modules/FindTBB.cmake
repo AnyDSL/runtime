@@ -53,30 +53,21 @@
 # TBB_FOUND, If false, don't try to use TBB.
 # TBB_INTERFACE_VERSION, as defined in tbb/tbb_stddef.h
 
+# newer packages (>=20190605) contain a cmake/TBBConfig.cmake, thus no FindTBB.cmake required
+find_package(TBB CONFIG QUIET)
 
-if (WIN32)
-    # has em64t/vc8 em64t/vc9
-    # has ia32/vc7.1 ia32/vc8 ia32/vc9
-    set(_TBB_DEFAULT_INSTALL_DIR "C:/Program Files/Intel/TBB" "C:/Program Files (x86)/Intel/TBB")
-    set(_TBB_LIB_NAME "tbb")
-    set(_TBB_LIB_MALLOC_NAME "${_TBB_LIB_NAME}malloc")
-    set(_TBB_LIB_DEBUG_NAME "${_TBB_LIB_NAME}_debug")
-    set(_TBB_LIB_MALLOC_DEBUG_NAME "${_TBB_LIB_MALLOC_NAME}_debug")
-    if (MSVC71)
-        set (_TBB_COMPILER "vc7.1")
-    endif(MSVC71)
-    if (MSVC80)
-        set(_TBB_COMPILER "vc8")
-    endif(MSVC80)
-    if (MSVC90)
-        set(_TBB_COMPILER "vc9")
-    endif(MSVC90)
-    if(MSVC10)
-        set(_TBB_COMPILER "vc10")
-    endif(MSVC10)
-    # Todo: add other Windows compilers such as ICL.
-    set(_TBB_ARCHITECTURE ${TBB_ARCHITECTURE})
-endif (WIN32)
+if(TARGET TBB::tbb)
+
+    message(STATUS "Found Intel TBB at ${TBB_DIR}")
+    set(TBB_LIBRARIES TBB::tbb TBB::tbbmalloc)
+
+elseif (WIN32)
+
+    message(STATUS "Could NOT find TBB (missing: TBB_DIR)")
+    message(STATUS "Please set TBB_DIR to point to TBBConfig.cmake")
+    find_path(TBB_DIR TBBConfig.cmake)
+
+else()
 
 if (UNIX)
     if (APPLE)
@@ -288,3 +279,5 @@ if (TBB_FOUND)
     STRING(REGEX REPLACE ".*#define TBB_INTERFACE_VERSION ([0-9]+).*" "\\1" TBB_INTERFACE_VERSION "${_TBB_VERSION_CONTENTS}")
     set(TBB_INTERFACE_VERSION "${TBB_INTERFACE_VERSION}")
 endif (TBB_FOUND)
+
+endif()
