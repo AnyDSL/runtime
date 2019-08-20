@@ -106,7 +106,14 @@ endif()
 
 add_definitions(${RUNTIME_DEFINITIONS})
 
-add_library(runtime
+option(AnyDSL_runtime_BUILD_SHARED "whether to build AnyDSL_runtime as shared or static library" ${BUILD_SHARED_LIBS})
+if(AnyDSL_runtime_BUILD_SHARED)
+    set(AnyDSL_runtime_BUILD "SHARED")
+else()
+    set(AnyDSL_runtime_BUILD "STATIC")
+endif()
+
+add_library(runtime ${AnyDSL_runtime_BUILD}
             runtime.cpp
             runtime.h
             anydsl_runtime.h
