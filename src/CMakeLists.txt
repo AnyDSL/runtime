@@ -121,7 +121,7 @@ add_library(runtime
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
-if(RUNTIME_JIT AND LLVM_FOUND)
+if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
 	llvm_config(runtime USE_SHARED all)
 endif()
 
