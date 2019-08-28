@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys, re, os
 basename = sys.argv[1]
-
 def patch_llvmir(rttype):
     # we need to patch
     result = []
@@ -101,9 +100,6 @@ def patch_cfiles(rttype):
                     if rttype == "opencl":
                         result.append(' {0}{1} = read_channel_intel({2});\n'.format(prefix, value, channel_name))
                         continue
-                    elif rttype == "hls":
-                        result.append(' {0}{2} >> {1};\n'.format(prefix, value, channel_name))
-                        continue
                     else:
                         continue
 
@@ -112,9 +108,6 @@ def patch_cfiles(rttype):
                     prefix, channel_name, value = m.groups()
                     if rttype == "opencl":
                         result.append('{0}write_channel_intel({1}, {2});\n'.format(prefix, channel_name, value))
-                        continue
-                    elif rttype == "hls":
-                        result.append('{0}{1} << {2};\n'.format(prefix, channel_name, value))
                         continue
                     else:
                         continue
