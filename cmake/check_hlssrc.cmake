@@ -6,11 +6,11 @@ if(EXISTS ${_basename}.hls)
                     COMMAND awk "{ ORS=\"\"; sub(/;$/,\"\"); print }" OUTPUT_VARIABLE kernels)
     if (NOT SOC)
         foreach(kernel ${kernels})
-            string(CONCAT tcl_script "open_project anydsl_fpga\n"
+            string(CONCAT tcl_script "open_project -reset anydsl_fpga\n"
                                     "set_top ${kernel}\n"
                                     "add_files ${_basename}_hls.cpp\n"
                                     "add_files -tb ${_basename}_tb.cpp\n"
-                                    "open_solution ${_basename}_${kernel}\n"
+                                    "open_solution -reset ${_basename}_${kernel}\n"
                                     "set lower ${FPGA_PART}\n"
                                     "set_part ${FPGA_PART}\n"
                                     "create_clock -period 10 -name default\n"
