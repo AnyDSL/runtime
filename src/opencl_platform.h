@@ -58,6 +58,7 @@ protected:
         cl_device_svm_capabilities svm_caps;
         #endif
         bool is_intel_fpga = false;
+        bool is_xilinx_fpga = false;
 
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;

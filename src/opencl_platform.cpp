@@ -202,6 +202,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             if (platform_name.find("FPGA") != std::string::npos)
                 devices_[dev].is_intel_fpga = true;
+            else if (platform_name.find("Xilinx") != std::string::npos)
+                devices_[dev].is_xilinx_fpga = true;
 
             // create context
             cl_context_properties ctx_props[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
@@ -236,7 +238,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
 OpenCLPlatform::~OpenCLPlatform() {
     for (size_t i = 0; i < devices_.size(); i++) {
-        if (devices_[i].is_intel_fpga)
+        if (devices_[i].is_intel_fpga || devices_[i].is_xilinx_fpga)
             continue;
 
         for (auto& map : devices_[i].kernels) {
@@ -355,7 +357,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     // launch the kernel
     cl_event event = 0;
     auto queue = devices_[dev].queue;
-    if (devices_[dev].is_intel_fpga)
+    if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga)
         queue = devices_[dev].kernels_queue[kernel];
     cl_int err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
@@ -378,7 +380,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
 }
 
 void OpenCLPlatform::synchronize(DeviceId dev) {
-    if (devices_[dev].is_intel_fpga) {
+    if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga) {
         auto& queue_map = devices_[dev].kernels_queue;
         for (auto& it : queue_map) {
             cl_int err = clFinish(it.second);
@@ -530,10 +532,12 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         std::string src_path = filename;
         if (opencl_dev.is_intel_fpga)
             src_path = filename.substr(0, ext_pos) + ".aocx";
+        else if (opencl_dev.is_xilinx_fpga)
+            src_path = filename.substr(0, ext_pos) + ".xclbin";
         std::string src_code = runtime_->load_file(src_path);
 
         // compile src or load from cache
-        std::string bin = opencl_dev.is_intel_fpga ? src_code
+        std::string bin = (opencl_dev.is_intel_fpga || opencl_dev.is_xilinx_fpga) ? src_code
             : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
         if (bin.empty()) {
             program = load_program_source(dev, src_path, src_code);
@@ -561,7 +565,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         kernel = clCreateKernel(program, kernelname.c_str(), &err);
         CHECK_OPENCL(err, "clCreateKernel()");
 
-        if (devices_[dev].is_intel_fpga) {
+        if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga) {
             // Intel SDK for FPGA needs a new queue for each kernel
             cl_command_queue kernel_queue = clCreateCommandQueue(opencl_dev.ctx, opencl_dev.dev, CL_QUEUE_PROFILING_ENABLE, &err);
             devices_[dev].kernels_queue[kernel] = kernel_queue;
