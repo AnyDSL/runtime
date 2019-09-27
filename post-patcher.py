@@ -80,38 +80,6 @@ def patch_cfiles(rttype):
                     channel_decl_line = len(result) - 1;
                     continue
 
-                # patch channel declarations and read/write functions
-                m = re.match('(.*)struct_channel_(.*) \*(.*) =.*', line)
-                #m = re.match('^(__device__|__constant|) struct_channel_(.*) \*(.*) =.*', line)
-                if m is not None:
-                    channel_name = m.groups()[2]
-                    result.append('//dummy channel\n')
-                    channel_line[channel_name] = len(result)-1
-                    channel_type[channel_name] = 'struct_channel_' + m.groups()[1]
-                    continue
-                m = re.match('(.*)struct_channel_.*slot.*', line)
-                #m = re.match('^(__device__|__constant) struct_channel_.*slot.*', line)
-                if m is not None:
-                    continue
-
-                m = re.match('(.*) (.*) = read_channel\((.*)\);', line)
-                if m is not None:
-                    prefix, value, channel_name = m.groups()
-                    if rttype == "opencl":
-                        result.append(' {0}{1} = read_channel_intel({2});\n'.format(prefix, value, channel_name))
-                        continue
-                    else:
-                        continue
-
-                m = re.match('(.*)write_channel\((.*), (.*)\);', line)
-                if m is not None:
-                    prefix, channel_name, value = m.groups()
-                    if rttype == "opencl":
-                        result.append('{0}write_channel_intel({1}, {2});\n'.format(prefix, channel_name, value))
-                        continue
-                    else:
-                        continue
-
                 # patch to opaque identity functions
                 m = re.match('^(.*) = (magic_.*_id)\((.*)\);\n$', line)
                 if m is not None:
@@ -122,17 +90,6 @@ def patch_cfiles(rttype):
                 else:
                     result.append(line)
 
-        # add channel typename
-        if channel_decl_type is not None :
-            if channel_decl_name is not None :
-                result[channel_decl_line] = 'typedef ' + channel_decl_type + ' struct_channel_' + channel_decl_name + ';\n'
-
-        # replace channel placeholder with channel declaration
-        for name, line in channel_line.items():
-            if rttype == "opencl":
-                result[line] = 'channel {0} {1};\n'.format(channel_type[name], name)
-            else:
-                continue
 
         # we have the patched thing, write it
         with open(filename, "w") as f:
