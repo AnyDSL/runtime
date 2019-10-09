@@ -196,6 +196,9 @@ function(anydsl_runtime_wrap outfiles)
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
+    list(GET HLS_FLAGS 0 SOC)
+    list(GET HLS_FLAGS 1 SYNTHESIS)
+    list(GET HLS_FLAGS 2 FPGA_PART)
 
     set(_additional_platform_files)
 
