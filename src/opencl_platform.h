@@ -38,6 +38,7 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
+    void dynamic_profile(DeviceId dev, const std::string& filename);
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }

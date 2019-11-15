@@ -515,6 +515,22 @@ cl_program OpenCLPlatform::compile_program(DeviceId dev, cl_program program, con
     return program;
 }
 
+void OpenCLPlatform::dynamic_profile(DeviceId dev, const std::string& filename) {
+    auto& opencl_dev = devices_[dev];
+    cl_program program = opencl_dev.programs[filename];
+
+    if(opencl_dev.is_intel_fpga) {
+        typedef cl_int (*clGetProfileDataDevice_fn) (cl_device_id, cl_program, cl_bool, cl_bool, cl_bool, size_t, void *, size_t *, cl_int *);
+
+        clGetProfileDataDevice_fn get_profile_data_ptr = (clGetProfileDataDevice_fn)
+            clGetExtensionFunctionAddressForPlatform(opencl_dev.platform, "clGetProfileDataDeviceIntelFPGA");
+        cl_int profile_status = CL_SUCCESS;
+        profile_status = get_profile_data_ptr(opencl_dev.dev, program, false, true, false, 0, NULL, NULL, NULL);
+        CHECK_OPENCL(profile_status, "clGetProfileDataDeviceIntelFPGA()");
+    } else
+        error("Dynamic Profiling is not available for this platform");
+}
+
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
 
