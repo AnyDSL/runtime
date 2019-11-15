@@ -323,6 +323,11 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
 }
 
 void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
+    if (devices_[dev].is_intel_fpga && launch_params.num_args == 0) {
+        debug("processing by autorun kernel");
+        return;
+    }
+
     auto kernel = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     // set up arguments
