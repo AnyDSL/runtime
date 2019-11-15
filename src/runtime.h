@@ -14,7 +14,7 @@
 
 enum DeviceId   : uint32_t {};
 enum PlatformId : uint32_t {};
-enum class ProfileLevel : uint8_t { None = 0, Full };
+enum class ProfileLevel : uint8_t { None = 0, Full, Fpga_dynamic };
 
 class Platform;
 
@@ -38,7 +38,7 @@ struct LaunchParams {
 
 class Runtime {
 public:
-    Runtime(ProfileLevel);
+    Runtime(std::pair<ProfileLevel, ProfileLevel>);
 
     /// Registers the given platform into the runtime.
     template <typename T, typename... Args>
@@ -82,7 +82,8 @@ public:
     std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
     void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
-    bool profiling_enabled() { return profile_ == ProfileLevel::Full; }
+    bool profiling_enabled() { return profile_.first == ProfileLevel::Full; }
+    bool dynamic_profiling_enabled() { return profile_.second == ProfileLevel::Fpga_dynamic; }
     std::atomic<uint64_t>& kernel_time() { return kernel_time_; }
 
     static void* aligned_malloc(size_t, size_t);
@@ -91,7 +92,7 @@ public:
 private:
     void check_device(PlatformId, DeviceId) const;
 
-    ProfileLevel profile_;
+    std::pair<ProfileLevel, ProfileLevel> profile_;
     std::atomic<uint64_t> kernel_time_;
     std::vector<std::unique_ptr<Platform>> platforms_;
     std::unordered_map<std::string, std::string> files_;
