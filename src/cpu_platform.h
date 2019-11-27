@@ -22,11 +22,11 @@ protected:
         return anydsl_aligned_malloc(size, 32);
     }
 
-    void* alloc_host(DeviceId dev, int64_t size) override {
+    void* alloc_host(DeviceId, int64_t size) override {
         return anydsl_aligned_malloc(size, PAGE_SIZE);
     }
 
-    void* alloc_unified(DeviceId dev, int64_t size) override {
+    void* alloc_unified(DeviceId, int64_t size) override {
         return anydsl_aligned_malloc(size, PAGE_SIZE);
     }
 
