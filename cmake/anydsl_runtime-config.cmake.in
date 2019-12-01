@@ -7,7 +7,7 @@
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.8.2)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
@@ -187,7 +187,7 @@ function(anydsl_runtime_wrap outfiles)
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
         ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM)
+        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
 
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
@@ -203,7 +203,7 @@ function(anydsl_runtime_wrap outfiles)
     add_custom_command(OUTPUT ${_objfile}
         COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
         COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
-        DEPENDS ${_llfile} VERBATIM)
+        DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
     set(${outfiles} ${${outfiles}} ${_objfile} ${_impala_platform_files} PARENT_SCOPE)
