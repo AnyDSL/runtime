@@ -7,7 +7,7 @@
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.8.2)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
@@ -112,8 +112,38 @@ endif()
 find_package(PythonInterp REQUIRED)
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
+# prepare function
+# anydsl_runtime_wrap(
+#   output
+#   [INTERFACE header_file]
+#   [NAME module_name]
+#   [IMPALA_FLAGS [args1...]]
+#   [CLANG_FLAGS [args2...]]
+#   [HLS_FLAGS [args3...]]
+#   [FILES [files...]]
+# )
+
 set(OPT_FLAGS_DEBUG "-g")
 set(OPT_FLAGS_RELEASE "-O3")
+set(OPT_FLAGS)
+
+get_property(_debug_configs GLOBAL PROPERTY DEBUG_CONFIGURATIONS)
+set(_release_configs ${CMAKE_CONFIGURATION_TYPES})
+list(REMOVE_ITEM _release_configs ${_debug_configs})
+
+message(STATUS "AnyDSL debug flags (${_debug_configs}): ${OPT_FLAGS_DEBUG}")
+foreach(_config ${_debug_configs})
+    foreach(_flag ${OPT_FLAGS_DEBUG})
+        list(APPEND OPT_FLAGS "$<$<CONFIG:${_config}>:${_flag}>")
+    endforeach()
+endforeach()
+
+message(STATUS "AnyDSL release flags (${_release_configs}): ${OPT_FLAGS_RELEASE}")
+foreach(_config ${_release_configs})
+    foreach(_flag ${OPT_FLAGS_RELEASE})
+        list(APPEND OPT_FLAGS "$<$<CONFIG:${_config}>:${_flag}>")
+    endforeach()
+endforeach()
 
 function(anydsl_runtime_wrap outfiles)
     cmake_parse_arguments("PARGS" "" "INTERFACE;NAME" "CLANG_FLAGS;IMPALA_FLAGS;FILES;HLS_FLAGS" ${ARGN})
@@ -161,31 +191,27 @@ function(anydsl_runtime_wrap outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_opencl.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/intrinsics_thorin.impala)
 
-    set(_impala_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_IMPALA_FLAGS_RELEASE})
-    set(_impala_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_IMPALA_FLAGS_DEBUG})
-    set(_impala_flags -emit-llvm ${PARGS_IMPALA_FLAGS} $<$<CONFIG:Release>:${_impala_flags_RELEASE}>$<$<NOT:$<CONFIG:Release>>:${_impala_flags_DEBUG}>)
+    set(_impala_flags ${PARGS_IMPALA_FLAGS} ${OPT_FLAGS})
+    set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
 
     list(FIND PARGS_IMPALA_FLAGS "--log-level" IMPALA_FLAGS_LOG_LEVEL_IDX)
     if(IMPALA_FLAGS_LOG_LEVEL_IDX EQUAL -1)
-        list(APPEND _impala_flags --log-level $<$<CONFIG:Release>:error>$<$<NOT:$<CONFIG:Release>>:info>)
+        list(APPEND _impala_flags --log-level $<IF:$<CONFIG:Release>,error,info>)
     endif()
 
-    set(_clang_flags_RELEASE ${OPT_FLAGS_RELEASE} ${PARGS_CLANG_FLAGS_RELEASE})
-    set(_clang_flags_DEBUG ${OPT_FLAGS_DEBUG} ${PARGS_CLANG_FLAGS_DEBUG})
-    set(_clang_flags ${PARGS_CLANG_FLAGS} $<$<CONFIG:Release>:${_clang_flags_RELEASE}>$<$<NOT:$<CONFIG:Release>>:${_clang_flags_DEBUG}>)
     if(NOT MSVC)
-        set(_clang_flags ${_clang_flags} -fPIE)
+        list(APPEND _clang_flags -fPIE)
     endif()
 
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -o ${_basepath}
+        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -emit-llvm -o ${_basepath}
         COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
         ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM)
+        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
 
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
@@ -193,7 +219,7 @@ function(anydsl_runtime_wrap outfiles)
         add_custom_command(OUTPUT ${_hfile}
            COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} -emit-c-interface -o ${PARGS_INTERFACE}
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-           DEPENDS ${Impala_BIN} ${_impala_platform_files} ${_infiles})
+           DEPENDS ${Impala_BIN} ${_impala_platform_files} ${_infiles} VERBATIM)
         set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
     endif()
 
@@ -201,7 +227,7 @@ function(anydsl_runtime_wrap outfiles)
     add_custom_command(OUTPUT ${_objfile}
         COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
         COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
-        DEPENDS ${_llfile} VERBATIM)
+        DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
     set(${outfiles} ${${outfiles}} ${_objfile} ${_impala_platform_files} PARENT_SCOPE)

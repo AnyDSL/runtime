@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda.h>
 #include <nvvm.h>
 
