@@ -114,6 +114,17 @@ endif()
 find_package(PythonInterp REQUIRED)
 set(PYTHON_BIN ${PYTHON_EXECUTABLE})
 
+# prepare function
+# anydsl_runtime_wrap(
+#   output
+#   [INTERFACE header_file]
+#   [NAME module_name]
+#   [IMPALA_FLAGS [args1...]]
+#   [CLANG_FLAGS [args2...]]
+#   [HLS_FLAGS [args3...]]
+#   [FILES [files...]]
+# )
+
 set(OPT_FLAGS_DEBUG "-g")
 set(OPT_FLAGS_RELEASE "-O3")
 set(OPT_FLAGS)
