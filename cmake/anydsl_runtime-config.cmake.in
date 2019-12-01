@@ -75,7 +75,7 @@ if(AnyDSL_runtime_HAS_JIT_SUPPORT)
 endif()
 
 # determine clang binary for toolchain
-find_package(Clang CONFIG QUIET PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES "../clang" "../lib/cmake/clang")
+find_package(Clang CONFIG QUIET PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES "../clang" "../lib/cmake/clang" NO_DEFAULT_PATH)
 if(TARGET clang AND NOT Clang_BIN)
     get_target_property(Clang_BIN clang LOCATION)
     set(Clang_BIN ${Clang_BIN} CACHE FILEPATH "path to clang executable")
