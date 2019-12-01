@@ -17,12 +17,12 @@ if(CUDA_FOUND)
     find_library(CUDA_LIBRARY cuda
         HINTS ${CUDA_TOOLKIT_ROOT_DIR}
         PATH_SUFFIXES lib lib64 lib/x64)
-    include_directories(${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
+    include_directories(${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include)
     set(CUDA_PLATFORM cuda_platform.cpp cuda_platform.h)
     set(AnyDSL_runtime_LIBDEVICE_DIR ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/)
     set(AnyDSL_runtime_NVCC_BIN      ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc)
     set(AnyDSL_runtime_NVCC_INC      ${CUDA_INCLUDE_DIRS})
-    list(APPEND CONF_RUNTIME_LIBRARIES ${CUDA_LIBRARY};${CUDA_NVVM_LIBRARY};${CUDA_NVRTC_LIBRARY})
+    list(APPEND CONF_RUNTIME_LIBRARIES ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
 endif()
 set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 
@@ -77,7 +77,7 @@ if(RUNTIME_JIT)
     add_definitions(${LLVM_DEFINITIONS})
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY})
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
