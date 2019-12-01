@@ -19,6 +19,8 @@
 #include <unistd.h>
 #endif
 
+#include "anydsl_runtime.h"
+
 #ifdef RUNTIME_ENABLE_TBB
 #define NOMINMAX
 #include <tbb/flow_graph.h>
@@ -28,8 +30,6 @@
 #else
 #include <thread>
 #endif
-
-#include "anydsl_runtime.h"
 
 #include "runtime.h"
 #include "platform.h"

@@ -35,12 +35,16 @@ find_path(AnyDSL_runtime_ROOT_DIR
 
 find_path(AnyDSL_runtime_INCLUDE_DIR
     NAMES
-        anydsl_runtime.h
-        anydsl_runtime.hpp
+        anydsl_runtime_config.h
     PATHS
-        ${AnyDSL_runtime_ROOT_DIR}/src
+        ${AnyDSL_runtime_ROOT_DIR}
+        ${AnyDSL_runtime_DIR}
+        "@CMAKE_CURRENT_BINARY_DIR@"
+    PATH_SUFFIXES
+        include
+        ../../../include
 )
-set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
+set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR} ${AnyDSL_runtime_ROOT_DIR}/src)
 
 if(NOT TARGET runtime)
     include(${AnyDSL_runtime_DIR}/anydsl_runtime-exports.cmake)

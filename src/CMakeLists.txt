@@ -116,6 +116,11 @@ else()
     set(AnyDSL_runtime_BUILD "STATIC")
 endif()
 
+include_directories(${CMAKE_BINARY_DIR}/include)
+set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
+configure_file(anydsl_runtime_config.h.in ${AnyDSL_runtime_CONFIG_FILE} @ONLY)
+set_source_files_properties(${AnyDSL_runtime_CONFIG_FILE} PROPERTIES GENERATED TRUE)
+
 add_library(runtime ${AnyDSL_runtime_BUILD}
             runtime.cpp
             runtime.h
@@ -125,12 +130,15 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
             cpu_platform.h
             dummy_platform.h
             log.h
+            ${AnyDSL_runtime_CONFIG_FILE}
             ${RUNTIME_JIT_SRC}
             ${CUDA_PLATFORM}
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
+set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
+
 if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
     set(AnyDSL_runtime_LLVM_COMPONENTS mcjit irreader support ${LLVM_TARGETS_TO_BUILD})
     if(AnyDSL_LLVM_LINK_SHARED)

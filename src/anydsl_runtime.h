@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "anydsl_runtime_config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
