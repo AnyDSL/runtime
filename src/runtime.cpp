@@ -21,7 +21,7 @@
 
 #include "anydsl_runtime.h"
 
-#ifdef RUNTIME_ENABLE_TBB
+#ifdef AnyDSL_runtime_HAS_TBB_SUPPORT
 #define NOMINMAX
 #include <tbb/flow_graph.h>
 #include <tbb/tbb.h>
@@ -35,13 +35,13 @@
 #include "platform.h"
 #include "cpu_platform.h"
 #include "dummy_platform.h"
-#ifdef RUNTIME_ENABLE_CUDA
+#ifdef AnyDSL_runtime_HAS_CUDA_SUPPORT
 #include "cuda_platform.h"
 #endif
-#ifdef RUNTIME_ENABLE_OPENCL
+#ifdef AnyDSL_runtime_HAS_OPENCL_SUPPORT
 #include "opencl_platform.h"
 #endif
-#ifdef RUNTIME_ENABLE_HSA
+#ifdef AnyDSL_runtime_HAS_HSA_SUPPORT
 #include "hsa_platform.h"
 #endif
 
@@ -62,17 +62,17 @@ Runtime::Runtime() {
     }
 
     register_platform<CpuPlatform>();
-#ifdef RUNTIME_ENABLE_CUDA
+#ifdef AnyDSL_runtime_HAS_CUDA_SUPPORT
     register_platform<CudaPlatform>();
 #else
     register_platform<DummyPlatform>("CUDA");
 #endif
-#ifdef RUNTIME_ENABLE_OPENCL
+#ifdef AnyDSL_runtime_HAS_OPENCL_SUPPORT
     register_platform<OpenCLPlatform>();
 #else
     register_platform<DummyPlatform>("OpenCL");
 #endif
-#ifdef RUNTIME_ENABLE_HSA
+#ifdef AnyDSL_runtime_HAS_HSA_SUPPORT
     register_platform<HSAPlatform>();
 #else
     register_platform<DummyPlatform>("HSA");
@@ -320,7 +320,7 @@ uint64_t anydsl_random_val_u64() {
     return std_dist_u64(std_gen);
 }
 
-#ifndef RUNTIME_ENABLE_TBB // C++11 threads version
+#ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
 

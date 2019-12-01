@@ -28,6 +28,7 @@ if(CUDA_FOUND)
 else()
     set(CUDA_PLATFORM "")
 endif()
+set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 
 # look for OpenCL
 find_package(OpenCL)
@@ -39,6 +40,7 @@ if(OpenCL_FOUND)
 else()
     set(OPENCL_PLATFORM "")
 endif()
+set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "OpenCL support enabled")
 
 # look for HSA
 find_package(HSA)
@@ -50,6 +52,7 @@ if(HSA_FOUND)
 else()
     set(HSA_PLATFORM "")
 endif()
+set(AnyDSL_runtime_HAS_HSA_SUPPORT ${HSA_FOUND} CACHE INTERNAL "HSA support enabled")
 
 # look for Threads
 find_package(Threads REQUIRED)
@@ -62,6 +65,7 @@ if(TBB_FOUND)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_TBB)
     list(APPEND CONF_RUNTIME_LIBRARIES ${TBB_LIBRARIES})
 endif()
+set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel using TBB")
 
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
@@ -106,6 +110,7 @@ if(RUNTIME_JIT)
         DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
     set_source_files_properties(${RUNTIME_SOURCES_INC_FILE} PROPERTIES GENERATED TRUE)
 endif()
+set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT} CACHE INTERNAL "enables anydsl_compile() api")
 
 add_definitions(${RUNTIME_DEFINITIONS})
 
