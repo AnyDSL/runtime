@@ -1,4 +1,6 @@
 #include "opencl_platform.h"
+
+// TODO: get rid of this cyclic dependency
 #include "runtime.h"
 
 #include <algorithm>
