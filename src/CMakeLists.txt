@@ -75,7 +75,7 @@ if(RUNTIME_JIT)
     add_definitions(${LLVM_DEFINITIONS})
     #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
     list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY})
-    set_source_files_properties(${RUNTIME_JIT_SRC} PROPERTIES INCLUDE_DIRECTORIES "${Impala_INCLUDE_DIR};${Thorin_INCLUDE_DIRS};${CMAKE_CURRENT_BINARY_DIR};${LLVM_INCLUDE_DIRS}")
+    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${LLVM_INCLUDE_DIRS})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
