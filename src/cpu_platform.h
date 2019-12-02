@@ -2,13 +2,16 @@
 #define CPU_PLATFORM_H
 
 #include "platform.h"
-#include "runtime.h"
 
 #ifndef PAGE_SIZE
 #define PAGE_SIZE 4096
 #endif
 
 #include <cstring>
+
+// TODO: solve dependency to anydsl_aligned_malloc()
+#include "anydsl_runtime.h"
+
 
 /// CPU platform, allocation is guaranteed to be aligned to page size: 4096 bytes.
 class CpuPlatform : public Platform {
