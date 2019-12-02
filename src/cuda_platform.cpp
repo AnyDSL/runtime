@@ -29,7 +29,7 @@
 #endif
 
 #ifndef LIBDEVICE_DIR
-#define LIBDEVICE_DIR ""
+#define LIBDEVICE_DIR AnyDSL_runtime_LIBDEVICE_DIR
 #endif
 
 #define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
@@ -52,7 +52,7 @@ inline void check_nvvm_errors(nvvmResult err, const char* name, const char* file
         error("NVVM API function % (%) [file %, line %]: %", name, err, file, line, nvvmGetErrorString(err));
 }
 
-#ifdef CUDA_NVRTC
+#ifdef AnyDSL_runtime_CUDA_NVRTC
 inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* file, const int line) {
     if (NVRTC_SUCCESS != err)
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
@@ -557,9 +557,9 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     return ptx;
 }
 
-#ifdef CUDA_NVRTC
-#ifndef NVCC_INC
-#define NVCC_INC "/usr/local/cuda/include"
+#ifdef AnyDSL_runtime_CUDA_NVRTC
+#ifndef AnyDSL_runtime_NVCC_INC
+#define AnyDSL_runtime_NVCC_INC "/usr/local/cuda/include"
 #endif
 std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     nvrtcProgram program;
@@ -571,7 +571,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     const char* options[] = {
         compute_arch.c_str(),
         "-I",
-        NVCC_INC,
+        AnyDSL_runtime_NVCC_INC,
         "-G",
         "-lineinfo" };
 
@@ -600,8 +600,8 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     return ptx;
 }
 #else
-#ifndef NVCC_BIN
-#define NVCC_BIN "nvcc"
+#ifndef AnyDSL_runtime_NVCC_BIN
+#define AnyDSL_runtime_NVCC_BIN "nvcc"
 #endif
 std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     CUjit_target compute_capability = devices_[dev].compute_capability;
@@ -609,7 +609,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     compute_capability = compute_capability == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : compute_capability; // compute_21 does not exist for nvcc
     #endif
     std::string ptx_filename = std::string(filename) + ".ptx";
-    std::string command = (NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
+    std::string command = (AnyDSL_runtime_NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())

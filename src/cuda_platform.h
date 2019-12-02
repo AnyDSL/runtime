@@ -19,7 +19,7 @@
     #error "CUDA 6.5 or higher required!"
 #endif
 
-#ifdef CUDA_NVRTC
+#ifdef AnyDSL_runtime_CUDA_NVRTC
 #include <nvrtc.h>
 #endif
 

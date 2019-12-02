@@ -25,9 +25,9 @@
 // CUDA support
 
 #cmakedefine AnyDSL_runtime_CUDA_NVRTC
-#cmakedefine AnyDSL_runtime_LIBDEVICE_DIR
-#cmakedefine AnyDSL_runtime_NVCC_BIN
-#cmakedefine AnyDSL_runtime_NVCC_INC
+#define AnyDSL_runtime_LIBDEVICE_DIR  "@AnyDSL_runtime_LIBDEVICE_DIR@/"
+#define AnyDSL_runtime_NVCC_BIN       "@AnyDSL_runtime_NVCC_BIN@"
+#define AnyDSL_runtime_NVCC_INC       "@AnyDSL_runtime_NVCC_INC@"
 
 
 // jit support
