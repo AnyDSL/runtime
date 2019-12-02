@@ -17,8 +17,8 @@ if(CUDA_FOUND)
     find_library(CUDA_LIBRARY cuda
         HINTS ${CUDA_TOOLKIT_ROOT_DIR}
         PATH_SUFFIXES lib lib64 lib/x64)
-    include_directories(${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include)
     set(CUDA_PLATFORM cuda_platform.cpp cuda_platform.h)
+    set_source_files_properties(${CUDA_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES "${CUDA_INCLUDE_DIRS};${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
     set(AnyDSL_runtime_LIBDEVICE_DIR ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/)
     set(AnyDSL_runtime_NVCC_BIN      ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc)
     set(AnyDSL_runtime_NVCC_INC      ${CUDA_INCLUDE_DIRS})
@@ -29,8 +29,8 @@ set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/N
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
-    include_directories(BEFORE ${OpenCL_INCLUDE_DIRS}) # use header from specified path instead of CUDA's
     set(OPENCL_PLATFORM opencl_platform.cpp opencl_platform.h)
+    set_source_files_properties(${OPENCL_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES ${OpenCL_INCLUDE_DIRS})
     list(APPEND CONF_RUNTIME_LIBRARIES ${OpenCL_LIBRARIES})
 endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "OpenCL support enabled")
@@ -38,8 +38,8 @@ set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "OpenCL sup
 # look for HSA
 find_package(HSA)
 if(HSA_FOUND)
-    include_directories(${HSA_INCLUDE_DIRS})
     set(HSA_PLATFORM hsa_platform.cpp hsa_platform.h)
+    set_source_files_properties(${HSA_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES ${HSA_INCLUDE_DIRS})
     list(APPEND CONF_RUNTIME_LIBRARIES ${HSA_LIBRARIES})
 endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${HSA_FOUND} CACHE INTERNAL "HSA support enabled")
@@ -70,14 +70,12 @@ if(RUNTIME_JIT)
     if(NOT Thorin_HAS_LLVM_SUPPORT)
         message(FATAL_ERROR "RUNTIME_JIT requires Thorin to be built with LLVM")
     endif()
-    include_directories(SYSTEM ${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS})
-    include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
     find_package(LLVM REQUIRED)
     add_definitions(${LLVM_DEFINITIONS})
-    include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
     list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY})
+    set_source_files_properties(${RUNTIME_JIT_SRC} PROPERTIES INCLUDE_DIRECTORIES "${Impala_INCLUDE_DIR};${Thorin_INCLUDE_DIRS};${CMAKE_CURRENT_BINARY_DIR};${LLVM_INCLUDE_DIRS}")
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
