@@ -32,8 +32,8 @@
 
 // jit support
 
-#define AnyDSL_runtime_SOURCE_DIR    "@CMAKE_CURRENT_SOURCE_DIR@"
-#define AnyDSL_runtime_SOURCE_FILES  "@RUNTIME_IMPALA_SRCS@"
+#define AnyDSL_runtime_SOURCE_DIR     "@CMAKE_CURRENT_SOURCE_DIR@"
+#define AnyDSL_runtime_SOURCE_FILES   "@RUNTIME_IMPALA_SRCS@"
 
 
 #endif // ANYDSL_RUNTIME_CONFIG_H
