@@ -19,10 +19,19 @@ if(CUDA_FOUND)
         PATH_SUFFIXES lib lib64 lib/x64)
     set(CUDA_PLATFORM cuda_platform.cpp cuda_platform.h)
     set_source_files_properties(${CUDA_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES "${CUDA_INCLUDE_DIRS};${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
-    set(AnyDSL_runtime_LIBDEVICE_DIR ${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/)
-    set(AnyDSL_runtime_NVCC_BIN      ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc)
-    set(AnyDSL_runtime_NVCC_INC      ${CUDA_INCLUDE_DIRS})
+    # TODO: would be nice to reference directly the file
+    find_path(AnyDSL_runtime_LIBDEVICE_DIR
+        NAMES libdevice.10.bc libdevice.compute_50.10.bc libdevice.compute_35.10.bc libdevice.compute_30.10.bc libdevice.compute_20.10.bc
+        HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES nvvm/libdevice)
+    find_program(AnyDSL_runtime_NVCC_BIN nvcc
+        HINTS ${CUDA_NVCC_EXECUTABLE} ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES bin)
+    find_path(AnyDSL_runtime_NVCC_INC NAMES cuda.h nvrtc.h
+        HINTS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE} ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES include)
     list(APPEND CONF_RUNTIME_LIBRARIES ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
+    mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_BIN AnyDSL_runtime_NVCC_INC)
 endif()
 set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 
