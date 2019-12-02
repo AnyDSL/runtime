@@ -11,7 +11,7 @@
 #include <sstream>
 #include <thread>
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -399,7 +399,7 @@ std::string get_libdevice_path(CUjit_target) {
 }
 #endif
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 bool llvm_initialized = false;
 static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, int opt) {
     if (!llvm_initialized) {

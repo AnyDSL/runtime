@@ -11,7 +11,7 @@
 #include <sstream>
 #include <thread>
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -535,7 +535,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
     return kernel_info;
 }
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 static std::string get_ocml_config(int target) {
     std::string config = R"(
         ; Module anydsl ocml config
