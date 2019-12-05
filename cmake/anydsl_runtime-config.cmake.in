@@ -130,6 +130,9 @@ set(OPT_FLAGS_RELEASE "-O3")
 set(OPT_FLAGS)
 
 get_property(_debug_configs GLOBAL PROPERTY DEBUG_CONFIGURATIONS)
+if(NOT _debug_configs)
+    set(_debug_configs "Debug")
+endif()
 set(_release_configs ${CMAKE_CONFIGURATION_TYPES})
 list(REMOVE_ITEM _release_configs ${_debug_configs})
 
