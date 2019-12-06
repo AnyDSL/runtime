@@ -133,11 +133,6 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
     set(AnyDSL_runtime_LLVM_COMPONENTS mcjit irreader support ${LLVM_TARGETS_TO_BUILD})
-    if(AnyDSL_LLVM_LINK_SHARED)
-        set(_specify_use_shared "USE_SHARED")
-    else()
-        unset(_specify_use_shared)
-    endif()
-    llvm_config(runtime ${_specify_use_shared} ${AnyDSL_runtime_LLVM_COMPONENTS})
+    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
