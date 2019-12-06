@@ -66,7 +66,7 @@ endif()
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
 else()
-    add_definitions("-Wall -Wextra")
+    add_compile_options("-Wall" "-Wextra")
 endif()
 
 if(RUNTIME_JIT)
