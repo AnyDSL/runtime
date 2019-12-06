@@ -66,8 +66,7 @@ find_program(Impala_BIN impala
     PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
-find_path(LLVM_DIR LLVMConfig.cmake PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@")
-find_package(LLVM CONFIG QUIET)
+find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@")
 
 set(AnyDSL_runtime_HAS_JIT_SUPPORT @RUNTIME_JIT@)
 if(AnyDSL_runtime_HAS_JIT_SUPPORT)
@@ -76,8 +75,7 @@ if(AnyDSL_runtime_HAS_JIT_SUPPORT)
 endif()
 
 # determine clang binary for toolchain
-find_path(Clang_DIR ClangConfig.cmake PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES ../clang)
-find_package(Clang QUIET)
+find_package(Clang CONFIG QUIET PATHS ${Clang_DIR} ${LLVM_DIR} PATH_SUFFIXES "../clang" "../lib/cmake/clang" NO_DEFAULT_PATH)
 if(TARGET clang AND NOT Clang_BIN)
     get_target_property(Clang_BIN clang LOCATION)
     set(Clang_BIN ${Clang_BIN} CACHE FILEPATH "path to clang executable")
