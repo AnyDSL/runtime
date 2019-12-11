@@ -4,7 +4,7 @@ if(EXISTS ${_basename}.hls)
     execute_process(COMMAND echo "int main() { return 0; }" OUTPUT_FILE ${_basename}_tb.cpp)
     execute_process(COMMAND awk -F "[ (]+" "/void .*;/{ ORS=\";\"; print $2 }" ${_basename}.hls
                     COMMAND awk "{ ORS=\"\"; sub(/;$/,\"\"); print }" OUTPUT_VARIABLE kernels)
-    if (NOT SOC)
+    if (SOC)
         foreach(kernel ${kernels})
             string(CONCAT tcl_script "open_project -reset anydsl_fpga\n"
                                     "set_top ${kernel}\n"
@@ -31,10 +31,8 @@ if(EXISTS ${_basename}.hls)
             execute_process(COMMAND vivado_hls -f ${_basename}_${kernel}.tcl)
         endforeach()
     else()
-        #TODO
-        # Building Device Support Archive (DSA)
-        # Integrating IP and running sds++ by vivado TCL
-        string(CONCAT tcl_script "puts {HELLO SOC}\n"
+        #TODO: 1) Compiling by xoflow. 2) linking BSP and HLS object files
+        string(CONCAT tcl_script "puts {HELLO HPC}\n"
                                 "exit")
         list(GET kernels 0 kernel)
         execute_process(COMMAND echo "${tcl_script}" OUTPUT_FILE ${_basename}_${kernel}.tcl)

@@ -196,9 +196,24 @@ function(anydsl_runtime_wrap outfiles)
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
-    list(GET HLS_FLAGS 0 SOC)
+
+    # SOC is of type bool on index 0
     list(GET HLS_FLAGS 1 SYNTHESIS)
     list(GET HLS_FLAGS 2 FPGA_PART)
+    list(GET HLS_FLAGS 3 ANYDSL_FPGA)
+
+    # decide on HLS interface
+    if(ANYDSL_FPGA STREQUAL "SOC" OR ANYDSL_FPGA STREQUAL "HPC")
+        set(ANYDSL_FPGA ${ANYDSL_FPGA})
+    elseif(ANYDSL_FPGA STREQUAL "BENCHMARK")
+        set(ANYDSL_FPGA "None")
+    else()
+        if(SOC)
+            set(ANYDSL_FPGA "SOC")
+        else()
+            set(ANYDSL_FPGA "HPC")
+        endif()
+    endif()
 
     set(_additional_platform_files)
 
@@ -305,7 +320,7 @@ function(anydsl_runtime_wrap outfiles)
     else()
         # generate .ll file and patch it
         add_custom_command(OUTPUT ${_llfile}
-            COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
+            COMMAND ${CMAKE_COMMAND} -E env "ANYDSL_FPGA=${ANYDSL_FPGA}" ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
             COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
