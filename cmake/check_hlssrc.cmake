@@ -6,13 +6,20 @@ if(EXISTS ${_basename}.hls)
                     COMMAND awk "{ ORS=\"\"; sub(/;$/,\"\"); print }" OUTPUT_VARIABLE kernels)
     if (SOC)
         foreach(kernel ${kernels})
-            string(CONCAT tcl_script "open_project -reset anydsl_fpga\n"
-                                    "set_top ${kernel}\n"
-                                    "add_files ${_basename}_hls.cpp\n"
-                                    "add_files -tb ${_basename}_tb.cpp\n"
-                                    "open_solution -reset ${_basename}_${kernel}\n"
-                                    "set lower ${FPGA_PART}\n"
-                                    "set_part ${FPGA_PART}\n"
+            string(CONCAT tcl_script "set project_name    \"anydsl_fpga\"\n"
+                                    "set kernel_name      \"${kernel}\"\n"
+                                    "set kernel_file      \"${_basename}_hls.cpp\"\n"
+                                    "set kernel_testbench \"${_basename}_tb.cpp\"\n"
+                                    "set solution         \"${_basename}_${kernel}\"\n"
+                                    "set kernel_platform  \"${FPGA_PART}\"\n"
+
+                                    "open_project -reset $project_name\n"
+                                    "set_top $kernel_name\n"
+                                    "add_files $kernel_file\n"
+                                    "add_files -tb $kernel_testbench\n"
+                                    "open_solution -reset $solution\n"
+                                    "set lower $kernel_platform\n"
+                                    "set_part $kernel_platform\n"
                                     "create_clock -period 10 -name default\n"
                                     "csim_design -compiler clang -ldflags {-lrt} -clean\n"
                                     "set lower ${SYNTHESIS}\n"
