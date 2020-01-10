@@ -393,9 +393,9 @@ std::string get_libdevice_path(CUjit_target) {
 #endif
 
 #ifdef RUNTIME_ENABLE_JIT
-bool llvm_initialized = false;
+bool llvm_nvptx_initialized = false;
 static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, int opt) {
-    if (!llvm_initialized) {
+    if (!llvm_nvptx_initialized) {
         // ANYDSL_LLVM_ARGS="-nvptx-sched4reg -nvptx-fma-level=2 -nvptx-prec-divf32=0 -nvptx-prec-sqrtf32=0 -nvptx-f32ftz=1"
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
         if (env_var) {
@@ -414,7 +414,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
         LLVMInitializeNVPTXTargetInfo();
         LLVMInitializeNVPTXTargetMC();
         LLVMInitializeNVPTXAsmPrinter();
-        llvm_initialized = true;
+        llvm_nvptx_initialized = true;
     }
 
     llvm::LLVMContext llvm_context;
