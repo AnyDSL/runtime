@@ -625,8 +625,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
 
-    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
-    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_ObjectFile, true);
+    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile, true);
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile, true);
 
     function_pass_manager.doInitialization();
     for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
