@@ -66,7 +66,7 @@ endif()
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
 else()
-    add_definitions("-Wall -Wextra")
+    add_compile_options("-Wall" "-Wextra")
 endif()
 
 if(RUNTIME_JIT)
@@ -75,6 +75,9 @@ if(RUNTIME_JIT)
     set(RUNTIME_JIT_SRC jit.cpp ${RUNTIME_SOURCES_INC_FILE})
     find_package(Impala REQUIRED)
     find_package(Thorin REQUIRED)
+    if(NOT Thorin_HAS_LLVM_SUPPORT)
+        message(FATAL_ERROR "RUNTIME_JIT requires Thorin to be built with LLVM")
+    endif()
     include_directories(SYSTEM ${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS})
     include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -82,8 +85,8 @@ if(RUNTIME_JIT)
     add_definitions(${LLVM_DEFINITIONS})
     add_definitions("-DLLVM_SUPPORT")
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY};${LLVM_JIT_LIBRARIES})
+    #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
@@ -106,7 +109,14 @@ endif()
 
 add_definitions(${RUNTIME_DEFINITIONS})
 
-add_library(runtime
+option(AnyDSL_runtime_BUILD_SHARED "whether to build AnyDSL_runtime as shared or static library" ${BUILD_SHARED_LIBS})
+if(AnyDSL_runtime_BUILD_SHARED)
+    set(AnyDSL_runtime_BUILD "SHARED")
+else()
+    set(AnyDSL_runtime_BUILD "STATIC")
+endif()
+
+add_library(runtime ${AnyDSL_runtime_BUILD}
             runtime.cpp
             runtime.h
             anydsl_runtime.h
@@ -121,3 +131,8 @@ add_library(runtime
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
+if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
+    set(AnyDSL_runtime_LLVM_COMPONENTS mcjit irreader support ${LLVM_TARGETS_TO_BUILD})
+    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
+endif()
+
