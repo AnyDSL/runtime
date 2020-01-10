@@ -33,7 +33,7 @@ protected:
     void* alloc(DeviceId dev, int64_t size) override;
     void* alloc_host(DeviceId dev, int64_t size) override;
     void* alloc_unified(DeviceId dev, int64_t size) override;
-    void* get_device_ptr(DeviceId, void*) override;
+    void* get_device_ptr(DeviceId, void* ptr) override;
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override;
 
