@@ -341,13 +341,13 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     for (uint32_t i = 0; i < num_args; i++) {
         // align base address for next kernel argument
         if (!std::align(aligns[i], sizes[i], cur, space))
-            debug("Incorrect kernel argument alignment detected");
+            error("Incorrect kernel argument alignment detected");
         std::memcpy(cur, args[i], sizes[i]);
         cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
     }
     size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
     if (total != kernel_info.kernarg_segment_size)
-        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
+        error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
@@ -390,7 +390,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         std::thread ([=] {
             hsa_signal_value_t completion = hsa_signal_wait_relaxed(launch_signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
             if (completion != 0)
-                debug("HSA launch_signal completion failed: %", completion);
+                error("HSA launch_signal completion failed: %", completion);
 
             hsa_amd_profiling_dispatch_time_t dispatch_times = { 0, 0 };
             hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, launch_signal, &dispatch_times);
@@ -408,7 +408,7 @@ void HSAPlatform::synchronize(DeviceId dev) {
     auto signal = devices_[dev].signal;
     hsa_signal_value_t completion = hsa_signal_wait_relaxed(signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
     if (completion != 0)
-        debug("HSA signal completion failed: %", completion);
+        error("HSA signal completion failed: %", completion);
 }
 
 void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
