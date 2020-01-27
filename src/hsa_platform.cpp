@@ -18,6 +18,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetRegistry.h>
@@ -645,6 +646,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
     runtime().store_file(obj_file, obj);
+    llvm::raw_os_ostream lld_cout(std::cout);
+    llvm::raw_os_ostream lld_cerr(std::cerr);
     std::vector<const char*> lld_args = {
         "ld",
         "-shared",
@@ -652,7 +655,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         "-o",
         gcn_file.c_str()
     };
-    if (!lld::elf::link(lld_args, false))
+    if (!lld::elf::link(lld_args, false, lld_cout, lld_cerr))
         error("Generating gcn using ld");
 
     return runtime().load_file(gcn_file);
