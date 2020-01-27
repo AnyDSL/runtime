@@ -28,7 +28,7 @@
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #endif
 
-#define CHECK_HSA(err, name)  check_hsa_error(err, name, __FILE__, __LINE__)
+#define CHECK_HSA(err, name) check_hsa_error(err, name, __FILE__, __LINE__)
 
 inline void check_hsa_error(hsa_status_t err, const char* name, const char* file, const int line) {
     if (err != HSA_STATUS_SUCCESS) {
@@ -140,10 +140,6 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
         CHECK_HSA(status, "hsa_amd_profiling_set_profiler_enabled()");
     }
 
-    hsa_signal_t signal;
-    status = hsa_signal_create(0, 0, nullptr, &signal);
-    CHECK_HSA(status, "hsa_signal_create()");
-
     auto dev = devices_->size();
     devices_->resize(dev + 1);
     DeviceData* device = &(*devices_)[dev];
@@ -152,7 +148,6 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->float_mode = float_mode;
     device->isa = isa_name;
     device->queue = queue;
-    device->signal = signal;
     device->kernarg_region.handle = { 0 };
     device->finegrained_region.handle = { 0 };
     device->coarsegrained_region.handle = { 0 };
@@ -160,6 +155,8 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->amd_finegrained_pool.handle = { 0 };
     device->amd_coarsegrained_pool.handle = { 0 };
 
+    status = hsa_signal_create(0, 0, nullptr, &device->signal);
+    CHECK_HSA(status, "hsa_signal_create()");
     status = hsa_agent_iterate_regions(agent, iterate_regions_callback, device);
     CHECK_HSA(status, "hsa_agent_iterate_regions()");
     status = hsa_amd_agent_iterate_memory_pools(agent, iterate_memory_pools_callback, device);
