@@ -131,7 +131,7 @@ get_property(_debug_configs GLOBAL PROPERTY DEBUG_CONFIGURATIONS)
 if(NOT _debug_configs)
     set(_debug_configs "Debug")
 endif()
-set(_release_configs ${CMAKE_CONFIGURATION_TYPES})
+set(_release_configs ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
 list(REMOVE_ITEM _release_configs ${_debug_configs})
 
 message(STATUS "AnyDSL debug flags (${_debug_configs}): ${OPT_FLAGS_DEBUG}")

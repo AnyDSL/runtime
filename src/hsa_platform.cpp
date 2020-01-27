@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -12,6 +11,7 @@
 #include <thread>
 
 #ifdef RUNTIME_ENABLE_JIT
+#include <lld/Common/Driver.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -28,7 +28,8 @@
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #endif
 
-#define CHECK_HSA(err, name)  check_hsa_error(err, name, __FILE__, __LINE__)
+#define CHECK_HSA(err, name) check_hsa_error(err, name, __FILE__, __LINE__)
+#define CODE_OBJECT_VERSION 2
 
 inline void check_hsa_error(hsa_status_t err, const char* name, const char* file, const int line) {
     if (err != HSA_STATUS_SUCCESS) {
@@ -140,10 +141,6 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
         CHECK_HSA(status, "hsa_amd_profiling_set_profiler_enabled()");
     }
 
-    hsa_signal_t signal;
-    status = hsa_signal_create(0, 0, nullptr, &signal);
-    CHECK_HSA(status, "hsa_signal_create()");
-
     auto dev = devices_->size();
     devices_->resize(dev + 1);
     DeviceData* device = &(*devices_)[dev];
@@ -152,7 +149,6 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->float_mode = float_mode;
     device->isa = isa_name;
     device->queue = queue;
-    device->signal = signal;
     device->kernarg_region.handle = { 0 };
     device->finegrained_region.handle = { 0 };
     device->coarsegrained_region.handle = { 0 };
@@ -160,6 +156,8 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->amd_finegrained_pool.handle = { 0 };
     device->amd_coarsegrained_pool.handle = { 0 };
 
+    status = hsa_signal_create(0, 0, nullptr, &device->signal);
+    CHECK_HSA(status, "hsa_signal_create()");
     status = hsa_agent_iterate_regions(agent, iterate_regions_callback, device);
     CHECK_HSA(status, "hsa_agent_iterate_regions()");
     status = hsa_amd_agent_iterate_memory_pools(agent, iterate_memory_pools_callback, device);
@@ -344,13 +342,13 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     for (uint32_t i = 0; i < num_args; i++) {
         // align base address for next kernel argument
         if (!std::align(aligns[i], sizes[i], cur, space))
-            debug("Incorrect kernel argument alignment detected");
+            error("Incorrect kernel argument alignment detected");
         std::memcpy(cur, args[i], sizes[i]);
         cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
     }
     size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
     if (total != kernel_info.kernarg_segment_size)
-        debug("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
+        error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
@@ -393,7 +391,7 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         std::thread ([=] {
             hsa_signal_value_t completion = hsa_signal_wait_relaxed(launch_signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
             if (completion != 0)
-                debug("HSA launch_signal completion failed: %", completion);
+                error("HSA launch_signal completion failed: %", completion);
 
             hsa_amd_profiling_dispatch_time_t dispatch_times = { 0, 0 };
             hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, launch_signal, &dispatch_times);
@@ -411,7 +409,7 @@ void HSAPlatform::synchronize(DeviceId dev) {
     auto signal = devices_[dev].signal;
     hsa_signal_value_t completion = hsa_signal_wait_relaxed(signal, HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX, HSA_WAIT_STATE_ACTIVE);
     if (completion != 0)
-        debug("HSA signal completion failed: %", completion);
+        error("HSA signal completion failed: %", completion);
 }
 
 void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
@@ -497,9 +495,12 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         hsa_dev.unlock();
 
         hsa_executable_symbol_t kernel_symbol = { 0 };
+        std::string symbol_name = kernelname;
+        #if CODE_OBJECT_VERSION == 3
+        symbol_name += ".kd";
+        #endif
         // DEPRECATED: use hsa_executable_get_symbol_by_linker_name if available
-        std::string kernelname_kd = kernelname + ".kd";
-        status = hsa_executable_get_symbol_by_name(executable, kernelname_kd.c_str(), &hsa_dev.agent, &kernel_symbol);
+        status = hsa_executable_get_symbol_by_name(executable, symbol_name.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
 
         KernelInfo kernel_info;
@@ -514,9 +515,11 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
-        // ROCm 2.x reports always 0 for kernarg_segment_size
-        //status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        //CHECK_HSA(status, "hsa_memory_allocate()");
+        #if CODE_OBJECT_VERSION == 2
+        // metadata are not yet extracted from code object version 3
+        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+        CHECK_HSA(status, "hsa_memory_allocate()");
+        #endif
 
         hsa_dev.lock();
         std::tie(kernel_it, std::ignore) = kernel_cache[executable.handle].emplace(kernelname, kernel_info);
@@ -582,7 +585,11 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
     options.NoTrappingFPMath = true;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "-trap-handler" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
+    std::string attrs = "-trap-handler";
+    #if CODE_OBJECT_VERSION == 2
+    attrs += ",-code-object-v3";
+    #endif
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn and ocml config
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
@@ -638,9 +645,15 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
     runtime().store_file(obj_file, obj);
-    std::string lld_cmd = "ld.lld -shared " + obj_file + " -o " + gcn_file;
-    if (std::system(lld_cmd.c_str()))
-        error("Generating gcn using lld");
+    std::vector<const char*> lld_args = {
+        "ld",
+        "-shared",
+        obj_file.c_str(),
+        "-o",
+        gcn_file.c_str()
+    };
+    if (!lld::elf::link(lld_args, false))
+        error("Generating gcn using ld");
 
     return runtime().load_file(gcn_file);
 }

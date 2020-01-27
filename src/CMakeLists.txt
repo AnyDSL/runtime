@@ -85,8 +85,11 @@ if(RUNTIME_JIT)
     add_definitions(${LLVM_DEFINITIONS})
     add_definitions("-DLLVM_SUPPORT")
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    #llvm_map_components_to_libnames(LLVM_JIT_LIBRARIES all)
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY})
+    find_library(LLD_COMMON_LIBRARY lldCommon HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLD_CORE_LIBRARY   lldCore   HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLD_DRIVER_LIBRARY lldDriver HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLD_ELF_LIBRARY    lldELF    HINTS ${LLVM_LIBRARY_DIRS})
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY};${LLVM_JIT_LIBRARIES};${LLD_CORE_LIBRARY};${LLD_ELF_LIBRARY};${LLD_DRIVER_LIBRARY};${LLD_COMMON_LIBRARY})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
