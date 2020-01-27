@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -12,6 +11,7 @@
 #include <thread>
 
 #ifdef RUNTIME_ENABLE_JIT
+#include <lld/Common/Driver.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -638,9 +638,15 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
     runtime().store_file(obj_file, obj);
-    std::string lld_cmd = "ld.lld -shared " + obj_file + " -o " + gcn_file;
-    if (std::system(lld_cmd.c_str()))
-        error("Generating gcn using lld");
+    std::vector<const char*> lld_args = {
+        "ld",
+        "-shared",
+        obj_file.c_str(),
+        "-o",
+        gcn_file.c_str()
+    };
+    if (!lld::elf::link(lld_args, false))
+        error("Generating gcn using ld");
 
     return runtime().load_file(gcn_file);
 }
