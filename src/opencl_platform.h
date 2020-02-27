@@ -2,7 +2,6 @@
 #define OPENCL_PLATFORM_H
 
 #include "platform.h"
-#include "runtime.h"
 
 #include <atomic>
 #include <string>

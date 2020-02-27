@@ -75,6 +75,131 @@ extern "device" {
     fn "gridDim_x"     cuda_gridDim_x() -> i32;
     fn "gridDim_y"     cuda_gridDim_y() -> i32;
     fn "gridDim_z"     cuda_gridDim_z() -> i32;
+
+
+    fn "__trap" cuda_trap() -> ();
+
+
+    fn "__clz" cuda_clz_u32(u32) -> i32;
+    fn "__clzll" cuda_clz_u64(u64) -> i32;
+
+    fn "__ffs" cuda_ffs_u32(u32) -> i32;
+    fn "__ffsll" cuda_ffs_u64(u64) -> i32;
+
+    fn "__popc" cuda_popc_u32(u32) -> i32;
+    fn "__popcll" cuda_popc_u64(u64) -> i32;
+
+    fn "__brev" cuda_brev_u32(u32) -> u32;
+    fn "__brevll" cuda_brev_u64(u64) -> u64;
+
+
+    fn "atomicAdd" cuda_atomic_add_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicAdd" cuda_atomic_add_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicAdd" cuda_atomic_add_global_u64(&mut[1]u64, u64) -> u64;
+    fn "atomicAdd" cuda_atomic_add_global_f32(&mut[1]f32, f32) -> f32;
+    fn "atomicAdd" cuda_atomic_add_global_f64(&mut[1]f64, f64) -> f64;
+
+    fn "atomicSub" cuda_atomic_sub_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicSub" cuda_atomic_sub_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicSub" cuda_atomic_sub_global_u64(&mut[1]u64, u64) -> u64;
+    fn "atomicSub" cuda_atomic_sub_global_f32(&mut[1]f32, f32) -> f32;
+    fn "atomicSub" cuda_atomic_sub_global_f64(&mut[1]f64, f64) -> f64;
+
+    fn "atomicAnd" cuda_atomic_and_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicAnd" cuda_atomic_and_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicAnd" cuda_atomic_and_global_u64(&mut[1]u64, u64) -> u64;
+
+    fn "atomicOr" cuda_atomic_or_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicOr" cuda_atomic_or_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicOr" cuda_atomic_or_global_u64(&mut[1]u64, u64) -> u64;
+
+    fn "atomicXor" cuda_atomic_xor_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicXor" cuda_atomic_xor_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicXor" cuda_atomic_xor_global_u64(&mut[1]u64, u64) -> u64;
+
+    fn "atomicExch" cuda_atomic_exch_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicExch" cuda_atomic_exch_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicExch" cuda_atomic_exch_global_u64(&mut[1]u64, u64) -> u64;
+    fn "atomicExch" cuda_atomic_exch_global_f32(&mut[1]f32, f32) -> f32;
+
+    fn "atomicMin" cuda_atomic_min_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicMin" cuda_atomic_min_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicMin" cuda_atomic_min_global_u64(&mut[1]u64, u64) -> u64;
+
+    fn "atomicMax" cuda_atomic_max_global_i32(&mut[1]i32, i32) -> i32;
+    fn "atomicMax" cuda_atomic_max_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicMax" cuda_atomic_max_global_u64(&mut[1]u64, u64) -> u64;
+
+    fn "atomicCAS" cuda_atomic_cas_global_u16(&mut[1]u16, u16, u16) -> u16;
+    fn "atomicCAS" cuda_atomic_cas_global_i32(&mut[1]i32, i32, i32) -> i32;
+    fn "atomicCAS" cuda_atomic_cas_global_u32(&mut[1]u32, u32, u32) -> u32;
+    fn "atomicCAS" cuda_atomic_cas_global_i64(&mut[1]u64, u64, u64) -> u64;
+
+    fn "atomicInc" cuda_atomic_inc_global_u32(&mut[1]u32, u32) -> u32;
+    fn "atomicDec" cuda_atomic_dec_global_u32(&mut[1]u32, u32) -> u32;
+
+
+    fn "__threadfence" cuda_threadfence() -> ();
+    fn "__threadfence_block" cuda_threadfence_block() -> ();
+    fn "__threadfence_system" cuda_threadfence_system() -> ();
+
+
+    fn "__syncthreads" cuda_block_sync() -> ();
+    fn "__syncthreads_count" cuda_block_sync_count(i32) -> i32;
+    fn "__syncthreads_and" cuda_block_sync_all(i32) -> i32;
+    fn "__syncthreads_or" cuda_block_sync_any(i32) -> i32;
+
+    fn "__syncwarp" cuda_warp_sync(u32) -> ();
+    fn "__all_sync" cuda_warp_sync_all(u32, i32) -> i32;
+    fn "__any_sync" cuda_warp_sync_any(u32, i32) -> i32;
+    fn "__ballot_sync" cuda_warp_sync_vote(u32, i32) -> u32;
+
+    fn "__activemask" cuda_warp_activemask() -> u32;
+
+    fn "__shfl_sync" cuda_warp_shfl_i32(u32, i32, i32, i32) -> i32;
+    fn "__shfl_sync" cuda_warp_shfl_u32(u32, u32, i32, i32) -> u32;
+    fn "__shfl_sync" cuda_warp_shfl_i64(u32, i64, i32, i32) -> i64;
+    fn "__shfl_sync" cuda_warp_shfl_u64(u32, u64, i32, i32) -> u64;
+    fn "__shfl_sync" cuda_warp_shfl_f32(u32, f32, i32, i32) -> f32;
+    fn "__shfl_sync" cuda_warp_shfl_f64(u32, f64, i32, i32) -> f64;
+
+    fn "__shfl_up_sync" cuda_warp_shfl_up_i32(u32, i32, u32, i32) -> i32;
+    fn "__shfl_up_sync" cuda_warp_shfl_up_u32(u32, u32, u32, i32) -> u32;
+    fn "__shfl_up_sync" cuda_warp_shfl_up_i64(u32, i64, u32, i32) -> i64;
+    fn "__shfl_up_sync" cuda_warp_shfl_up_u64(u32, u64, u32, i32) -> u64;
+    fn "__shfl_up_sync" cuda_warp_shfl_up_f32(u32, f32, u32, i32) -> f32;
+    fn "__shfl_up_sync" cuda_warp_shfl_up_f64(u32, f64, u32, i32) -> f64;
+
+    fn "__shfl_down_sync" cuda_warp_shfl_down_i32(u32, i32, u32, i32) -> i32;
+    fn "__shfl_down_sync" cuda_warp_shfl_down_u32(u32, u32, u32, i32) -> u32;
+    fn "__shfl_down_sync" cuda_warp_shfl_down_i64(u32, i64, u32, i32) -> i64;
+    fn "__shfl_down_sync" cuda_warp_shfl_down_u64(u32, u64, u32, i32) -> u64;
+    fn "__shfl_down_sync" cuda_warp_shfl_down_f32(u32, f32, u32, i32) -> f32;
+    fn "__shfl_down_sync" cuda_warp_shfl_down_f64(u32, f64, u32, i32) -> f64;
+
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_i32(u32, i32, i32, i32) -> i32;
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_u32(u32, u32, i32, i32) -> u32;
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_i64(u32, i64, i32, i32) -> i64;
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_u64(u32, u64, i32, i32) -> u64;
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_f32(u32, f32, i32, i32) -> f32;
+    fn "__shfl_xor_sync" cuda_warp_shfl_xor_f64(u32, f64, i32, i32) -> f64;
+
+    fn "__match_any_sync" cuda_warp_match_any_i32(u32, i32) -> u32;
+    fn "__match_any_sync" cuda_warp_match_any_u32(u32, u32) -> u32;
+    fn "__match_any_sync" cuda_warp_match_any_i64(u32, i64) -> u32;
+    fn "__match_any_sync" cuda_warp_match_any_u64(u32, u64) -> u32;
+    fn "__match_any_sync" cuda_warp_match_any_f32(u32, f32) -> u32;
+    fn "__match_any_sync" cuda_warp_match_any_f64(u32, f64) -> u32;
+
+    fn "__match_all_sync" cuda_warp_match_all_i32(u32, i32, &mut i32) -> u32;
+    fn "__match_all_sync" cuda_warp_match_all_u32(u32, u32, &mut i32) -> u32;
+    fn "__match_all_sync" cuda_warp_match_all_i64(u32, i64, &mut i32) -> u32;
+    fn "__match_all_sync" cuda_warp_match_all_u64(u32, u64, &mut i32) -> u32;
+    fn "__match_all_sync" cuda_warp_match_all_f32(u32, f32, &mut i32) -> u32;
+    fn "__match_all_sync" cuda_warp_match_all_f64(u32, f64, &mut i32) -> u32;
+
+
+    fn "__nanosleep" cuda_nanosleep(u32) -> ();
 }
 
 fn @cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
