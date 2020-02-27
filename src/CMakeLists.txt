@@ -1,4 +1,3 @@
-set(RUNTIME_DEFINITIONS)
 set(CONF_RUNTIME_LIBRARIES)
 
 # Look for CUDA
@@ -11,45 +10,48 @@ if(CUDA_FOUND)
         HINTS ${CUDA_TOOLKIT_ROOT_DIR}
         PATH_SUFFIXES lib lib64 lib/x64)
     if(CUDA_NVRTC_LIBRARY)
-        set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DCUDA_NVRTC)
+        set(AnyDSL_runtime_CUDA_NVRTC TRUE)
     else()
         set(CUDA_NVRTC_LIBRARY "")
     endif()
     find_library(CUDA_LIBRARY cuda
         HINTS ${CUDA_TOOLKIT_ROOT_DIR}
         PATH_SUFFIXES lib lib64 lib/x64)
-    include_directories(${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
     set(CUDA_PLATFORM cuda_platform.cpp cuda_platform.h)
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_CUDA)
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DLIBDEVICE_DIR=\"${CUDA_TOOLKIT_ROOT_DIR}/nvvm/libdevice/\"")
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DNVCC_BIN=\"${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc\"")
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} "-DNVCC_INC=\"${CUDA_INCLUDE_DIRS}\"")
-    list(APPEND CONF_RUNTIME_LIBRARIES ${CUDA_LIBRARY};${CUDA_NVVM_LIBRARY};${CUDA_NVRTC_LIBRARY})
-else()
-    set(CUDA_PLATFORM "")
+    set_source_files_properties(${CUDA_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES "${CUDA_INCLUDE_DIRS};${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
+    # TODO: would be nice to reference directly the file
+    find_path(AnyDSL_runtime_LIBDEVICE_DIR
+        NAMES libdevice.10.bc libdevice.compute_50.10.bc libdevice.compute_35.10.bc libdevice.compute_30.10.bc libdevice.compute_20.10.bc
+        HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES nvvm/libdevice)
+    find_program(AnyDSL_runtime_NVCC_BIN nvcc
+        HINTS ${CUDA_NVCC_EXECUTABLE} ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES bin)
+    find_path(AnyDSL_runtime_NVCC_INC NAMES cuda.h nvrtc.h
+        HINTS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE} ${CUDA_TOOLKIT_ROOT_DIR}
+        PATH_SUFFIXES include)
+    list(APPEND CONF_RUNTIME_LIBRARIES ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
+    mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_BIN AnyDSL_runtime_NVCC_INC)
 endif()
+set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
-    include_directories(BEFORE ${OpenCL_INCLUDE_DIRS}) # use header from specified path instead of CUDA's
     set(OPENCL_PLATFORM opencl_platform.cpp opencl_platform.h)
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_OPENCL)
+    set_source_files_properties(${OPENCL_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES ${OpenCL_INCLUDE_DIRS})
     list(APPEND CONF_RUNTIME_LIBRARIES ${OpenCL_LIBRARIES})
-else()
-    set(OPENCL_PLATFORM "")
 endif()
+set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "OpenCL support enabled")
 
 # look for HSA
 find_package(HSA)
 if(HSA_FOUND)
-    include_directories(${HSA_INCLUDE_DIRS})
     set(HSA_PLATFORM hsa_platform.cpp hsa_platform.h)
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_HSA)
+    set_source_files_properties(${HSA_PLATFORM} PROPERTIES INCLUDE_DIRECTORIES ${HSA_INCLUDE_DIRS})
     list(APPEND CONF_RUNTIME_LIBRARIES ${HSA_LIBRARIES})
-else()
-    set(HSA_PLATFORM "")
 endif()
+set(AnyDSL_runtime_HAS_HSA_SUPPORT ${HSA_FOUND} CACHE INTERNAL "HSA support enabled")
 
 # look for Threads
 find_package(Threads REQUIRED)
@@ -62,6 +64,7 @@ if(TBB_FOUND)
     set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_TBB)
     list(APPEND CONF_RUNTIME_LIBRARIES ${TBB_LIBRARIES})
 endif()
+set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel using TBB")
 
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
@@ -70,7 +73,6 @@ else()
 endif()
 
 if(RUNTIME_JIT)
-    set(RUNTIME_DEFINITIONS ${RUNTIME_DEFINITIONS} -DRUNTIME_ENABLE_JIT -DANYDSL_RUNTIME_DIR=\"${PROJECT_SOURCE_DIR}\")
     set(RUNTIME_SOURCES_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/runtime_srcs.inc)
     set(RUNTIME_JIT_SRC jit.cpp ${RUNTIME_SOURCES_INC_FILE})
     find_package(Impala REQUIRED)
@@ -78,18 +80,15 @@ if(RUNTIME_JIT)
     if(NOT Thorin_HAS_LLVM_SUPPORT)
         message(FATAL_ERROR "RUNTIME_JIT requires Thorin to be built with LLVM")
     endif()
-    include_directories(SYSTEM ${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS})
-    include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
     find_package(LLVM REQUIRED)
     add_definitions(${LLVM_DEFINITIONS})
-    add_definitions("-DLLVM_SUPPORT")
-    include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     find_library(LLD_COMMON_LIBRARY lldCommon HINTS ${LLVM_LIBRARY_DIRS})
     find_library(LLD_CORE_LIBRARY   lldCore   HINTS ${LLVM_LIBRARY_DIRS})
     find_library(LLD_DRIVER_LIBRARY lldDriver HINTS ${LLVM_LIBRARY_DIRS})
     find_library(LLD_ELF_LIBRARY    lldELF    HINTS ${LLVM_LIBRARY_DIRS})
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES};${Impala_LIBRARY};${LLVM_JIT_LIBRARIES};${LLD_CORE_LIBRARY};${LLD_ELF_LIBRARY};${LLD_DRIVER_LIBRARY};${LLD_COMMON_LIBRARY})
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY} ${LLVM_JIT_LIBRARIES} ${LLD_CORE_LIBRARY} ${LLD_ELF_LIBRARY} ${LLD_DRIVER_LIBRARY} ${LLD_COMMON_LIBRARY})
+    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${LLVM_INCLUDE_DIRS})
 
     find_package(PythonInterp REQUIRED)
     set(RUNTIME_IMPALA_SRCS
@@ -109,8 +108,7 @@ if(RUNTIME_JIT)
         DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
     set_source_files_properties(${RUNTIME_SOURCES_INC_FILE} PROPERTIES GENERATED TRUE)
 endif()
-
-add_definitions(${RUNTIME_DEFINITIONS})
+set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT} CACHE INTERNAL "enables anydsl_compile() api")
 
 option(AnyDSL_runtime_BUILD_SHARED "whether to build AnyDSL_runtime as shared or static library" ${BUILD_SHARED_LIBS})
 if(AnyDSL_runtime_BUILD_SHARED)
@@ -119,21 +117,30 @@ else()
     set(AnyDSL_runtime_BUILD "STATIC")
 endif()
 
+include_directories(${CMAKE_BINARY_DIR}/include)
+set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
+configure_file(anydsl_runtime_config.h.in ${AnyDSL_runtime_CONFIG_FILE} @ONLY)
+set_source_files_properties(${AnyDSL_runtime_CONFIG_FILE} PROPERTIES GENERATED TRUE)
+
 add_library(runtime ${AnyDSL_runtime_BUILD}
             runtime.cpp
             runtime.h
             anydsl_runtime.h
             anydsl_runtime.hpp
             platform.h
+            cpu_platform.cpp
             cpu_platform.h
             dummy_platform.h
             log.h
+            ${AnyDSL_runtime_CONFIG_FILE}
             ${RUNTIME_JIT_SRC}
             ${CUDA_PLATFORM}
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
+set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
+
 if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
     set(AnyDSL_runtime_LLVM_COMPONENTS mcjit irreader support ${LLVM_TARGETS_TO_BUILD})
     llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})

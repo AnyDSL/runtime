@@ -10,7 +10,7 @@
 #include <sstream>
 #include <thread>
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 #include <lld/Common/Driver.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
@@ -237,6 +237,12 @@ hsa_status_t HSAPlatform::iterate_memory_pools_callback(hsa_amd_memory_pool_t me
 
     return HSA_STATUS_SUCCESS;
 }
+
+// factory method
+template<> template<>
+Platform* PlatformFactory<HSAPlatform>::create(Runtime* runtime, const std::string& reference) {
+    return new HSAPlatform(runtime);
+};
 
 HSAPlatform::HSAPlatform(Runtime* runtime)
     : Platform(runtime)
@@ -533,7 +539,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
     return kernel_info;
 }
 
-#ifdef RUNTIME_ENABLE_JIT
+#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 static std::string get_ocml_config(int target) {
     std::string config = R"(
         ; Module anydsl ocml config

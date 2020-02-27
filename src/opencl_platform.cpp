@@ -1,4 +1,6 @@
 #include "opencl_platform.h"
+
+// TODO: get rid of this cyclic dependency
 #include "runtime.h"
 
 #include <algorithm>
@@ -7,6 +9,14 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+
+
+// factory method
+template<> template<>
+Platform* PlatformFactory<OpenCLPlatform>::create(Runtime* runtime, const std::string& reference) {
+    return new OpenCLPlatform(runtime);
+};
+
 
 static std::string get_opencl_error_code_str(int error) {
     #define CL_ERROR_CODE(CODE) case CODE: return #CODE;

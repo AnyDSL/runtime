@@ -19,7 +19,9 @@
 #include <unistd.h>
 #endif
 
-#ifdef RUNTIME_ENABLE_TBB
+#include "anydsl_runtime.h"
+
+#ifdef AnyDSL_runtime_HAS_TBB_SUPPORT
 #define NOMINMAX
 #include <tbb/flow_graph.h>
 #include <tbb/tbb.h>
@@ -29,20 +31,38 @@
 #include <thread>
 #endif
 
-#include "anydsl_runtime.h"
-
 #include "runtime.h"
 #include "platform.h"
-#include "cpu_platform.h"
 #include "dummy_platform.h"
-#ifdef RUNTIME_ENABLE_CUDA
-#include "cuda_platform.h"
+
+
+class CpuPlatform;
+class CudaPlatform;
+class OpenCLPlatform;
+class HSAPlatform;
+
+// default dummy for all platforms
+template<class PLATFORM> template<typename... Args>
+Platform* PlatformFactory<PLATFORM>::create(Runtime* runtime, const std::string& reference, Args... args) {
+    return new DummyPlatform(runtime, reference);
+};
+
+// specialization for cpu platform
+template<> template<typename... Args>
+Platform* PlatformFactory<CpuPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
+
+// feature dependent template specialization
+#ifdef AnyDSL_runtime_HAS_CUDA_SUPPORT
+template<> template<typename... Args>
+Platform* PlatformFactory<CudaPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
 #endif
-#ifdef RUNTIME_ENABLE_OPENCL
-#include "opencl_platform.h"
+#ifdef AnyDSL_runtime_HAS_OPENCL_SUPPORT
+template<> template<typename... Args>
+Platform* PlatformFactory<OpenCLPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
 #endif
-#ifdef RUNTIME_ENABLE_HSA
-#include "hsa_platform.h"
+#ifdef AnyDSL_runtime_HAS_HSA_SUPPORT
+template<> template<typename... Args>
+Platform* PlatformFactory<HSAPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
 #endif
 
 Runtime& runtime() {
@@ -61,22 +81,10 @@ Runtime::Runtime() {
             profile_ = ProfileLevel::Full;
     }
 
-    register_platform<CpuPlatform>();
-#ifdef RUNTIME_ENABLE_CUDA
-    register_platform<CudaPlatform>();
-#else
-    register_platform<DummyPlatform>("CUDA");
-#endif
-#ifdef RUNTIME_ENABLE_OPENCL
-    register_platform<OpenCLPlatform>();
-#else
-    register_platform<DummyPlatform>("OpenCL");
-#endif
-#ifdef RUNTIME_ENABLE_HSA
-    register_platform<HSAPlatform>();
-#else
-    register_platform<DummyPlatform>("HSA");
-#endif
+    register_platform<CpuPlatform>("CPU");
+    register_platform<CudaPlatform>("CUDA");
+    register_platform<OpenCLPlatform>("OpenCL");
+    register_platform<HSAPlatform>("HSA");
 }
 
 #ifdef _WIN32
@@ -320,7 +328,7 @@ uint64_t anydsl_random_val_u64() {
     return std_dist_u64(std_gen);
 }
 
-#ifndef RUNTIME_ENABLE_TBB // C++11 threads version
+#ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
 
