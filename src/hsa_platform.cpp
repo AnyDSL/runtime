@@ -240,7 +240,7 @@ hsa_status_t HSAPlatform::iterate_memory_pools_callback(hsa_amd_memory_pool_t me
 
 // factory method
 template<> template<>
-Platform* PlatformFactory<HSAPlatform>::create(Runtime* runtime, const std::string& reference) {
+Platform* PlatformFactory<HSAPlatform>::create(Runtime* runtime, const std::string&) {
     return new HSAPlatform(runtime);
 };
 

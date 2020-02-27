@@ -43,7 +43,7 @@ class HSAPlatform;
 
 // default dummy for all platforms
 template<class PLATFORM> template<typename... Args>
-Platform* PlatformFactory<PLATFORM>::create(Runtime* runtime, const std::string& reference, Args... args) {
+Platform* PlatformFactory<PLATFORM>::create(Runtime* runtime, const std::string& reference, Args...) {
     return new DummyPlatform(runtime, reference);
 };
 

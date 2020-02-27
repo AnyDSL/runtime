@@ -13,7 +13,7 @@
 
 // factory method
 template<> template<>
-Platform* PlatformFactory<OpenCLPlatform>::create(Runtime* runtime, const std::string& reference) {
+Platform* PlatformFactory<OpenCLPlatform>::create(Runtime* runtime, const std::string&) {
     return new OpenCLPlatform(runtime);
 };
 

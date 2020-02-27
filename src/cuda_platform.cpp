@@ -61,7 +61,7 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 
 // factory method
 template<> template<>
-Platform* PlatformFactory<CudaPlatform>::create(Runtime* runtime, const std::string& reference) {
+Platform* PlatformFactory<CudaPlatform>::create(Runtime* runtime, const std::string&) {
     return new CudaPlatform(runtime);
 };
 

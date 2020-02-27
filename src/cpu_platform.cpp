@@ -3,6 +3,6 @@
 
 
 template<> template<>
-Platform* PlatformFactory<CpuPlatform>::create(Runtime* runtime, const std::string& reference) {
+Platform* PlatformFactory<CpuPlatform>::create(Runtime* runtime, const std::string&) {
     return new CpuPlatform(runtime);
 }
