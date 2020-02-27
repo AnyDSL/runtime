@@ -11,11 +11,19 @@
 #cmakedefine AnyDSL_runtime_HAS_TBB_SUPPORT
 
 
-#ifdef AnyDSL_runtime_BUILD_SHARED
+#if defined(AnyDSL_runtime_BUILD_SHARED)
 #  ifdef AnyDSL_runtime_EXPORTS
-#    define AnyDSL_runtime_API __declspec(dllexport)
+#    ifdef _MSC_VER
+#      define AnyDSL_runtime_API __declspec(dllexport)
+#    else  // _MSC_VER
+#      define AnyDSL_runtime_API __attribute__((visibility("default")))
+#    endif // _MSC_VER
 #  else  // AnyDSL_runtime_EXPORTS
-#    define AnyDSL_runtime_API __declspec(dllimport)
+#    ifdef _MSC_VER
+#      define AnyDSL_runtime_API __declspec(dllimport)
+#    else  // _MSC_VER
+#      define AnyDSL_runtime_API __attribute__((visibility("default")))
+#    endif // _MSC_VER
 #  endif // AnyDSL_runtime_EXPORTS
 #else  // AnyDSL_runtime_BUILD_SHARED
 #  define AnyDSL_runtime_API

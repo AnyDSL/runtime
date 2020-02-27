@@ -68,7 +68,7 @@ set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
 else()
-    add_compile_options("-Wall" "-Wextra")
+    add_compile_options("-Wall" "-Wextra" "-fvisibility=hidden")
 endif()
 
 if(RUNTIME_JIT)
