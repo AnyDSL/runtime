@@ -67,6 +67,20 @@ if(OpenCL_FOUND)
     add_library(runtime_opencl STATIC opencl_platform.cpp opencl_platform.h)
     target_link_libraries(runtime_opencl PRIVATE runtime_base OpenCL::OpenCL)
     list(APPEND RUNTIME_PLATFORMS runtime_opencl)
+
+    # look for Xilinx-HLS
+    find_package(XHLS)
+    if(XHLS_FOUND)
+        target_include_directories(runtime_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
+        target_link_libraries(runtime_opencl PRIVATE ${Xilinx_LIBRARIES})
+    endif()
+
+    # look for Intel FPGA OpenCL
+    find_package(IHLS)
+    if(IntelFPGAOpenCL_FOUND)
+        target_include_directories(runtime_opencl PRIVATE ${IntelFPGAOpenCL_INCLUDE_DIRS})
+        target_link_libraries(runtime_opencl PRIVATE ${IntelFPGAOpenCL_LIBRARIES})
+    endif()
 endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 
