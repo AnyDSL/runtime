@@ -9,7 +9,6 @@ extern "C" {
     fn "anydsl_release"        runtime_release(i32, &[i8]) -> ();
     fn "anydsl_release_host"   runtime_release_host(i32, &[i8]) -> ();
     fn "anydsl_synchronize"    runtime_synchronize(i32) -> ();
-    fn "anydsl_load_xilinx_binary" runtime_load_xilinx_binary(i32, &[i8]) -> ();
 
     fn "anydsl_random_seed"     random_seed(u32) -> ();
     fn "anydsl_random_val_f32"  random_val_f32() -> f32;
