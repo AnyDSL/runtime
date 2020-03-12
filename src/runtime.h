@@ -82,6 +82,9 @@ public:
     std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
     void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
+    /// Returns the platform at the given index, may be a dummy platform if the index is not a valid platform.
+    //Platform* platform(PlatformId plat) { return platforms_[plat]; }
+
     bool profiling_enabled() { return profile_.first == ProfileLevel::Full; }
     bool dynamic_profiling_enabled() { return profile_.second == ProfileLevel::Fpga_dynamic; }
     std::atomic<uint64_t>& kernel_time() { return kernel_time_; }

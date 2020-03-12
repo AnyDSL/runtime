@@ -109,7 +109,9 @@ protected:
     cl_program load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program compile_program(DeviceId dev, cl_program program, const std::string& filename) const;
+    cl_program load_and_compile_kernel(DeviceId dev, const std::string& filename);
 
+    friend void load_xilinx_binary(DeviceId, const char*);
     friend void time_kernel_callback(cl_event, cl_int, void*);
 };
 
