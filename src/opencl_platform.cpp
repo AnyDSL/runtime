@@ -401,11 +401,11 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     }
 
     if (runtime_->profiling_enabled() && event) {
-        err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
+        cl_int err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
         devices_[dev].atomic_data.timings_counter.fetch_add(1);
         CHECK_OPENCL(err, "clSetEventCallback()");
     } else {
-        err = clReleaseEvent(event);
+        cl_int err = clReleaseEvent(event);
         CHECK_OPENCL(err, "clReleaseEvent()");
     }
 
