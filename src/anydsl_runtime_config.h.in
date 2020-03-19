@@ -1,0 +1,47 @@
+#ifndef ANYDSL_RUNTIME_CONFIG_H
+#define ANYDSL_RUNTIME_CONFIG_H
+
+// AnyDSL runtime feature support
+
+#cmakedefine AnyDSL_runtime_BUILD_SHARED
+#cmakedefine AnyDSL_runtime_HAS_JIT_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_CUDA_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_OPENCL_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_HSA_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_TBB_SUPPORT
+
+
+#if defined(AnyDSL_runtime_BUILD_SHARED)
+#  ifdef AnyDSL_runtime_EXPORTS
+#    ifdef _MSC_VER
+#      define AnyDSL_runtime_API __declspec(dllexport)
+#    else  // _MSC_VER
+#      define AnyDSL_runtime_API __attribute__((visibility("default")))
+#    endif // _MSC_VER
+#  else  // AnyDSL_runtime_EXPORTS
+#    ifdef _MSC_VER
+#      define AnyDSL_runtime_API __declspec(dllimport)
+#    else  // _MSC_VER
+#      define AnyDSL_runtime_API __attribute__((visibility("default")))
+#    endif // _MSC_VER
+#  endif // AnyDSL_runtime_EXPORTS
+#else  // AnyDSL_runtime_BUILD_SHARED
+#  define AnyDSL_runtime_API
+#endif // AnyDSL_runtime_BUILD_SHARED
+
+
+// CUDA support
+
+#cmakedefine AnyDSL_runtime_CUDA_NVRTC
+#define AnyDSL_runtime_LIBDEVICE_DIR  "@AnyDSL_runtime_LIBDEVICE_DIR@/"
+#define AnyDSL_runtime_NVCC_BIN       "@AnyDSL_runtime_NVCC_BIN@"
+#define AnyDSL_runtime_NVCC_INC       "@AnyDSL_runtime_NVCC_INC@"
+
+
+// jit support
+
+#define AnyDSL_runtime_SOURCE_DIR     "@CMAKE_CURRENT_SOURCE_DIR@"
+#define AnyDSL_runtime_SOURCE_FILES   "@RUNTIME_IMPALA_SRCS@"
+
+
+#endif // ANYDSL_RUNTIME_CONFIG_H

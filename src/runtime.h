@@ -24,8 +24,9 @@ public:
 
     /// Registers the given platform into the runtime.
     template <typename T, typename... Args>
-    void register_platform(Args... args) {
-        Platform* p = new T(this, args...);
+    void register_platform(const std::string& name, Args... args) {
+        PlatformFactory<T> factory;
+        Platform* p = factory.create(this, name, args...);
         platforms_.push_back(p);
     }
 

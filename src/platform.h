@@ -1,6 +1,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include "anydsl_runtime_config.h"
 #include "log.h"
 
 #include <cstdint>
@@ -67,5 +68,13 @@ protected:
 
     Runtime* runtime_;
 };
+
+
+template<class PLATFORM>
+struct PlatformFactory {
+    template<typename... Args>
+    Platform* create(Runtime* runtime, const std::string& reference, Args... args);
+};
+
 
 #endif

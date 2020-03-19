@@ -75,9 +75,7 @@ struct JIT {
             thorin::World world(module_name);
             impala::emit(world, module.get());
 
-            world.cleanup();
             world.opt();
-            world.cleanup();
 
             thorin::Backends backends(world);
             llvm_module = std::move(backends.cpu_cg->emit(opt, debug));

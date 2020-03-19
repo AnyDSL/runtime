@@ -35,12 +35,16 @@ find_path(AnyDSL_runtime_ROOT_DIR
 
 find_path(AnyDSL_runtime_INCLUDE_DIR
     NAMES
-        anydsl_runtime.h
-        anydsl_runtime.hpp
+        anydsl_runtime_config.h
     PATHS
-        ${AnyDSL_runtime_ROOT_DIR}/src
+        ${AnyDSL_runtime_ROOT_DIR}
+        ${AnyDSL_runtime_DIR}
+        "@CMAKE_CURRENT_BINARY_DIR@"
+    PATH_SUFFIXES
+        include
+        ../../../include
 )
-set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR})
+set(AnyDSL_runtime_INCLUDE_DIRS ${AnyDSL_runtime_INCLUDE_DIR} ${AnyDSL_runtime_ROOT_DIR}/src)
 
 if(NOT TARGET runtime)
     include(${AnyDSL_runtime_DIR}/anydsl_runtime-exports.cmake)
@@ -66,9 +70,9 @@ find_program(Impala_BIN impala
     PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
-find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@")
+find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@" NO_DEFAULT_PATH)
 
-set(AnyDSL_runtime_HAS_JIT_SUPPORT @RUNTIME_JIT@)
+set(AnyDSL_runtime_HAS_JIT_SUPPORT @AnyDSL_runtime_HAS_JIT_SUPPORT@)
 if(AnyDSL_runtime_HAS_JIT_SUPPORT)
     find_package(Thorin REQUIRED)
     find_package(LLVM REQUIRED)
@@ -132,6 +136,9 @@ if(NOT _debug_configs)
     set(_debug_configs "Debug")
 endif()
 set(_release_configs ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
+if(NOT _release_configs)
+    set(_release_configs "Release")
+endif()
 list(REMOVE_ITEM _release_configs ${_debug_configs})
 
 message(STATUS "AnyDSL debug flags (${_debug_configs}): ${OPT_FLAGS_DEBUG}")
