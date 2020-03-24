@@ -326,6 +326,14 @@ extern "C" {
     fn "__nv_copysign"  nvvm_copysign(f64, f64) -> f64;
 }
 
+extern "device" {
+    // https://github.com/nvidia-compiler-sdk/nvvmir-samples/tree/master/syscalls/vprintf.ll
+    // There is no direct printf() support. In order to use vprintf(), a local buffer is allocated.
+    // Integer types that are shorter than int need to be extended to int and float needs to be
+    // extended to double before being pushed into the local buffer.
+    fn "vprintf" nvvm_vprintf(fmt: &[u8], args: &[u8]) -> i32;
+}
+
 extern "thorin" {
     fn "atomic"  nvvm_atomic_global[T](u32, &mut[1]T, T) -> T;
     fn "atomic"  nvvm_atomic_shared[T](u32, &mut[3]T, T) -> T;
