@@ -137,7 +137,7 @@ if(EXISTS ${_basename}.hls)
                     file(MAKE_DIRECTORY "${kernel}_xlbin")
                     #add host code
                     file(GLOB XCLBIN_FILE ${kernel_workspace}/${kernel}_*.xclbin)
-                    file(COPY ${EM_CONFIG_FILE} ${XCLBIN_FILE} DESTINATION "${kernel}_bin")
+                    file(COPY ${EM_CONFIG_FILE} ${XCLBIN_FILE} DESTINATION "${kernel}_xlbin")
                 endif()
     endforeach()
     STRING(TOLOWER ${SYNTHESIS} SYNTHESIS)
