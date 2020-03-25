@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -132,7 +133,7 @@ void CudaPlatform::erase_profiles(bool erase_all) {
             float time;
             if (status == CUDA_SUCCESS) {
                 cuEventElapsedTime(&time, profile->start, profile->end);
-                anydsl_kernel_time.fetch_add(time * 1000);
+                anydsl_kernel_time.fetch_add(static_cast<unsigned long long>(time * 1000));
             }
             cuEventDestroy(profile->start);
             cuEventDestroy(profile->end);
@@ -414,7 +415,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
                 llvm_args.push_back(tmp);
             for (auto &str : llvm_args)
                 c_llvm_args.push_back(str.c_str());
-            llvm::cl::ParseCommandLineOptions(c_llvm_args.size(), c_llvm_args.data(), "AnyDSL nvptx JIT compiler\n");
+            llvm::cl::ParseCommandLineOptions(static_cast<int>(c_llvm_args.size()), c_llvm_args.data(), "AnyDSL nvptx JIT compiler\n");
         }
 
         LLVMInitializeNVPTXTarget();
@@ -642,13 +643,13 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
 #endif
 
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
-    const unsigned int opt_level = 4;
-    const unsigned int error_log_size = 10240;
-    const unsigned int num_options = 4;
+    constexpr std::uintptr_t opt_level = 4;
+    constexpr std::uintptr_t error_log_size = 10240;
+    constexpr std::uintptr_t num_options = 4;
     char error_log_buffer[error_log_size] = { 0 };
 
     CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
-    void* option_values[]  = { (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
+    void* option_values[]  = { error_log_buffer, reinterpret_cast<void*>(error_log_size), reinterpret_cast<void*>(devices_[dev].compute_capability), reinterpret_cast<void*>(opt_level) };
 
     debug("Creating module from PTX '%' on CUDA device %", filename, dev);
     CUmodule mod;
