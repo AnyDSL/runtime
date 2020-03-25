@@ -202,6 +202,22 @@ extern "device" {
     fn "__nanosleep" cuda_nanosleep(u32) -> ();
 }
 
+fn @cuda_vprintf(fmt: &[u8], args: &[u8]) -> i32 {
+    let mut res: i32;
+    asm(
+        "{\n"
+        ".param.b64 param0;\n"
+        ".param.b64 param1;\n"
+        ".param.b32 retval;\n"
+        "st.param.b64 [param0], %1;\n"
+        "st.param.b64 [param1], %2;\n"
+        "call.uni (retval), vprintf, (param0, param1);\n"
+        "ld.param.b32 %0, [retval];\n"
+        "}" : "=r"(res) : "l"(fmt), "l"(args) : "memory" : "volatile"
+    );
+    res
+}
+
 fn @cuda_laneid() -> u32 {
     let mut id: u32;
     asm("mov.u32 %0, %laneid;" : "=r" (id));

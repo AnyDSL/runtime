@@ -597,6 +597,10 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     err = nvrtcDestroyProgram(&program);
     CHECK_NVRTC(err, "nvrtcDestroyProgram()");
 
+    auto address_pos = ptx.find(".address_size");
+    if (address_pos != std::string::npos)
+        ptx.insert(ptx.find('\n', address_pos), "\n\n.extern .func (.param .s32 status) vprintf (.param .b64 format, .param .b64 valist);\n");
+
     return ptx;
 }
 #else
