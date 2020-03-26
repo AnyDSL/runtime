@@ -12,6 +12,17 @@ extern "device" {
     fn "llvm.nvvm.read.ptx.sreg.tid.y" nvvm_read_ptx_sreg_tid_y() -> i32;
     fn "llvm.nvvm.read.ptx.sreg.tid.z" nvvm_read_ptx_sreg_tid_z() -> i32;
     fn "llvm.nvvm.read.ptx.sreg.warpsize" nvvm_read_ptx_sreg_warpsize() -> i32;
+    fn "llvm.nvvm.read.ptx.sreg.laneid" nvvm_laneid() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.warpid" nvvm_warpid() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.nwarpid" nvvm_nwarpid() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.smid" nvvm_smid() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.nsmid" nvvm_nsmid() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.lanemask_eq" nvvm_lanemask() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.lanemask_le" nvvm_lanemask_le() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.lanemask_lt" nvvm_lanemask_lt() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.lanemask_ge" nvvm_lanemask_ge() -> u32;
+    fn "llvm.nvvm.read.ptx.sreg.lanemask_gt" nvvm_lanemask_gt() -> u32;
+
     fn "llvm.nvvm.barrier0" nvvm_barrier() -> ();
 
     fn "llvm.nvvm.abs.i" nvvm_abs_i(i32) -> i32;
@@ -268,6 +279,23 @@ extern "device" {
     fn "llvm.nvvm.ldg.global.f.f32.p0f32" nvptx_ldg_f32_(&[1]f32, i32) -> f32;
     fn "llvm.nvvm.ldg.global.i.v4i32.p0v4i32" nvptx_ldg4_i32_(&[1]simd[i32 * 4], i32) -> simd[i32 * 4];
     fn "llvm.nvvm.ldg.global.f.v4f32.p0v4f32" nvptx_ldg4_f32_(&[1]simd[f32 * 4], i32) -> simd[f32 * 4];
+
+    fn "llvm.nvvm.atomic.load.inc.32.p1i32" nvvm_atomic_inc_global_u32(&mut[1]u32, u32) -> u32;
+    fn "llvm.nvvm.atomic.load.dec.32.p1i32" nvvm_atomic_dec_global_u32(&mut[1]u32, u32) -> u32;
+
+    fn "llvm.nvvm.membar.gl" nvvm_threadfence() -> ();
+    fn "llvm.nvvm.membar.cta" nvvm_threadfence_block() -> ();
+    fn "llvm.nvvm.membar.sys" nvvm_threadfence_system() -> ();
+
+    fn "llvm.nvvm.barrier0" nvvm_block_sync() -> ();
+    fn "llvm.nvvm.barrier0.popc" nvvm_block_sync_count(i32) -> i32;
+    fn "llvm.nvvm.barrier0.and" nvvm_block_sync_all(i32) -> i32;
+    fn "llvm.nvvm.barrier0.or" nvvm_block_sync_any(i32) -> i32;
+
+    fn "llvm.nvvm.bar.warp.sync" nvvm_warp_sync(u32) -> ();
+    fn "llvm.nvvm.vote.sync" nvvm_warp_vote_sync(u32, i32, bool) -> (u32, bool);
+
+    fn "llvm.nvvm.shfl.sync.i32" nvvm_warp_shfl_sync(i32, i32, i32, i32, i32) -> (i32, bool);
 }
 
 extern "C" {
@@ -342,16 +370,121 @@ extern "thorin" {
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn @nvvm_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(0u, a, b) }
-fn @nvvm_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(0u, a, b) }
-fn @nvvm_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(1u, a, b) }
-fn @nvvm_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(1u, a, b) }
-fn @nvvm_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(2u, a, b) }
-fn @nvvm_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(2u, a, b) }
-fn @nvvm_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(7u, a, b) }
-fn @nvvm_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(7u, a, b) }
-fn @nvvm_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { nvvm_atomic_global(8u, a, b) }
-fn @nvvm_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { nvvm_atomic_shared(8u, a, b) }
+fn @nvvm_atomic_xchg_global(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(0u, location, value) }
+fn @nvvm_atomic_xchg_shared(location: &mut[3]i32, value: i32) -> i32 { nvvm_atomic_shared(0u, location, value) }
+fn @nvvm_atomic_add_global(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(1u, location, value) }
+fn @nvvm_atomic_add_shared(location: &mut[3]i32, value: i32) -> i32 { nvvm_atomic_shared(1u, location, value) }
+fn @nvvm_atomic_sub_global(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(2u, location, value) }
+fn @nvvm_atomic_sub_shared(location: &mut[3]i32, value: i32) -> i32 { nvvm_atomic_shared(2u, location, value) }
+fn @nvvm_atomic_max_global(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(7u, location, value) }
+fn @nvvm_atomic_max_shared(location: &mut[3]i32, value: i32) -> i32 { nvvm_atomic_shared(7u, location, value) }
+fn @nvvm_atomic_min_global(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(8u, location, value) }
+fn @nvvm_atomic_min_shared(location: &mut[3]i32, value: i32) -> i32 { nvvm_atomic_shared(8u, location, value) }
+
+fn @nvvm_atomic_add_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(1u32, location, value) }
+fn @nvvm_atomic_add_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(1u32, location, value) }
+fn @nvvm_atomic_add_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(1u32, location, value) }
+fn @nvvm_atomic_add_global_f32(location: &mut[1]f32, value: f32) -> f32 { nvvm_atomic_global(1u32, location, value) }
+fn @nvvm_atomic_add_global_f64(location: &mut[1]f64, value: f64) -> f64 { nvvm_atomic_global(1u32, location, value) }
+
+fn @nvvm_atomic_sub_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(2u32, location, value) }
+fn @nvvm_atomic_sub_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(2u32, location, value) }
+fn @nvvm_atomic_sub_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(2u32, location, value) }
+fn @nvvm_atomic_sub_global_f32(location: &mut[1]f32, value: f32) -> f32 { nvvm_atomic_global(2u32, location, value) }
+fn @nvvm_atomic_sub_global_f64(location: &mut[1]f64, value: f64) -> f64 { nvvm_atomic_global(2u32, location, value) }
+
+fn @nvvm_atomic_and_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(3u32, location, value) }
+fn @nvvm_atomic_and_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(3u32, location, value) }
+fn @nvvm_atomic_and_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(3u32, location, value) }
+
+fn @nvvm_atomic_or_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(5u32, location, value) }
+fn @nvvm_atomic_or_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(5u32, location, value) }
+fn @nvvm_atomic_or_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(5u32, location, value) }
+
+fn @nvvm_atomic_xor_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(6u32, location, value) }
+fn @nvvm_atomic_xor_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(6u32, location, value) }
+fn @nvvm_atomic_xor_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(6u32, location, value) }
+
+fn @nvvm_atomic_exch_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(0u32, location, value) }
+fn @nvvm_atomic_exch_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(0u32, location, value) }
+fn @nvvm_atomic_exch_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(0u32, location, value) }
+fn @nvvm_atomic_exch_global_f32(location: &mut[1]f32, value: f32) -> f32 { nvvm_atomic_global(0u32, location, value) }
+
+fn @nvvm_atomic_min_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(8u32, location, value) }
+fn @nvvm_atomic_min_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(8u32, location, value) }
+fn @nvvm_atomic_min_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(8u32, location, value) }
+
+fn @nvvm_atomic_max_global_i32(location: &mut[1]i32, value: i32) -> i32 { nvvm_atomic_global(7u32, location, value) }
+fn @nvvm_atomic_max_global_u32(location: &mut[1]u32, value: u32) -> u32 { nvvm_atomic_global(7u32, location, value) }
+fn @nvvm_atomic_max_global_u64(location: &mut[1]u64, value: u64) -> u64 { nvvm_atomic_global(7u32, location, value) }
+
+fn @nvvm_atomic_cas_global_u16(location: &mut[1]u16, old: u16, new: u16) -> u16 { nvvm_atomic_cmpxchg_global(location, old, new)(0) }
+fn @nvvm_atomic_cas_global_i32(location: &mut[1]i32, old: i32, new: i32) -> i32 { nvvm_atomic_cmpxchg_global(location, old, new)(0) }
+fn @nvvm_atomic_cas_global_u32(location: &mut[1]u32, old: u32, new: u32) -> u32 { nvvm_atomic_cmpxchg_global(location, old, new)(0) }
+fn @nvvm_atomic_cas_global_u64(location: &mut[1]u64, old: u64, new: u64) -> u64 { nvvm_atomic_cmpxchg_global(location, old, new)(0) }
+
+fn @nvvm_warp_sync_all(membermask: u32, predicate: bool) -> bool { nvvm_warp_vote_sync(membermask, 0, predicate)(1) }
+fn @nvvm_warp_sync_any(membermask: u32, predicate: bool) -> bool { nvvm_warp_vote_sync(membermask, 1, predicate)(1) }
+fn @nvvm_warp_sync_vote(membermask: u32, predicate: bool) -> u32 { nvvm_warp_vote_sync(membermask, 3, predicate)(0) }
+
+fn @nvvm_warp_activemask() -> u32 {
+    let mut mask: u32;
+    asm("activemask.b32 %0;" : "=r" (mask));
+    mask
+}
+
+fn @nvvm_warp_shfl_i32(membermask: u32, x: i32, src_lane: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 0, x, src_lane, width)(0) }
+fn @nvvm_warp_shfl_u32(membermask: u32, x: u32, src_lane: i32, width: i32) -> u32 { nvvm_warp_shfl_i32(membermask, x as i32, src_lane, width) as u32 }
+// fn @nvvm_warp_shfl_i64(membermask: u32, x: i64, src_lane: i32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_u64(membermask: u32, x: u64, src_lane: i32, width: i32) -> u64;
+fn @nvvm_warp_shfl_f32(membermask: u32, x: f32, src_lane: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_i32(membermask, nvvm_bitcast_f2i(x), src_lane, width)) }
+// fn @nvvm_warp_shfl_f64(membermask: u32, x: f64, src_lane: i32, width: i32) -> f64 {
+//     let lo = nvvm_warp_shfl_i32(membermask, nvvm_d2i_lo x, src_lane, width)
+// }
+
+fn @nvvm_warp_shfl_up_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 1, x, delta as i32, width)(0) }
+fn @nvvm_warp_shfl_up_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_up_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_up_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_up_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
+fn @nvvm_warp_shfl_up_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_up_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_up_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
+
+fn @nvvm_warp_shfl_down_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 2, x, delta as i32, width)(0) }
+fn @nvvm_warp_shfl_down_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_down_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_down_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_down_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
+fn @nvvm_warp_shfl_down_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_down_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_down_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
+
+fn @nvvm_warp_shfl_xor_i32(membermask: u32, x: i32, lane_mask: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 3, x, lane_mask, width)(0) }
+fn @nvvm_warp_shfl_xor_u32(membermask: u32, x: u32, lane_mask: i32, width: i32) -> u32 { nvvm_warp_shfl_xor_i32(membermask, x as i32, lane_mask, width) as u32 }
+// fn @nvvm_warp_shfl_xor_i64(membermask: u32, x: i64, lane_mask: i32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_xor_u64(membermask: u32, x: u64, lane_mask: i32, width: i32) -> u64;
+fn @nvvm_warp_shfl_xor_f32(membermask: u32, x: f32, lane_mask: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_xor_i32(membermask, nvvm_bitcast_f2i(x), lane_mask, width)) }
+// fn @nvvm_warp_shfl_xor_f64(membermask: u32, x: f64, lane_mask: i32, width: i32) -> f64;
+
+// fn @nvvm_warp_match_any_i32(membermask: u32, x: i32) -> u32;
+// fn @nvvm_warp_match_any_u32(membermask: u32, x: u32) -> u32;
+// fn @nvvm_warp_match_any_i64(membermask: u32, x: i64) -> u32;
+// fn @nvvm_warp_match_any_u64(membermask: u32, x: u64) -> u32;
+// fn @nvvm_warp_match_any_f32(membermask: u32, x: f32) -> u32;
+// fn @nvvm_warp_match_any_f64(membermask: u32, x: f64) -> u32;
+
+// fn @nvvm_warp_match_all_i32(membermask: u32, x: i32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_u32(membermask: u32, x: u32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_i64(membermask: u32, x: i64, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_u64(membermask: u32, x: u64, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_f32(membermask: u32, x: f32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_f64(membermask: u32, x: f64, predicate: &mut i32) -> u32;
+
+fn @nvvm_trap() -> () {
+    asm("trap;");
+}
+
+fn @nvvm_nanosleep(t: u32) -> () {
+    asm("nanosleep.u32 $0;" : : "r"(t));
+}
+
 
 fn @nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
