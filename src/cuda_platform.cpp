@@ -512,16 +512,16 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(devices_[dev].compute_capability));
-    int num_options = 2;
+    int num_options = 3;
     const char* options[] = {
         compute_arch.c_str(),
         "-opt=3",
+        "-generate-line-info",
         "-ftz=1",
         "-prec-div=0",
         "-prec-sqrt=0",
         "-fma=1",
-        "-g",
-        "-generate-line-info" };
+        "-g" };
 
     err = nvvmVerifyProgram(program, num_options, options);
     if (err != NVVM_SUCCESS) {
@@ -567,13 +567,13 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     CHECK_NVRTC(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(devices_[dev].compute_capability));
-    int num_options = 3;
+    int num_options = 4;
     const char* options[] = {
         compute_arch.c_str(),
         "-I",
         AnyDSL_runtime_NVCC_INC,
-        "-G",
-        "-lineinfo" };
+        "-lineinfo",
+        "-G" };
 
     debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
     err = nvrtcCompileProgram(program, num_options, options);
