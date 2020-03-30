@@ -119,6 +119,9 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
 
         err = cuCtxCreate(&devices_[i].ctx, CU_CTX_MAP_HOST, devices_[i].dev);
         CHECK_CUDA(err, "cuCtxCreate()");
+
+        err = cuDriverGetVersion(&devices_[i].driver_version);
+        CHECK_CUDA(err, "cuDriverGetVersion()");
     }
 }
 
@@ -376,6 +379,26 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
     return func;
 }
 
+const char* get_ptx_version_flag(int driver_version) {
+    if (driver_version < 8000)
+        error("unsupported driver version");
+
+    // TODO: comment in as they become available with LLVM versions > 8.0.1
+    // if (driver_version >= 10020)
+    //     return "+ptx65";
+    // if (driver_version >= 10010)
+    //     return "+ptx64";
+    if (driver_version >= 10000)
+        return "+ptx63";
+    if (driver_version >= 9020)
+        return "+ptx62";
+    if (driver_version >= 9010)
+        return "+ptx61";
+    if (driver_version >= 9000)
+        return "+ptx60";
+    return "+ptx50";
+}
+
 #if CUDA_VERSION < 9000
 std::string get_libdevice_path(CUjit_target compute_capability) {
     // select libdevice module according to documentation
@@ -401,7 +424,7 @@ std::string get_libdevice_path(CUjit_target) {
 
 #ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 bool llvm_nvptx_initialized = false;
-static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, int opt) {
+static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const char* ptx_version_flag, const std::string &filename, int opt) {
     if (!llvm_nvptx_initialized) {
         // ANYDSL_LLVM_ARGS="-nvptx-sched4reg -nvptx-fma-level=2 -nvptx-prec-divf32=0 -nvptx-prec-sqrtf32=0 -nvptx-f32ftz=1"
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
@@ -440,7 +463,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
+    std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, ptx_version_flag /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link libdevice
     std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(libdevice_file, diagnostic_err, llvm_context));
@@ -492,7 +515,8 @@ static std::string emit_nvptx(const std::string&, const std::string&, const std:
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     debug("Compiling NVVM to PTX using nvptx for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(devices_[dev].compute_capability);
-    return emit_nvptx(program_string, get_libdevice_path(devices_[dev].compute_capability), cpu, filename, 3);
+    const char* ptx_version_flag = get_ptx_version_flag(devices_[dev].driver_version);
+    return emit_nvptx(program_string, get_libdevice_path(devices_[dev].compute_capability), cpu, ptx_version_flag, filename, 3);
 }
 
 #if CUDA_VERSION < 10000

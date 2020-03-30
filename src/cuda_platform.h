@@ -61,6 +61,8 @@ protected:
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
 
+        int driver_version;
+
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
         DeviceData(DeviceData&& data)
@@ -69,6 +71,7 @@ protected:
             , compute_capability(data.compute_capability)
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
+            , driver_version(data.driver_version)
         {}
 
         void lock() {
