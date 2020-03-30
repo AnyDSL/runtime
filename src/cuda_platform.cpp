@@ -4,10 +4,10 @@
 #include <algorithm>
 #include <atomic>
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -64,7 +64,7 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 #endif
 
 CudaPlatform::CudaPlatform(Runtime* runtime)
-    : Platform(runtime)
+    : Platform(runtime), dump_binaries(std::getenv("ANYDSL_DUMP_CUDA_BINARIES") != nullptr)
 {
     int device_count = 0, driver_version = 0, nvvm_major = 0, nvvm_minor = 0;
 
@@ -634,19 +634,52 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
 
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
     const unsigned int opt_level = 4;
-    const unsigned int error_log_size = 10240;
-    const unsigned int num_options = 4;
-    char error_log_buffer[error_log_size] = { 0 };
-
-    CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
-    void* option_values[]  = { (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
 
     debug("Creating module from PTX '%' on CUDA device %", filename, dev);
-    CUmodule mod;
-    CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
+
+    char info_log[10240] = {};
+    char error_log[10240] = {};
+
+    CUjit_option options[] = {
+        CU_JIT_INFO_LOG_BUFFER, CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES,
+        CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES,
+        CU_JIT_TARGET,
+        CU_JIT_OPTIMIZATION_LEVEL
+    };
+
+    void* option_values[]  = {
+        info_log, reinterpret_cast<void*>(static_cast<uintptr_t>(std::size(info_log))),
+        error_log, reinterpret_cast<void*>(static_cast<uintptr_t>(std::size(error_log))),
+        reinterpret_cast<void*>(static_cast<uintptr_t>(devices_[dev].compute_capability)),
+        reinterpret_cast<void*>(static_cast<uintptr_t>(opt_level))
+    };
+
+    static_assert(std::size(options) == std::size(option_values));
+
+    CUlinkState linker;
+    CHECK_CUDA(cuLinkCreate(std::size(options), options, option_values, &linker), "cuLinkCreate()");
+
+    CHECK_CUDA(cuLinkAddData(linker, CU_JIT_INPUT_PTX, const_cast<char*>(ptx_string.c_str()), ptx_string.length(), filename.c_str(), 0U, nullptr, nullptr), "cuLinkAddData");
+
+    void* binary;
+    size_t binary_size;
+    CUresult err = cuLinkComplete(linker, &binary, &binary_size);
     if (err != CUDA_SUCCESS)
-        info("Compilation error: %", error_log_buffer);
-    CHECK_CUDA(err, "cuModuleLoadDataEx()");
+        info("Compilation error: %", error_log);
+    if (*info_log)
+        info("Compilation info: %", info_log);
+    CHECK_CUDA(err, "cuLinkComplete()");
+
+    if (dump_binaries)
+    {
+        auto cubin_name = filename + ".sm_" + std::to_string(devices_[dev].compute_capability) + ".cubin";
+        runtime_->store_file(cubin_name, static_cast<const std::byte*>(binary), binary_size);
+    }
+
+    CUmodule mod;
+    CHECK_CUDA(cuModuleLoadData(&mod, binary), "cuModuleLoadData()");
+
+    CHECK_CUDA(cuLinkDestroy(linker), "cuLinkDestroy");
 
     return mod;
 }

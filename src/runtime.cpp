@@ -206,10 +206,14 @@ std::string Runtime::load_file(const std::string& filename) const {
 }
 
 void Runtime::store_file(const std::string& filename, const std::string& str) const {
+    store_file(filename, reinterpret_cast<const std::byte*>(str.data()), str.length());
+}
+
+void Runtime::store_file(const std::string& filename, const std::byte* data, size_t size) const {
     std::ofstream dst_file(filename, std::ofstream::binary);
     if (!dst_file)
         error("Can't open destination file '%'", filename);
-    dst_file.write(str.data(), str.size());
+    dst_file.write(reinterpret_cast<const char*>(data), size);
 }
 
 std::string Runtime::load_from_cache(const std::string& key, const std::string& ext) const {
