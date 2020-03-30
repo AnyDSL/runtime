@@ -296,6 +296,15 @@ extern "device" {
     fn "llvm.nvvm.vote.sync" nvvm_warp_vote_sync(u32, i32, bool) -> (u32, bool);
 
     fn "llvm.nvvm.shfl.sync.i32" nvvm_warp_shfl_sync(i32, i32, i32, i32, i32) -> (i32, bool);
+
+    fn "llvm.nvvm.shfl.sync.idx.i32" nvvm_warp_shfl_sync_idx_i32(u32, i32, i32, i32) -> i32;
+    fn "llvm.nvvm.shfl.sync.idx.f32" nvvm_warp_shfl_sync_idx_f32(u32, f32, i32, i32) -> f32;
+    fn "llvm.nvvm.shfl.sync.up.i32" nvvm_warp_shfl_sync_up_i32(u32, i32, i32, i32) -> i32;
+    fn "llvm.nvvm.shfl.sync.up.f32" nvvm_warp_shfl_sync_up_f32(u32, f32, i32, i32) -> f32;
+    fn "llvm.nvvm.shfl.sync.down.i32" nvvm_warp_shfl_sync_down_i32(u32, i32, i32, i32) -> i32;
+    fn "llvm.nvvm.shfl.sync.down.f32" nvvm_warp_shfl_sync_down_f32(u32, f32, i32, i32) -> f32;
+    fn "llvm.nvvm.shfl.sync.bfly.i32" nvvm_warp_shfl_sync_bfly_i32(u32, i32, i32, i32) -> i32;
+    fn "llvm.nvvm.shfl.sync.bfly.f32" nvvm_warp_shfl_sync_bfly_f32(u32, f32, i32, i32) -> f32;
 }
 
 extern "C" {
@@ -433,34 +442,34 @@ fn @nvvm_warp_activemask() -> u32 {
     mask
 }
 
-fn @nvvm_warp_shfl_i32(membermask: u32, x: i32, src_lane: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 0, x, src_lane, width)(0) }
-fn @nvvm_warp_shfl_u32(membermask: u32, x: u32, src_lane: i32, width: i32) -> u32 { nvvm_warp_shfl_i32(membermask, x as i32, src_lane, width) as u32 }
+// fn @nvvm_warp_shfl_i32(membermask: u32, x: i32, src_lane: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 0, x, src_lane, width)(0) }
+// fn @nvvm_warp_shfl_u32(membermask: u32, x: u32, src_lane: i32, width: i32) -> u32 { nvvm_warp_shfl_i32(membermask, x as i32, src_lane, width) as u32 }
 // fn @nvvm_warp_shfl_i64(membermask: u32, x: i64, src_lane: i32, width: i32) -> i64;
 // fn @nvvm_warp_shfl_u64(membermask: u32, x: u64, src_lane: i32, width: i32) -> u64;
-fn @nvvm_warp_shfl_f32(membermask: u32, x: f32, src_lane: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_i32(membermask, nvvm_bitcast_f2i(x), src_lane, width)) }
+// fn @nvvm_warp_shfl_f32(membermask: u32, x: f32, src_lane: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_i32(membermask, nvvm_bitcast_f2i(x), src_lane, width)) }
 // fn @nvvm_warp_shfl_f64(membermask: u32, x: f64, src_lane: i32, width: i32) -> f64 {
 //     let lo = nvvm_warp_shfl_i32(membermask, nvvm_d2i_lo x, src_lane, width)
 // }
 
-fn @nvvm_warp_shfl_up_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 1, x, delta as i32, width)(0) }
-fn @nvvm_warp_shfl_up_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_up_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_up_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 1, x, delta as i32, width)(0) }
+// fn @nvvm_warp_shfl_up_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_up_i32(membermask, x as i32, delta, width) as u32 }
 // fn @nvvm_warp_shfl_up_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
 // fn @nvvm_warp_shfl_up_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
-fn @nvvm_warp_shfl_up_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_up_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_up_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_up_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
 // fn @nvvm_warp_shfl_up_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
 
-fn @nvvm_warp_shfl_down_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 2, x, delta as i32, width)(0) }
-fn @nvvm_warp_shfl_down_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_down_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_down_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 2, x, delta as i32, width)(0) }
+// fn @nvvm_warp_shfl_down_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_down_i32(membermask, x as i32, delta, width) as u32 }
 // fn @nvvm_warp_shfl_down_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
 // fn @nvvm_warp_shfl_down_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
-fn @nvvm_warp_shfl_down_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_down_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_down_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_down_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
 // fn @nvvm_warp_shfl_down_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
 
-fn @nvvm_warp_shfl_xor_i32(membermask: u32, x: i32, lane_mask: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 3, x, lane_mask, width)(0) }
-fn @nvvm_warp_shfl_xor_u32(membermask: u32, x: u32, lane_mask: i32, width: i32) -> u32 { nvvm_warp_shfl_xor_i32(membermask, x as i32, lane_mask, width) as u32 }
+// fn @nvvm_warp_shfl_xor_i32(membermask: u32, x: i32, lane_mask: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 3, x, lane_mask, width)(0) }
+// fn @nvvm_warp_shfl_xor_u32(membermask: u32, x: u32, lane_mask: i32, width: i32) -> u32 { nvvm_warp_shfl_xor_i32(membermask, x as i32, lane_mask, width) as u32 }
 // fn @nvvm_warp_shfl_xor_i64(membermask: u32, x: i64, lane_mask: i32, width: i32) -> i64;
 // fn @nvvm_warp_shfl_xor_u64(membermask: u32, x: u64, lane_mask: i32, width: i32) -> u64;
-fn @nvvm_warp_shfl_xor_f32(membermask: u32, x: f32, lane_mask: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_xor_i32(membermask, nvvm_bitcast_f2i(x), lane_mask, width)) }
+// fn @nvvm_warp_shfl_xor_f32(membermask: u32, x: f32, lane_mask: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_xor_i32(membermask, nvvm_bitcast_f2i(x), lane_mask, width)) }
 // fn @nvvm_warp_shfl_xor_f64(membermask: u32, x: f64, lane_mask: i32, width: i32) -> f64;
 
 // fn @nvvm_warp_match_any_i32(membermask: u32, x: i32) -> u32;
