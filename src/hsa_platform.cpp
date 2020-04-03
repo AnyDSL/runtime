@@ -540,17 +540,6 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 }
 
 #ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
-static std::string get_ocml_config(int target) {
-    std::string config = R"(
-        ; Module anydsl ocml config
-        @__oclc_finite_only_opt = addrspace(4) constant i8 0
-        @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
-        @__oclc_daz_opt = addrspace(4) constant i8 0
-        @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
-        @__oclc_ISA_version = addrspace(4) constant i32 )";
-    return config + std::to_string(target);
-}
-
 bool llvm_amdgpu_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
     if (!llvm_amdgpu_initialized) {
@@ -599,27 +588,39 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn and ocml config
-    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
-    std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
-    std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
-    if (ocml_module == nullptr)
-        error("Can't create ocml module for '%'", ocml_file);
+    std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + std::string(&cpu[3 /*"gfx"*/]) + ".amdgcn.bc";
+    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
+    std::string ocml_config = R"(; Module anydsl ocml config
+                                @__oclc_finite_only_opt = addrspace(4) constant i8 0
+                                @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
+                                @__oclc_daz_opt = addrspace(4) constant i8 0
+                                @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
+                                @__oclc_wavefrontsize64 = addrspace(4) constant i8 1)";
+    std::unique_ptr<llvm::Module> isa_module(llvm::parseIRFile(isa_file, diagnostic_err, llvm_context));
+    if (isa_module == nullptr)
+        error("Can't create isa module for '%'", isa_file);
     std::unique_ptr<llvm::Module> config_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(ocml_config)->getMemBufferRef(), diagnostic_err, llvm_context);
     if (config_module == nullptr)
         error("Can't create ocml config module");
+    std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
+    if (ocml_module == nullptr)
+        error("Can't create ocml module for '%'", ocml_file);
 
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
+     isa_module->setDataLayout(machine->createDataLayout());
     ocml_module->setDataLayout(machine->createDataLayout());
     config_module->setDataLayout(machine->createDataLayout());
 
     llvm::Linker linker(*llvm_module.get());
-    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
-        error("Can't link config into module");
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
+    if (linker.linkInModule(std::move(isa_module), llvm::Linker::Flags::None))
+        error("Can't link isa into module");
+    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
+        error("Can't link config into module");
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;
