@@ -570,6 +570,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         LLVMInitializeAMDGPUTarget();
         LLVMInitializeAMDGPUTargetInfo();
         LLVMInitializeAMDGPUTargetMC();
+        LLVMInitializeAMDGPUAsmParser();
         LLVMInitializeAMDGPUAsmPrinter();
         llvm_amdgpu_initialized = true;
     }
