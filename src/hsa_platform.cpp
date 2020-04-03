@@ -332,29 +332,31 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto& kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
-    if (!kernel_info.kernarg_segment) {
-        size_t total_size = 0;
-        for (uint32_t i = 0; i < num_args; i++) {
-            total_size += sizes[i];
-            if (i != num_args - 1 && total_size % aligns[i + 1])
-                total_size += aligns[i + 1] - total_size % aligns[i + 1];
+    if (num_args) {
+        if (!kernel_info.kernarg_segment) {
+            size_t total_size = 0;
+            for (uint32_t i = 0; i < num_args; i++) {
+                total_size += sizes[i];
+                if (i != num_args - 1 && total_size % aligns[i + 1])
+                    total_size += aligns[i + 1] - total_size % aligns[i + 1];
+            }
+            kernel_info.kernarg_segment_size = total_size;
+            hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+            CHECK_HSA(status, "hsa_memory_allocate()");
         }
-        kernel_info.kernarg_segment_size = total_size;
-        hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        void*  cur   = kernel_info.kernarg_segment;
+        size_t space = kernel_info.kernarg_segment_size;
+        for (uint32_t i = 0; i < num_args; i++) {
+            // align base address for next kernel argument
+            if (!std::align(aligns[i], sizes[i], cur, space))
+                error("Incorrect kernel argument alignment detected");
+            std::memcpy(cur, args[i], sizes[i]);
+            cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
+        }
+        size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
+        if (total != kernel_info.kernarg_segment_size)
+            error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
     }
-    void*  cur   = kernel_info.kernarg_segment;
-    size_t space = kernel_info.kernarg_segment_size;
-    for (uint32_t i = 0; i < num_args; i++) {
-        // align base address for next kernel argument
-        if (!std::align(aligns[i], sizes[i], cur, space))
-            error("Incorrect kernel argument alignment detected");
-        std::memcpy(cur, args[i], sizes[i]);
-        cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
-    }
-    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
-    if (total != kernel_info.kernarg_segment_size)
-        error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
@@ -523,8 +525,10 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 
         #if CODE_OBJECT_VERSION == 2
         // metadata are not yet extracted from code object version 3
-        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        if (kernel_info.kernarg_segment_size) {
+            status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+            CHECK_HSA(status, "hsa_memory_allocate()");
+        }
         #endif
 
         hsa_dev.lock();
