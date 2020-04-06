@@ -596,6 +596,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         error("Expected gfx ISA, got %", cpu);
     std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + std::string(&cpu[3 /*"gfx"*/]) + ".amdgcn.bc";
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
+    std::string ockl_file = "/opt/rocm/lib/ockl.amdgcn.bc";
     std::string ocml_config = R"(; Module anydsl ocml config
                                 @__oclc_finite_only_opt = addrspace(4) constant i8 0
                                 @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
@@ -611,16 +612,22 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
     if (ocml_module == nullptr)
         error("Can't create ocml module for '%'", ocml_file);
+    std::unique_ptr<llvm::Module> ockl_module(llvm::parseIRFile(ockl_file, diagnostic_err, llvm_context));
+    if (ockl_module == nullptr)
+        error("Can't create ockl module for '%'", ockl_file);
 
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
      isa_module->setDataLayout(machine->createDataLayout());
     ocml_module->setDataLayout(machine->createDataLayout());
+    ockl_module->setDataLayout(machine->createDataLayout());
     config_module->setDataLayout(machine->createDataLayout());
 
     llvm::Linker linker(*llvm_module.get());
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
+    if (linker.linkInModule(std::move(ockl_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link ockl into module");
     if (linker.linkInModule(std::move(isa_module), llvm::Linker::Flags::None))
         error("Can't link isa into module");
     if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
