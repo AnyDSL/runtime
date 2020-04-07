@@ -72,7 +72,12 @@ find_program(Impala_BIN impala
 
 find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@" NO_DEFAULT_PATH)
 
-set(AnyDSL_runtime_HAS_JIT_SUPPORT @AnyDSL_runtime_HAS_JIT_SUPPORT@)
+set(AnyDSL_runtime_HAS_CUDA_SUPPORT    @AnyDSL_runtime_HAS_CUDA_SUPPORT@)
+set(AnyDSL_runtime_HAS_OPENCL_SUPPORT  @AnyDSL_runtime_HAS_OPENCL_SUPPORT@)
+set(AnyDSL_runtime_HAS_HSA_SUPPORT     @AnyDSL_runtime_HAS_HSA_SUPPORT@)
+set(AnyDSL_runtime_HAS_TBB_SUPPORT     @AnyDSL_runtime_HAS_TBB_SUPPORT@)
+set(AnyDSL_runtime_HAS_JIT_SUPPORT     @AnyDSL_runtime_HAS_JIT_SUPPORT@)
+
 if(AnyDSL_runtime_HAS_JIT_SUPPORT)
     find_package(Thorin REQUIRED)
     find_package(LLVM REQUIRED)

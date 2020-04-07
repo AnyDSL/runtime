@@ -1,8 +1,12 @@
 extern "device" {
     fn "llvm.amdgcn.dispatch.id"    amdgcn_dispatch_id() -> i64;
     fn "llvm.amdgcn.dispatch.ptr"   amdgcn_dispatch_ptr() -> &[4]i8;
+    fn "llvm.amdgcn.ds.gws.barrier" amdgcn_ds_gws_barrier(i32, i32) -> ();
     fn "llvm.amdgcn.s.barrier"      amdgcn_s_barrier() -> ();
     fn "llvm.amdgcn.wave.barrier"   amdgcn_wave_barrier() -> ();
+    fn "llvm.amdgcn.mbcnt.hi"       amdgcn_mbcnt_hi(i32, i32) -> i32;
+    fn "llvm.amdgcn.mbcnt.lo"       amdgcn_mbcnt_lo(i32, i32) -> i32;
+    fn "llvm.amdgcn.ds.bpermute"    amdgcn_ds_bpermute(i32, i32) -> i32;
     fn "llvm.amdgcn.workgroup.id.x" amdgcn_workgroup_id_x() -> i32;
     fn "llvm.amdgcn.workgroup.id.y" amdgcn_workgroup_id_y() -> i32;
     fn "llvm.amdgcn.workgroup.id.z" amdgcn_workgroup_id_z() -> i32;
@@ -13,6 +17,9 @@ extern "device" {
     fn "llvm.amdgcn.cos.f32"        amdgcn_cosf(f32) -> f32;
     fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
     fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
+    fn "llvm.amdgcn.s.sleep"        amdgcn_s_sleep(i32) -> ();
+    fn "llvm.amdgcn.atomic.inc"     amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
+    fn "llvm.amdgcn.atomic.dec"     amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
 }
 
 extern "C" {
@@ -83,31 +90,93 @@ extern "thorin" {
 }
 
 // kind: Xchg Add Sub And Nand Or Xor Max Min
-fn @amdgcn_atomic_xchg_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(0u, a, b) }
-fn @amdgcn_atomic_add_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(1u, a, b) }
-fn @amdgcn_atomic_sub_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(2u, a, b) }
-fn @amdgcn_atomic_max_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(7u, a, b) }
-fn @amdgcn_atomic_min_shared(a: &mut[3]i32, b: i32) -> i32 { amdgcn_atomic_shared(8u, a, b) }
+fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(0u, addr, val) }
+fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(0u, addr, val) }
+fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(1u, addr, val) }
+fn @amdgcn_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(1u, addr, val) }
+fn @amdgcn_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(2u, addr, val) }
+fn @amdgcn_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(2u, addr, val) }
+fn @amdgcn_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(7u, addr, val) }
+fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(7u, addr, val) }
+fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(8u, addr, val) }
+fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(8u, addr, val) }
 
-// global atomics are mapped to PCIe atomics: CAS, FetchADD, Swap
-fn @amdgcn_atomic_xchg_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(0u, a, b) }
-fn @amdgcn_atomic_add_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, b) }
-fn @amdgcn_atomic_sub_global(a: &mut[1]i32, b: i32) -> i32 { amdgcn_atomic_global(1u, a, -b) }
-fn @amdgcn_atomic_max_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a, b, c| { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x > y { x } else { y } }) }
-fn @amdgcn_atomic_min_global(a: &mut[1]i32, b: i32) -> i32 { atomic_op_global(a, b, |a, b, c| { amdgcn_atomic_cmpxchg_global(a, b, c)(0) }, |x, y| { if x < y { x } else { y } }) }
+fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(1u32, addr, val) }
+fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(1u32, addr, val) }
+fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(1u32, addr, val) }
+fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(1u32, addr, val) }
+fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { amdgcn_atomic_global(1u32, addr, val) }
 
-// atomic operations based on cmpxchg
-fn @atomic_op_global(a: &mut[1]i32, b: i32, cmpxchg: fn(&mut[1]i32, i32, i32) -> i32, op: fn(i32, i32) -> i32) -> i32 {
-    let mut assumed = *a;
-    let mut old     = cmpxchg(a, assumed, op(b, assumed));
+fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(2u32, addr, val) }
+fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(2u32, addr, val) }
+fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(2u32, addr, val) }
+fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(2u32, addr, val) }
+fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { amdgcn_atomic_global(2u32, addr, val) }
 
-    while assumed != old {
-        assumed = old;
-        old = cmpxchg(a, assumed, op(b, assumed));
-    }
+fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(3u32, addr, val) }
+fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(3u32, addr, val) }
+fn @amdgcn_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(3u32, addr, val) }
 
-    old
+fn @amdgcn_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(5u32, addr, val) }
+fn @amdgcn_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(5u32, addr, val) }
+fn @amdgcn_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(5u32, addr, val) }
+
+fn @amdgcn_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(6u32, addr, val) }
+fn @amdgcn_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(6u32, addr, val) }
+fn @amdgcn_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(6u32, addr, val) }
+
+fn @amdgcn_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(0u32, addr, val) }
+fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(0u32, addr, val) }
+fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(0u32, addr, val) }
+fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(0u32, addr, val) }
+
+fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(8u32, addr, val) }
+fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(8u32, addr, val) }
+fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(8u32, addr, val) }
+
+fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(7u32, addr, val) }
+fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(7u32, addr, val) }
+fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(7u32, addr, val) }
+
+fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, val: u16) -> u16 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
+fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, val: i32) -> i32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
+fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, val: u32) -> u32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
+fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, val: u64) -> u64 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
+
+static amdgcn_wavefront_size = 64;
+fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefront_size == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
+
+fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
+    let own_lane = amdgcn_lane_id();
+    let idx = src_lane + (own_lane & !(width - 1));
+    amdgcn_ds_bpermute(idx << 2, var)
 }
+fn @amdgcn_shfl_u32(var: u32, src_lane: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
+fn @amdgcn_shfl_f32(var: f32, src_lane: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
+
+fn @amdgcn_shfl_up_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
+    let own_lane = amdgcn_lane_id();
+    let idx = if own_lane - lane_delta as i32 < own_lane & !(width - 1) { own_lane } else { own_lane - lane_delta as i32 };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_up_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_up_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
+
+fn @amdgcn_shfl_down_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
+    let own_lane = amdgcn_lane_id();
+    let idx = if (own_lane & (width - 1)) + lane_delta as i32 >= width { own_lane } else { own_lane + lane_delta as i32 };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_down_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_down_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
+
+fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
+    let own_lane = amdgcn_lane_id();
+    let idx = if own_lane ^ lane_mask >= (own_lane + width) & !(width - 1) { own_lane } else { own_lane ^ lane_mask };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
 
 fn @amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;

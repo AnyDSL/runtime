@@ -333,29 +333,31 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     auto& kernel_info = load_kernel(dev, file, name);
 
     // set up arguments
-    if (!kernel_info.kernarg_segment) {
-        size_t total_size = 0;
-        for (uint32_t i = 0; i < num_args; i++) {
-            total_size += sizes[i];
-            if (i != num_args - 1 && total_size % aligns[i + 1])
-                total_size += aligns[i + 1] - total_size % aligns[i + 1];
+    if (num_args) {
+        if (!kernel_info.kernarg_segment) {
+            size_t total_size = 0;
+            for (uint32_t i = 0; i < num_args; i++) {
+                total_size += sizes[i];
+                if (i != num_args - 1 && total_size % aligns[i + 1])
+                    total_size += aligns[i + 1] - total_size % aligns[i + 1];
+            }
+            kernel_info.kernarg_segment_size = total_size;
+            hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+            CHECK_HSA(status, "hsa_memory_allocate()");
         }
-        kernel_info.kernarg_segment_size = total_size;
-        hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        void*  cur   = kernel_info.kernarg_segment;
+        size_t space = kernel_info.kernarg_segment_size;
+        for (uint32_t i = 0; i < num_args; i++) {
+            // align base address for next kernel argument
+            if (!std::align(aligns[i], sizes[i], cur, space))
+                error("Incorrect kernel argument alignment detected");
+            std::memcpy(cur, args[i], sizes[i]);
+            cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
+        }
+        size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
+        if (total != kernel_info.kernarg_segment_size)
+            error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
     }
-    void*  cur   = kernel_info.kernarg_segment;
-    size_t space = kernel_info.kernarg_segment_size;
-    for (uint32_t i = 0; i < num_args; i++) {
-        // align base address for next kernel argument
-        if (!std::align(aligns[i], sizes[i], cur, space))
-            error("Incorrect kernel argument alignment detected");
-        std::memcpy(cur, args[i], sizes[i]);
-        cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
-    }
-    size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
-    if (total != kernel_info.kernarg_segment_size)
-        error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
 
     auto signal = devices_[dev].signal;
     hsa_signal_add_relaxed(signal, 1);
@@ -524,8 +526,10 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 
         #if CODE_OBJECT_VERSION == 2
         // metadata are not yet extracted from code object version 3
-        status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
-        CHECK_HSA(status, "hsa_memory_allocate()");
+        if (kernel_info.kernarg_segment_size) {
+            status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
+            CHECK_HSA(status, "hsa_memory_allocate()");
+        }
         #endif
 
         hsa_dev.lock();
@@ -541,17 +545,6 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 }
 
 #ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
-static std::string get_ocml_config(int target) {
-    std::string config = R"(
-        ; Module anydsl ocml config
-        @__oclc_finite_only_opt = addrspace(4) constant i8 0
-        @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
-        @__oclc_daz_opt = addrspace(4) constant i8 0
-        @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
-        @__oclc_ISA_version = addrspace(4) constant i32 )";
-    return config + std::to_string(target);
-}
-
 bool llvm_amdgpu_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
     if (!llvm_amdgpu_initialized) {
@@ -571,6 +564,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         LLVMInitializeAMDGPUTarget();
         LLVMInitializeAMDGPUTargetInfo();
         LLVMInitializeAMDGPUTargetMC();
+        LLVMInitializeAMDGPUAsmParser();
         LLVMInitializeAMDGPUAsmPrinter();
         llvm_amdgpu_initialized = true;
     }
@@ -599,27 +593,46 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn and ocml config
-    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
-    std::string ocml_config = get_ocml_config(std::stoi(&cpu[3 /*"gfx"*/]));
-    std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
-    if (ocml_module == nullptr)
-        error("Can't create ocml module for '%'", ocml_file);
+    std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + std::string(&cpu[3 /*"gfx"*/]) + ".amdgcn.bc";
+    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
+    std::string ockl_file = "/opt/rocm/lib/ockl.amdgcn.bc";
+    std::string ocml_config = R"(; Module anydsl ocml config
+                                @__oclc_finite_only_opt = addrspace(4) constant i8 0
+                                @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
+                                @__oclc_daz_opt = addrspace(4) constant i8 0
+                                @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
+                                @__oclc_wavefrontsize64 = addrspace(4) constant i8 1)";
+    std::unique_ptr<llvm::Module> isa_module(llvm::parseIRFile(isa_file, diagnostic_err, llvm_context));
+    if (isa_module == nullptr)
+        error("Can't create isa module for '%'", isa_file);
     std::unique_ptr<llvm::Module> config_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(ocml_config)->getMemBufferRef(), diagnostic_err, llvm_context);
     if (config_module == nullptr)
         error("Can't create ocml config module");
+    std::unique_ptr<llvm::Module> ocml_module(llvm::parseIRFile(ocml_file, diagnostic_err, llvm_context));
+    if (ocml_module == nullptr)
+        error("Can't create ocml module for '%'", ocml_file);
+    std::unique_ptr<llvm::Module> ockl_module(llvm::parseIRFile(ockl_file, diagnostic_err, llvm_context));
+    if (ockl_module == nullptr)
+        error("Can't create ockl module for '%'", ockl_file);
 
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
+     isa_module->setDataLayout(machine->createDataLayout());
     ocml_module->setDataLayout(machine->createDataLayout());
+    ockl_module->setDataLayout(machine->createDataLayout());
     config_module->setDataLayout(machine->createDataLayout());
 
     llvm::Linker linker(*llvm_module.get());
-    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
-        error("Can't link config into module");
     if (linker.linkInModule(std::move(ocml_module), llvm::Linker::Flags::LinkOnlyNeeded))
         error("Can't link ocml into module");
+    if (linker.linkInModule(std::move(ockl_module), llvm::Linker::Flags::LinkOnlyNeeded))
+        error("Can't link ockl into module");
+    if (linker.linkInModule(std::move(isa_module), llvm::Linker::Flags::None))
+        error("Can't link isa into module");
+    if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
+        error("Can't link config into module");
 
     llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
     llvm::legacy::PassManager module_pass_manager;

@@ -60,6 +60,7 @@ if(TARGET TBB::tbb)
 
     message(STATUS "Found Intel TBB at ${TBB_DIR}")
     set(TBB_LIBRARIES TBB::tbb TBB::tbbmalloc)
+    get_target_property(TBB_INCLUDE_DIRS TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
 
 elseif (WIN32)
 

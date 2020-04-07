@@ -133,7 +133,7 @@ extern "device" {
     fn "atomicCAS" cuda_atomic_cas_global_u16(&mut[1]u16, u16, u16) -> u16;
     fn "atomicCAS" cuda_atomic_cas_global_i32(&mut[1]i32, i32, i32) -> i32;
     fn "atomicCAS" cuda_atomic_cas_global_u32(&mut[1]u32, u32, u32) -> u32;
-    fn "atomicCAS" cuda_atomic_cas_global_i64(&mut[1]u64, u64, u64) -> u64;
+    fn "atomicCAS" cuda_atomic_cas_global_u64(&mut[1]u64, u64, u64) -> u64;
 
     fn "atomicInc" cuda_atomic_inc_global_u32(&mut[1]u32, u32) -> u32;
     fn "atomicDec" cuda_atomic_dec_global_u32(&mut[1]u32, u32) -> u32;
@@ -200,6 +200,82 @@ extern "device" {
 
 
     fn "__nanosleep" cuda_nanosleep(u32) -> ();
+}
+
+fn @cuda_vprintf(fmt: &[u8], args: &[u8]) -> i32 {
+    let mut res: i32;
+    asm(
+        "{\n"
+        ".param.b64 param0;\n"
+        ".param.b64 param1;\n"
+        ".param.b32 retval;\n"
+        "st.param.b64 [param0], %1;\n"
+        "st.param.b64 [param1], %2;\n"
+        "call.uni (retval), vprintf, (param0, param1);\n"
+        "ld.param.b32 %0, [retval];\n"
+        "}" : "=r"(res) : "l"(fmt), "l"(args) : "memory" : "volatile"
+    );
+    res
+}
+
+fn @cuda_laneid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %laneid;" : "=r" (id));
+    id
+}
+
+fn @cuda_warpid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %warpid;" : "=r" (id));
+    id
+}
+
+fn @cuda_nwarpid() -> u32 {
+    let mut n: u32;
+    asm("mov.u32 %0, %nwarpid;" : "=r" (n));
+    n
+}
+
+fn @cuda_smid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %smid;" : "=r" (id));
+    id
+}
+
+fn @cuda_nsmid() -> u32 {
+    let mut n: u32;
+    asm("mov.u32 %0, %nsmid;" : "=r" (n));
+    n
+}
+
+fn @cuda_lanemask() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_eq;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_le() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_le;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_lt() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_lt;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_ge() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_ge;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_gt() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_gt;" : "=r" (mask));
+    mask
 }
 
 fn @cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
