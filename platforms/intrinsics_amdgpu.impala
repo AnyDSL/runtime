@@ -18,8 +18,8 @@ extern "device" {
     fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
     fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
     fn "llvm.amdgcn.s.sleep"        amdgcn_s_sleep(i32) -> ();
-    fn "llvm.amdgcn.atomic.inc"     amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
-    fn "llvm.amdgcn.atomic.dec"     amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
+    fn "llvm.amdgcn.atomic.inc.i32.p1i32"   amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
+    fn "llvm.amdgcn.atomic.dec.i32.p1i32"   amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
 }
 
 extern "C" {
