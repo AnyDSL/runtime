@@ -4,6 +4,7 @@ extern "device" {
     fn "llvm.amdgcn.ds.gws.barrier" amdgcn_ds_gws_barrier(i32, i32) -> ();
     fn "llvm.amdgcn.s.barrier"      amdgcn_s_barrier() -> ();
     fn "llvm.amdgcn.wave.barrier"   amdgcn_wave_barrier() -> ();
+    fn "llvm.amdgcn.wavefrontsize"  amdgcn_wavefrontsize() -> i32;
     fn "llvm.amdgcn.mbcnt.hi"       amdgcn_mbcnt_hi(i32, i32) -> i32;
     fn "llvm.amdgcn.mbcnt.lo"       amdgcn_mbcnt_lo(i32, i32) -> i32;
     fn "llvm.amdgcn.ds.bpermute"    amdgcn_ds_bpermute(i32, i32) -> i32;
@@ -143,8 +144,7 @@ fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, val: i32) -> i32 { 
 fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, val: u32) -> u32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
 fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, val: u64) -> u64 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
 
-static amdgcn_wavefront_size = 64;
-fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefront_size == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
+fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefrontsize() == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
 
 fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
     let own_lane = amdgcn_lane_id();

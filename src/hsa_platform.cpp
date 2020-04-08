@@ -594,7 +594,9 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     // link ocml.amdgcn and ocml config
     if (cpu.compare(0, 3, "gfx"))
         error("Expected gfx ISA, got %", cpu);
-    std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + std::string(&cpu[3 /*"gfx"*/]) + ".amdgcn.bc";
+    std::string isa_version = std::string(&cpu[3]);
+    std::string wavefrontsize64 = std::stoi(isa_version) >= 1000 ? "0" : "1";
+    std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + isa_version + ".amdgcn.bc";
     std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
     std::string ockl_file = "/opt/rocm/lib/ockl.amdgcn.bc";
     std::string ocml_config = R"(; Module anydsl ocml config
@@ -602,7 +604,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
                                 @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
                                 @__oclc_daz_opt = addrspace(4) constant i8 0
                                 @__oclc_correctly_rounded_sqrt32 = addrspace(4) constant i8 0
-                                @__oclc_wavefrontsize64 = addrspace(4) constant i8 1)";
+                                @__oclc_wavefrontsize64 = addrspace(4) constant i8 )" + wavefrontsize64;
     std::unique_ptr<llvm::Module> isa_module(llvm::parseIRFile(isa_file, diagnostic_err, llvm_context));
     if (isa_module == nullptr)
         error("Can't create isa module for '%'", isa_file);
