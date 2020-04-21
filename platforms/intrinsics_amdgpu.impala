@@ -90,7 +90,8 @@ extern "thorin" {
     fn "cmpxchg" amdgcn_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
 }
 
-// kind: Xchg Add Sub And Nand Or Xor Max Min
+//       0    1   2   3   4    5  6   7   8   9    10
+// kind: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
 fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(0u, addr, val) }
 fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(0u, addr, val) }
 fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(1u, addr, val) }
@@ -131,13 +132,13 @@ fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_at
 fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(0u32, addr, val) }
 fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(0u32, addr, val) }
 
-fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(8u32, addr, val) }
-fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(8u32, addr, val) }
-fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(8u32, addr, val) }
+fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global( 8u32, addr, val) }
+fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(10u32, addr, val) }
+fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(10u32, addr, val) }
 
 fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(7u32, addr, val) }
-fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(7u32, addr, val) }
-fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(7u32, addr, val) }
+fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(9u32, addr, val) }
+fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(9u32, addr, val) }
 
 fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, val: u16) -> u16 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
 fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, val: i32) -> i32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
