@@ -84,11 +84,23 @@ extern "C" {
 }
 
 extern "thorin" {
-    fn "atomic"  amdgcn_atomic_global[T](u32, &mut[1]T, T) -> T;
-    fn "atomic"  amdgcn_atomic_shared[T](u32, &mut[3]T, T) -> T;
-    fn "cmpxchg" amdgcn_atomic_cmpxchg_global[T](&mut[1]T, T, T) -> (T, bool);
-    fn "cmpxchg" amdgcn_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
+    //                  0         1         2         4       5       6              7
+    // atomic ordering: NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
+    // syncscope:       agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
+    fn "atomic"         amdgcn_atomic_global[T](u32, &mut[1]T, T) -> T;
+    fn "atomic"         amdgcn_atomic_shared[T](u32, &mut[3]T, T) -> T;
+    fn "atomic_load"    amdgcn_atomic_load[T](&mut[1]T, u32, &[u8]) -> T;
+    fn "atomic_store"   amdgcn_atomic_store[T](&mut[1]T, T, u32, &[u8]) -> ();
+    fn "cmpxchg"        amdgcn_atomic_cmpxchg_global[T](&mut[1]T, T, T) -> (T, bool);
+    fn "cmpxchg"        amdgcn_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
 }
+
+fn @amdgcn_atomic_load_global_i32(addr: &mut[1]i32) -> i32 { amdgcn_atomic_load(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u32(addr: &mut[1]u32) -> u32 { amdgcn_atomic_load(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u64(addr: &mut[1]u64) -> u64 { amdgcn_atomic_load(addr, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_i32(addr: &mut[1]i32, val: i32) -> () { amdgcn_atomic_store(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u32(addr: &mut[1]u32, val: u32) -> () { amdgcn_atomic_store(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u64(addr: &mut[1]u64, val: u64) -> () { amdgcn_atomic_store(addr, val, 2u32, "agent") }
 
 //       0    1   2   3   4    5  6   7   8   9    10
 // kind: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
