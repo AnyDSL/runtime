@@ -71,11 +71,11 @@ extern "device" {
 
 //       0    1   2   3   4    5  6   7   8   9    10
 // kind: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
-fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u, a, b) }
-fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u, a, b) }
-fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u, a, b) }
-fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u, a, b) }
-fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u, a, b) }
+fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 { atomic(0u32, a, b) }
+fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32 { atomic(1u32, a, b) }
+fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32 { atomic(2u32, a, b) }
+fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32 { atomic(7u32, a, b) }
+fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32 { atomic(8u32, a, b) }
 
 static cpu_intrinsics = Intrinsics {
     expf        : cpu_expf,
