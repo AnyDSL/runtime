@@ -94,65 +94,65 @@ extern "C" {
 // syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
 //
 
-fn @amdgcn_atomic_load_global_i32(addr: &mut[1]i32) -> i32 { atomic_load(addr, 2u32, "agent") }
-fn @amdgcn_atomic_load_global_u32(addr: &mut[1]u32) -> u32 { atomic_load(addr, 2u32, "agent") }
-fn @amdgcn_atomic_load_global_u64(addr: &mut[1]u64) -> u64 { atomic_load(addr, 2u32, "agent") }
-fn @amdgcn_atomic_store_global_i32(addr: &mut[1]i32, val: i32) -> () { atomic_store(addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_store_global_u32(addr: &mut[1]u32, val: u32) -> () { atomic_store(addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_store_global_u64(addr: &mut[1]u64, val: u64) -> () { atomic_store(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_i32(addr: &mut[1]i32) -> i32 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u32(addr: &mut[1]u32) -> u32 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u64(addr: &mut[1]u64) -> u64 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_i32(addr: &mut[1]i32, val: i32) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u32(addr: &mut[1]u32, val: u32) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u64(addr: &mut[1]u64, val: u64) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "workgroup") }
-fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(1u32, addr, val, 2u32, "workgroup") }
-fn @amdgcn_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(2u32, addr, val, 2u32, "workgroup") }
-fn @amdgcn_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(7u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(7u32, addr, val, 2u32, "workgroup") }
-fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(8u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(8u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { atomic_p3(0u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(1u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(2u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(7u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(7u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(8u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(8u32, addr, val, 2u32, "workgroup") }
 
-fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(3u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(3u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(3u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(3u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(5u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(5u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(5u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(5u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(5u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(5u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(6u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(6u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(6u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(6u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(6u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(6u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(0u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(0u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic( 8u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(10u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(10u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1( 8u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(10u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(10u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(7u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(9u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(9u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(7u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(9u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(9u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, new: u16) -> u16 { cmpxchg(addr, cmp, new, 2u32, "agent")(0) }
-fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { cmpxchg(addr, cmp, new, 2u32, "agent")(0) }
-fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg(addr, cmp, new, 2u32, "agent")(0) }
-fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, new: u16) -> u16 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
 
 fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefrontsize() == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
 

@@ -383,58 +383,58 @@ extern "device" {
 // syncscope: "" (system)
 //
 
-fn @nvvm_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(7u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(7u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic(8u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic(8u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { atomic_p3(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(7u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(7u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(8u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(8u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(1u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(1u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(1u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(2u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(2u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(2u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(3u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(3u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(3u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(3u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(3u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(3u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(5u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(5u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(5u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(5u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(5u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(5u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(6u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(6u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(6u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(6u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(6u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(6u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(0u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(0u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(0u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(0u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(0u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic( 8u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(10u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(10u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1( 8u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(10u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(10u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic(7u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic(9u32, addr, val, 2u32, "") }
-fn @nvvm_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic(9u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(7u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(9u32, addr, val, 2u32, "") }
+fn @nvvm_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(9u32, addr, val, 2u32, "") }
 
-fn @nvvm_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, new: u16) -> u16 { cmpxchg(addr, cmp, new, 2u32, "")(0) }
-fn @nvvm_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { cmpxchg(addr, cmp, new, 2u32, "")(0) }
-fn @nvvm_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg(addr, cmp, new, 2u32, "")(0) }
-fn @nvvm_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg(addr, cmp, new, 2u32, "")(0) }
+fn @nvvm_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, new: u16) -> u16 { cmpxchg_p1(addr, cmp, new, 2u32, "")(0) }
+fn @nvvm_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { cmpxchg_p1(addr, cmp, new, 2u32, "")(0) }
+fn @nvvm_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg_p1(addr, cmp, new, 2u32, "")(0) }
+fn @nvvm_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg_p1(addr, cmp, new, 2u32, "")(0) }
 
 // fn @nvvm_warp_sync_all(membermask: u32, predicate: bool) -> bool { nvvm_warp_vote_sync(membermask, 0, predicate)(1) }
 // fn @nvvm_warp_sync_any(membermask: u32, predicate: bool) -> bool { nvvm_warp_vote_sync(membermask, 1, predicate)(1) }
