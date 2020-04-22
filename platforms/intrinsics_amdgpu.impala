@@ -19,6 +19,8 @@ extern "device" {
     fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
     fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
     fn "llvm.amdgcn.s.sleep"        amdgcn_s_sleep(i32) -> ();
+    fn "llvm.amdgcn.icmp"           amdgcn_icmp_i32(i32, i32, i32) -> i32;
+    fn "llvm.amdgcn.icmp"           amdgcn_icmp_i64(i32, i32, i32) -> i64;
     fn "llvm.amdgcn.atomic.inc"     amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
     fn "llvm.amdgcn.atomic.dec"     amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
 }
@@ -159,6 +161,27 @@ fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, val: u64) -> u64 { 
 
 fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefrontsize() == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
 
+static ICMP_NE = 33;
+fn @amdgcn_sync_all(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo()) as i32
+}
+
+fn @amdgcn_sync_any(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) != 0) as i32
+}
+
+fn @amdgcn_sync_count(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    cpu_popcount32(amdgcn_icmp_i32(p, 0, ICMP_NE)) as i32
+}
+
+fn @amdgcn_sync_vote(p: i32) -> u64 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) as u32) as u64
+}
+
 fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
     let own_lane = amdgcn_lane_id();
     let idx = src_lane + (own_lane & !(width - 1));
@@ -190,6 +213,26 @@ fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
 }
 fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
 fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+
+fn @amdgcn_read_exec() -> i64 {
+    let mut exec_lo: i32;
+    let mut exec_hi: i32;
+    asm("v_mov_b32_e32 $0, exec_lo\n"
+        "v_mov_b32_e32 $1, exec_hi" : "=v"(exec_lo), "=v"(exec_hi) : :: "volatile");
+    exec_hi as i64 << 32i64 | exec_lo as i64
+}
+
+fn @amdgcn_read_exec_lo() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_lo" : "=v"(res) : :: "volatile");
+    res
+}
+
+fn @amdgcn_read_exec_hi() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_hi" : "=v"(res) : :: "volatile");
+    res
+}
 
 fn @amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
