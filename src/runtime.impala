@@ -20,6 +20,9 @@ extern "C" {
     fn "anydsl_print_i16"    print_i16(i16) -> ();
     fn "anydsl_print_i32"    print_i32(i32) -> ();
     fn "anydsl_print_i64"    print_i64(i64) -> ();
+    fn "anydsl_print_u16"    print_u16(u16) -> ();
+    fn "anydsl_print_u32"    print_u32(u32) -> ();
+    fn "anydsl_print_u64"    print_u64(u64) -> ();
     fn "anydsl_print_f32"    print_f32(f32) -> ();
     fn "anydsl_print_f64"    print_f64(f64) -> ();
     fn "anydsl_print_char"   print_char(u8) -> ();
