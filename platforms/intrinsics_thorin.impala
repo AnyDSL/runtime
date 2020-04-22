@@ -22,6 +22,8 @@ extern "thorin" {
     fn sync(id: i32) -> ();
 
     fn atomic[T](u32, &mut T, T) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin - only for integer data types
+    fn atomic_load[T](addr: &mut T, order: u32, scope: &[u8]) -> T;
+    fn atomic_store[T](addr: &mut T, val: T, order: u32, scope: &[u8]) -> ();
     fn cmpxchg[T](&mut T, T, T) -> (T, bool); // only for integer data types
 
     fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
