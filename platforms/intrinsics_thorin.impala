@@ -21,7 +21,7 @@ extern "thorin" {
     fn spawn(body: fn() -> ()) -> i32;
     fn sync(id: i32) -> ();
 
-    fn atomic[T](binop: u32, addr: &mut T, val: T, order: u32, scope: &[u8]) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin - only for integer data types
+    fn atomic[T](binop: u32, addr: &mut T, val: T, order: u32, scope: &[u8]) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
     fn atomic_load[T](addr: &mut T, order: u32, scope: &[u8]) -> T;
     fn atomic_store[T](addr: &mut T, val: T, order: u32, scope: &[u8]) -> ();
     fn cmpxchg[T](addr: &mut T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool); // only for integer data types

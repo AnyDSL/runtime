@@ -87,8 +87,8 @@ extern "C" {
 
 //
 // atomics
-//            0    1   2   3   4    5  6   7   8   9    10
-// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
+//            0    1   2   3   4    5  6   7   8   9    10   11   12
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
 //            0         1         2         4       5       6              7
 // ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
 // syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
@@ -112,17 +112,17 @@ fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(7u3
 fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(8u32, addr, val, 2u32, "agent") }
 fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(8u32, addr, val, 2u32, "workgroup") }
 
-fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1( 1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1( 1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1( 1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(11u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(11u32, addr, val, 2u32, "agent") }
 
-fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
-fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1( 2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1( 2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1( 2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(12u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(12u32, addr, val, 2u32, "agent") }
 
 fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
 fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
