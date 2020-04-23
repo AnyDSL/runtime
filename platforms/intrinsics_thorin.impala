@@ -16,13 +16,24 @@ extern "thorin" {
     fn reserve_shared[T](i32) -> &mut[3][T];
 
     fn hls(body: fn() -> ()) -> ();
-    fn pipeline (i32, i32, i32, fn (i32) -> ()) -> (); // only for HLS/OpenCL backend
+    fn pipeline(i32, i32, i32, fn(i32) -> ()) -> (); // only for HLS/OpenCL backend
     fn parallel(num_threads: i32, lower: i32, upper: i32, body: fn(i32) -> ()) -> ();
     fn spawn(body: fn() -> ()) -> i32;
     fn sync(id: i32) -> ();
 
-    fn atomic[T](u32, &mut T, T) -> T; // only for integer data types
-    fn cmpxchg[T](&mut T, T, T) -> (T, bool);  // only for integer data types
+    fn atomic[T](binop: u32, addr: &mut T, val: T, order: u32, scope: &[u8]) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin - only for integer data types
+    fn atomic_load[T](addr: &mut T, order: u32, scope: &[u8]) -> T;
+    fn atomic_store[T](addr: &mut T, val: T, order: u32, scope: &[u8]) -> ();
+    fn cmpxchg[T](addr: &mut T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool); // only for integer data types
+
+    fn "atomic" atomic_p1[T](binop: u32, addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> T;
+    fn "atomic" atomic_p3[T](binop: u32, addr: &mut [3]T, val: T, order: u32, scope: &[u8]) -> T;
+    fn "atomic_load" atomic_load_p1[T](addr: &mut [1]T, order: u32, scope: &[u8]) -> T;
+    fn "atomic_load" atomic_load_p3[T](addr: &mut [3]T, order: u32, scope: &[u8]) -> T;
+    fn "atomic_store" atomic_store_p1[T](addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> ();
+    fn "atomic_store" atomic_store_p3[T](addr: &mut [3]T, val: T, order: u32, scope: &[u8]) -> ();
+    fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg" cmpxchg_p3[T](addr: &mut [3]T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool);
 
     fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
 }

@@ -490,7 +490,7 @@ static std::string emit_nvptx(const std::string&, const std::string&, const std:
 #endif
 
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
-    debug("Compiling NVVM to PTX using nvptx for '%' on CUDA device %", filename, dev);
+    debug("Compiling NVVM to PTX using NVPTX for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(devices_[dev].compute_capability);
     return emit_nvptx(program_string, get_libdevice_path(devices_[dev].compute_capability), cpu, filename, 3);
 }
@@ -532,7 +532,7 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
         info("Verify program error: %", error_log);
     }
 
-    debug("Compiling NVVM to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling NVVM to PTX using libNVVM for '%' on CUDA device %", filename, dev);
     err = nvvmCompileProgram(program, num_options, options);
     if (err != NVVM_SUCCESS) {
         size_t log_size;
@@ -575,7 +575,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
         "-lineinfo",
         "-G" };
 
-    debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling CUDA to PTX using NVRTC for '%' on CUDA device %", filename, dev);
     err = nvrtcCompileProgram(program, num_options, options);
     if (err != NVRTC_SUCCESS) {
         size_t log_size;
@@ -619,7 +619,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     if (!program_string.empty())
         runtime().store_file(filename, program_string);
 
-    debug("Compiling CUDA to PTX for '%' on CUDA device %", filename, dev);
+    debug("Compiling CUDA to PTX using NVCC for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {
         std::string log;
         char buffer[256];

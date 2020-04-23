@@ -19,6 +19,8 @@ extern "device" {
     fn "llvm.amdgcn.sin.f64"        amdgcn_sin(f64) -> f64;
     fn "llvm.amdgcn.cos.f64"        amdgcn_cos(f64) -> f64;
     fn "llvm.amdgcn.s.sleep"        amdgcn_s_sleep(i32) -> ();
+    fn "llvm.amdgcn.icmp.i32.i32"           amdgcn_icmp_i32(i32, i32, i32) -> i32;
+    fn "llvm.amdgcn.icmp.i64.i32"           amdgcn_icmp_i64(i32, i32, i32) -> i64;
     fn "llvm.amdgcn.atomic.inc.i32.p1i32"   amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
     fn "llvm.amdgcn.atomic.dec.i32.p1i32"   amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
 }
@@ -83,68 +85,111 @@ extern "C" {
     fn "__ocml_mad_f64"         ocml_mad(f64, f64, f64) -> f64;
 }
 
-extern "thorin" {
-    fn "atomic"  amdgcn_atomic_global[T](u32, &mut[1]T, T) -> T;
-    fn "atomic"  amdgcn_atomic_shared[T](u32, &mut[3]T, T) -> T;
-    fn "cmpxchg" amdgcn_atomic_cmpxchg_global[T](&mut[1]T, T, T) -> (T, bool);
-    fn "cmpxchg" amdgcn_atomic_cmpxchg_shared[T](&mut[3]T, T, T) -> (T, bool);
+//
+// atomics
+//            0    1   2   3   4    5  6   7   8   9    10
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
+//            0         1         2         4       5       6              7
+// ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
+// syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
+//
+
+fn @amdgcn_atomic_load_global_i32(addr: &mut[1]i32) -> i32 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u32(addr: &mut[1]u32) -> u32 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_load_global_u64(addr: &mut[1]u64) -> u64 { atomic_load_p1(addr, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_i32(addr: &mut[1]i32, val: i32) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u32(addr: &mut[1]u32, val: u32) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_store_global_u64(addr: &mut[1]u64, val: u64) -> () { atomic_store_p1(addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { atomic_p3(0u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(1u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(2u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(7u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(7u32, addr, val, 2u32, "workgroup") }
+fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32  { atomic_p1(8u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32  { atomic_p3(8u32, addr, val, 2u32, "workgroup") }
+
+fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(1u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { atomic_p1(2u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(3u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(3u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(5u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(5u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(5u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(6u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(6u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(6u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { atomic_p1(0u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1( 8u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(10u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(10u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { atomic_p1(7u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { atomic_p1(9u32, addr, val, 2u32, "agent") }
+fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { atomic_p1(9u32, addr, val, 2u32, "agent") }
+
+fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, new: u16) -> u16 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
+
+fn @amdgcn_lane_id() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0))
+    } else {
+        amdgcn_mbcnt_lo(-1, 0)
+    }
 }
 
-// kind: Xchg Add Sub And Nand Or Xor Max Min
-fn @amdgcn_atomic_xchg_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(0u, addr, val) }
-fn @amdgcn_atomic_xchg_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(0u, addr, val) }
-fn @amdgcn_atomic_add_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(1u, addr, val) }
-fn @amdgcn_atomic_add_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(1u, addr, val) }
-fn @amdgcn_atomic_sub_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(2u, addr, val) }
-fn @amdgcn_atomic_sub_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(2u, addr, val) }
-fn @amdgcn_atomic_max_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(7u, addr, val) }
-fn @amdgcn_atomic_max_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(7u, addr, val) }
-fn @amdgcn_atomic_min_global(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(8u, addr, val) }
-fn @amdgcn_atomic_min_shared(addr: &mut[3]i32, val: i32) -> i32 { amdgcn_atomic_shared(8u, addr, val) }
+fn @amdgcn_activelane() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(amdgcn_read_exec_hi(), amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0))
+    } else {
+        amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0)
+    }
+}
 
-fn @amdgcn_atomic_add_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(1u32, addr, val) }
-fn @amdgcn_atomic_add_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(1u32, addr, val) }
-fn @amdgcn_atomic_add_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(1u32, addr, val) }
-fn @amdgcn_atomic_add_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(1u32, addr, val) }
-fn @amdgcn_atomic_add_global_f64(addr: &mut[1]f64, val: f64) -> f64 { amdgcn_atomic_global(1u32, addr, val) }
+static ICMP_NE = 33;
+fn @amdgcn_sync_all(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo()) as i32
+}
 
-fn @amdgcn_atomic_sub_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(2u32, addr, val) }
-fn @amdgcn_atomic_sub_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(2u32, addr, val) }
-fn @amdgcn_atomic_sub_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(2u32, addr, val) }
-fn @amdgcn_atomic_sub_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(2u32, addr, val) }
-fn @amdgcn_atomic_sub_global_f64(addr: &mut[1]f64, val: f64) -> f64 { amdgcn_atomic_global(2u32, addr, val) }
+fn @amdgcn_sync_any(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) != 0) as i32
+}
 
-fn @amdgcn_atomic_and_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(3u32, addr, val) }
-fn @amdgcn_atomic_and_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(3u32, addr, val) }
-fn @amdgcn_atomic_and_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(3u32, addr, val) }
+fn @amdgcn_sync_count(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    cpu_popcount32(amdgcn_icmp_i32(p, 0, ICMP_NE)) as i32
+}
 
-fn @amdgcn_atomic_or_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(5u32, addr, val) }
-fn @amdgcn_atomic_or_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(5u32, addr, val) }
-fn @amdgcn_atomic_or_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(5u32, addr, val) }
-
-fn @amdgcn_atomic_xor_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(6u32, addr, val) }
-fn @amdgcn_atomic_xor_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(6u32, addr, val) }
-fn @amdgcn_atomic_xor_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(6u32, addr, val) }
-
-fn @amdgcn_atomic_exch_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(0u32, addr, val) }
-fn @amdgcn_atomic_exch_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(0u32, addr, val) }
-fn @amdgcn_atomic_exch_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(0u32, addr, val) }
-fn @amdgcn_atomic_exch_global_f32(addr: &mut[1]f32, val: f32) -> f32 { amdgcn_atomic_global(0u32, addr, val) }
-
-fn @amdgcn_atomic_min_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(8u32, addr, val) }
-fn @amdgcn_atomic_min_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(8u32, addr, val) }
-fn @amdgcn_atomic_min_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(8u32, addr, val) }
-
-fn @amdgcn_atomic_max_global_i32(addr: &mut[1]i32, val: i32) -> i32 { amdgcn_atomic_global(7u32, addr, val) }
-fn @amdgcn_atomic_max_global_u32(addr: &mut[1]u32, val: u32) -> u32 { amdgcn_atomic_global(7u32, addr, val) }
-fn @amdgcn_atomic_max_global_u64(addr: &mut[1]u64, val: u64) -> u64 { amdgcn_atomic_global(7u32, addr, val) }
-
-fn @amdgcn_atomic_cas_global_u16(addr: &mut[1]u16, cmp: u16, val: u16) -> u16 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
-fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, val: i32) -> i32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
-fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, val: u32) -> u32 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
-fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, val: u64) -> u64 { amdgcn_atomic_cmpxchg_global(addr, cmp, val)(0) }
-
-fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefrontsize() == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
+fn @amdgcn_sync_vote(p: i32) -> u64 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) as u32) as u64
+}
 
 fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
     let own_lane = amdgcn_lane_id();
@@ -177,6 +222,26 @@ fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
 }
 fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
 fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+
+fn @amdgcn_read_exec() -> i64 {
+    let mut exec_lo: i32;
+    let mut exec_hi: i32;
+    asm("v_mov_b32_e32 $0, exec_lo\n"
+        "v_mov_b32_e32 $1, exec_hi" : "=v"(exec_lo), "=v"(exec_hi) : :: "volatile");
+    exec_hi as i64 << 32i64 | exec_lo as i64
+}
+
+fn @amdgcn_read_exec_lo() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_lo" : "=v"(res) : :: "volatile");
+    res
+}
+
+fn @amdgcn_read_exec_hi() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_hi" : "=v"(res) : :: "volatile");
+    res
+}
 
 fn @amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
     let mut res: i32;
