@@ -154,7 +154,21 @@ fn @amdgcn_atomic_cas_global_i32(addr: &mut[1]i32, cmp: i32, new: i32) -> i32 { 
 fn @amdgcn_atomic_cas_global_u32(addr: &mut[1]u32, cmp: u32, new: u32) -> u32 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
 fn @amdgcn_atomic_cas_global_u64(addr: &mut[1]u64, cmp: u64, new: u64) -> u64 { cmpxchg_p1(addr, cmp, new, 2u32, "agent")(0) }
 
-fn @amdgcn_lane_id() -> i32 { if amdgcn_wavefrontsize() == 64 { amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0)) } else { amdgcn_mbcnt_lo(-1, 0) } }
+fn @amdgcn_lane_id() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0))
+    } else {
+        amdgcn_mbcnt_lo(-1, 0)
+    }
+}
+
+fn @amdgcn_activelane() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(amdgcn_read_exec_hi(), amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0))
+    } else {
+        amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0)
+    }
+}
 
 static ICMP_NE = 33;
 fn @amdgcn_sync_all(p: i32) -> i32 {
