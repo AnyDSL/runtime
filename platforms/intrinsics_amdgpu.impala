@@ -171,6 +171,47 @@ fn @amdgcn_activelane() -> i32 {
 }
 
 static ICMP_NE = 33;
+fn @amdgcn_ballot(p: i32) -> u64 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_icmp_i64(p, 0, ICMP_NE) as u64
+    } else {
+        amdgcn_icmp_i32(p, 0, ICMP_NE) as u32 as u64
+    }
+}
+
+fn @amdgcn_lanemask_eq() -> u64 {
+    let lane_id = amdgcn_lane_id();
+    let mask = 1u64 << lane_id as u64;
+    mask
+}
+
+fn @amdgcn_lanemask_lt() -> u64 {
+    let lane_id = amdgcn_lane_id();
+    let ballot = amdgcn_ballot(1);
+    let mask = (1u64 << lane_id as u64) - 1u64;
+    mask & ballot
+}
+
+fn @amdgcn_lanemask_le() -> u64 {
+    amdgcn_lanemask_lt() | amdgcn_lanemask_eq()
+}
+
+fn @amdgcn_lanemask_gt() -> u64 {
+    let lane_id = amdgcn_lane_id();
+
+    if (amdgcn_wavefrontsize() == 64 && lane_id == 63) || (amdgcn_wavefrontsize() == 32 && lane_id == 31) {
+        return(0u64)
+    }
+
+    let ballot = amdgcn_ballot(1);
+    let mask = (!0u64) << (lane_id as u64 + 1u64);
+    mask & ballot
+}
+
+fn @amdgcn_lanemask_ge() -> u64 {
+    amdgcn_lanemask_gt() | amdgcn_lanemask_eq()
+}
+
 fn @amdgcn_sync_all(p: i32) -> i32 {
     amdgcn_wave_barrier();
     (amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo()) as i32
@@ -192,32 +233,32 @@ fn @amdgcn_sync_vote(p: i32) -> u64 {
 }
 
 fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
-    let own_lane = amdgcn_lane_id();
-    let idx = src_lane + (own_lane & !(width - 1));
+    let lane_id = amdgcn_lane_id();
+    let idx = src_lane + (lane_id & !(width - 1));
     amdgcn_ds_bpermute(idx << 2, var)
 }
 fn @amdgcn_shfl_u32(var: u32, src_lane: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
 fn @amdgcn_shfl_f32(var: f32, src_lane: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
 
 fn @amdgcn_shfl_up_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
-    let own_lane = amdgcn_lane_id();
-    let idx = if own_lane - lane_delta as i32 < own_lane & !(width - 1) { own_lane } else { own_lane - lane_delta as i32 };
+    let lane_id = amdgcn_lane_id();
+    let idx = if lane_id - lane_delta as i32 < lane_id & !(width - 1) { lane_id } else { lane_id - lane_delta as i32 };
     amdgcn_ds_bpermute(idx << 2, var)
 }
 fn @amdgcn_shfl_up_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
 fn @amdgcn_shfl_up_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
 
 fn @amdgcn_shfl_down_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
-    let own_lane = amdgcn_lane_id();
-    let idx = if (own_lane & (width - 1)) + lane_delta as i32 >= width { own_lane } else { own_lane + lane_delta as i32 };
+    let lane_id = amdgcn_lane_id();
+    let idx = if (lane_id & (width - 1)) + lane_delta as i32 >= width { lane_id } else { lane_id + lane_delta as i32 };
     amdgcn_ds_bpermute(idx << 2, var)
 }
 fn @amdgcn_shfl_down_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
 fn @amdgcn_shfl_down_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
 
 fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
-    let own_lane = amdgcn_lane_id();
-    let idx = if own_lane ^ lane_mask >= (own_lane + width) & !(width - 1) { own_lane } else { own_lane ^ lane_mask };
+    let lane_id = amdgcn_lane_id();
+    let idx = if lane_id ^ lane_mask >= (lane_id + width) & !(width - 1) { lane_id } else { lane_id ^ lane_mask };
     amdgcn_ds_bpermute(idx << 2, var)
 }
 fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
