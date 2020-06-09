@@ -54,7 +54,9 @@
 # TBB_INTERFACE_VERSION, as defined in tbb/tbb_stddef.h
 
 # newer packages (>=20190605) contain a cmake/TBBConfig.cmake, thus no FindTBB.cmake required
-find_package(TBB CONFIG QUIET)
+#find_package(TBB CONFIG QUIET)
+# NOTE Apparently, some versions of TBB still ship an erroneous FindTBB.cmake that messes with -isystem.
+# For now, we still use our own magic to find TBB.
 
 if(TARGET TBB::tbb)
 
