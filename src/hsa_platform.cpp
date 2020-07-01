@@ -18,6 +18,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetRegistry.h>
@@ -653,8 +654,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
 
-    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile, true);
-    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::TargetMachine::CGFT_ObjectFile, true);
+    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile, true);
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile, true);
 
     function_pass_manager.doInitialization();
     for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
@@ -666,6 +667,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
     runtime().store_file(obj_file, obj);
+    llvm::raw_os_ostream lld_cout(std::cout);
+    llvm::raw_os_ostream lld_cerr(std::cerr);
     std::vector<const char*> lld_args = {
         "ld",
         "-shared",
@@ -673,7 +676,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         "-o",
         gcn_file.c_str()
     };
-    if (!lld::elf::link(lld_args, false))
+    if (!lld::elf::link(lld_args, false, lld_cout, lld_cerr))
         error("Generating gcn using ld");
 
     return runtime().load_file(gcn_file);

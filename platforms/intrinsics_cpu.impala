@@ -66,13 +66,13 @@ extern "device" {
     fn "llvm.x86.bmi.pext.64" cpu_pext64(i64, i64) -> i64;
     fn "llvm.x86.bmi.pdep.32" cpu_pdep32(i32, i32) -> i32;
     fn "llvm.x86.bmi.pdep.64" cpu_pdep64(i64, i64) -> i64;
-    fn "llvm.prefetch"        cpu_prefetch(&u8, i32, i32, i32) -> ();
+    fn "llvm.prefetch.p0i8"   cpu_prefetch(&u8, i32, i32, i32) -> ();
 }
 
 //
 // atomics
-//            0    1   2   3   4    5  6   7   8   9    10
-// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin
+//            0    1   2   3   4    5  6   7   8   9    10   11   12
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
 //            0         1         2         4       5       6              7
 // ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
 // syncscope: singlethread "" (system)
