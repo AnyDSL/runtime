@@ -24,8 +24,8 @@ struct Accelerator {
                        (i32, i32, i32), // block
                        fn(WorkItem) -> ()) -> (),
     sync          : fn() -> (),
-    alloc         : fn(i32) -> Buffer,
-    alloc_unified : fn(i32) -> Buffer,
+    alloc         : fn(i64) -> Buffer,
+    alloc_unified : fn(i64) -> Buffer,
     barrier       : fn() -> ()
 }
 

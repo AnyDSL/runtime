@@ -1,7 +1,7 @@
 extern "thorin" {
     fn pe_info[T](&[u8], T) -> ();
 
-    fn sizeof[T]() -> i32;
+    fn sizeof[T]() -> i64;
     fn undef[T]() -> T;
 
     fn bitcast[D, S](S) -> D;
