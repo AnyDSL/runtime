@@ -1,6 +1,7 @@
 extern "thorin" {
     fn pe_info[T](&[u8], T) -> ();
 
+    fn alignof[T]() -> i64;
     fn sizeof[T]() -> i64;
     fn undef[T]() -> T;
 
