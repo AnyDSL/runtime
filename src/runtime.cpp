@@ -246,12 +246,12 @@ void anydsl_copy(int32_t mask_src, const void* src, int64_t offset_src,
 void anydsl_launch_kernel(int32_t mask,
                           const char* file, const char* kernel,
                           const uint32_t* grid, const uint32_t* block,
-                          void** args, const uint32_t* sizes, const uint32_t* aligns, const uint8_t* types,
+                          void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const uint8_t* types,
                           uint32_t num_args) {
     runtime().launch_kernel(to_platform(mask), to_device(mask),
                             file, kernel,
                             grid, block,
-                            args, sizes, aligns, reinterpret_cast<const KernelArgType*>(types),
+                            args, sizes, aligns, allocs, reinterpret_cast<const KernelArgType*>(types),
                             num_args);
 }
 

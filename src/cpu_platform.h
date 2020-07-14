@@ -52,7 +52,7 @@ protected:
     void launch_kernel(DeviceId,
                        const char*, const char*,
                        const uint32_t*, const uint32_t*,
-                       void**, const uint32_t*, const uint32_t*, const KernelArgType*,
+                       void**, const uint32_t*, const uint32_t*, const uint32_t*, const KernelArgType*,
                        uint32_t) override { no_kernel(); }
     void synchronize(DeviceId) override { no_kernel(); }
 

@@ -24,7 +24,7 @@ protected:
     void launch_kernel(DeviceId,
                        const char*, const char*,
                        const uint32_t*, const uint32_t*,
-                       void**, const uint32_t*, const uint32_t*, const KernelArgType*,
+                       void**, const uint32_t*, const uint32_t*, const uint32_t*, const KernelArgType*,
                        uint32_t) override { platform_error(); }
     void synchronize(DeviceId) override { platform_error(); }
 

@@ -324,7 +324,7 @@ extern std::atomic<uint64_t> anydsl_kernel_time;
 void HSAPlatform::launch_kernel(DeviceId dev,
                                 const char* file, const char* name,
                                 const uint32_t* grid, const uint32_t* block,
-                                void** args, const uint32_t* sizes, const uint32_t* aligns, const KernelArgType*,
+                                void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const KernelArgType*,
                                 uint32_t num_args) {
     auto queue = devices_[dev].queue;
     if (!queue)
@@ -336,11 +336,8 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     if (num_args) {
         if (!kernel_info.kernarg_segment) {
             size_t total_size = 0;
-            for (uint32_t i = 0; i < num_args; i++) {
-                total_size += sizes[i];
-                if (i != num_args - 1 && total_size % aligns[i + 1])
-                    total_size += aligns[i + 1] - total_size % aligns[i + 1];
-            }
+            for (uint32_t i = 0; i < num_args; i++)
+                total_size = (total_size + aligns[i] - 1) / aligns[i] * aligns[i] + allocs[i];
             kernel_info.kernarg_segment_size = total_size;
             hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
             CHECK_HSA(status, "hsa_memory_allocate()");
@@ -349,10 +346,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         size_t space = kernel_info.kernarg_segment_size;
         for (uint32_t i = 0; i < num_args; i++) {
             // align base address for next kernel argument
-            if (!std::align(aligns[i], sizes[i], cur, space))
+            if (!std::align(aligns[i], allocs[i], cur, space))
                 error("Incorrect kernel argument alignment detected");
             std::memcpy(cur, args[i], sizes[i]);
-            cur = reinterpret_cast<uint8_t*>(cur) + sizes[i];
+            cur = reinterpret_cast<uint8_t*>(cur) + allocs[i];
         }
         size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
         if (total != kernel_info.kernarg_segment_size)

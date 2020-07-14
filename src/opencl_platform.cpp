@@ -339,7 +339,7 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
 void OpenCLPlatform::launch_kernel(DeviceId dev,
                                    const char* file, const char* name,
                                    const uint32_t* grid, const uint32_t* block,
-                                   void** args, const uint32_t* sizes, const uint32_t*, const KernelArgType* types,
+                                   void** args, const uint32_t* sizes, const uint32_t*, const uint32_t*, const KernelArgType* types,
                                    uint32_t num_args) {
     auto kernel = load_kernel(dev, file, name);
 
