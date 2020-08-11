@@ -1,184 +1,178 @@
-extern "device" {
-    // no declarations are emitted for "device" functions
-    fn "exp"        hls_expf(f32) -> f32;
-    fn "exp2"       hls_exp2f(f32) -> f32;
-    fn "log"        hls_logf(f32) -> f32;
-    fn "log2"       hls_log2f(f32) -> f32;
-    fn "pow"        hls_powf(f32, f32) -> f32;
-    fn "rsqrt"      hls_rsqrtf(f32) -> f32;
-    fn "sqrt"       hls_sqrtf(f32) -> f32;
-    fn "fabs"       hls_fabsf(f32) -> f32;
-    fn "sin"        hls_sinf(f32) -> f32;
-    fn "cos"        hls_cosf(f32) -> f32;
-    fn "tan"        hls_tanf(f32) -> f32;
-    fn "asin"       hls_asinf(f32) -> f32;
-    fn "acos"       hls_acosf(f32) -> f32;
-    fn "atan"       hls_atanf(f32) -> f32;
-    fn "erf"        hls_erff(f32) -> f32;
-    fn "atan2"      hls_atan2f(f32, f32) -> f32;
-    fn "fmod"       hls_fmodf(f32, f32) -> f32;
-    fn "floor"      hls_floorf(f32) -> f32;
-    fn "isinf"      hls_isinff(f32) -> i32;
-    fn "isnan"      hls_isnanf(f32) -> i32;
-    fn "isfinite"   hls_isfinitef(f32) -> i32;
-    fn "fma"        hls_fmaf(f32, f32, f32) -> f32;
-    fn "mad"        hls_madf(f32, f32, f32) -> f32;
-    fn "copysign"   hls_copysignf(f32, f32) -> f32;
-    fn "exp"        hls_exp(f64) -> f64;
-    fn "exp2"       hls_exp2(f64) -> f64;
-    fn "log"        hls_log(f64) -> f64;
-    fn "log2"       hls_log2(f64) -> f64;
-    fn "pow"        hls_pow(f64, f64) -> f64;
-    fn "rsqrt"      hls_rsqrt(f64) -> f64;
-    fn "sqrt"       hls_sqrt(f64) -> f64;
-    fn "fabs"       hls_fabs(f64) -> f64;
-    fn "sin"        hls_sin(f64) -> f64;
-    fn "cos"        hls_cos(f64) -> f64;
-    fn "tan"        hls_tan(f64) -> f64;
-    fn "asin"       hls_asin(f64) -> f64;
-    fn "acos"       hls_acos(f64) -> f64;
-    fn "atan"       hls_atan(f64) -> f64;
-    fn "erf"        hls_erf(f64) -> f64;
-    fn "atan2"      hls_atan2(f64, f64) -> f64;
-    fn "fmod"       hls_fmod(f64, f64) -> f64;
-    fn "floor"      hls_floor(f64) -> f64;
-    fn "isinf"      hls_isinf(f64) -> i32;
-    fn "isnan"      hls_isnan(f64) -> i32;
-    fn "isfinite"   hls_isfinite(f64) -> i32;
-    fn "fma"        hls_fma(f64, f64, f64) -> f64;
-    fn "mad"        hls_mad(f64, f64, f64) -> f64;
-    fn "copysign"   hls_copysign(f64, f64) -> f64;
-    fn "fmin"       hls_fminf(f32, f32) -> f32;
-    fn "fmax"       hls_fmaxf(f32, f32) -> f32;
-    fn "fmin"       hls_fmin(f64, f64) -> f64;
-    fn "fmax"       hls_fmax(f64, f64) -> f64;
-    fn "min"        hls_min(i32, i32) -> i32;
-    fn "max"        hls_max(i32, i32) -> i32;
+// no declarations are emitted for "device" functions
+#[import(cc = "C", name = "exp")]      fn hls_expf(f32) -> f32;
+#[import(cc = "C", name = "exp2")]     fn hls_exp2f(f32) -> f32;
+#[import(cc = "C", name = "log")]      fn hls_logf(f32) -> f32;
+#[import(cc = "C", name = "log2")]     fn hls_log2f(f32) -> f32;
+#[import(cc = "C", name = "pow")]      fn hls_powf(f32, f32) -> f32;
+#[import(cc = "C", name = "rsqrt")]    fn hls_rsqrtf(f32) -> f32;
+#[import(cc = "C", name = "sqrt")]     fn hls_sqrtf(f32) -> f32;
+#[import(cc = "C", name = "fabs")]     fn hls_fabsf(f32) -> f32;
+#[import(cc = "C", name = "sin")]      fn hls_sinf(f32) -> f32;
+#[import(cc = "C", name = "cos")]      fn hls_cosf(f32) -> f32;
+#[import(cc = "C", name = "tan")]      fn hls_tanf(f32) -> f32;
+#[import(cc = "C", name = "asin")]     fn hls_asinf(f32) -> f32;
+#[import(cc = "C", name = "acos")]     fn hls_acosf(f32) -> f32;
+#[import(cc = "C", name = "atan")]     fn hls_atanf(f32) -> f32;
+#[import(cc = "C", name = "erf")]      fn hls_erff(f32) -> f32;
+#[import(cc = "C", name = "atan2")]    fn hls_atan2f(f32, f32) -> f32;
+#[import(cc = "C", name = "fmod")]     fn hls_fmodf(f32, f32) -> f32;
+#[import(cc = "C", name = "floor")]    fn hls_floorf(f32) -> f32;
+#[import(cc = "C", name = "isinf")]    fn hls_isinff(f32) -> i32;
+#[import(cc = "C", name = "isnan")]    fn hls_isnanf(f32) -> i32;
+#[import(cc = "C", name = "isfinite")] fn hls_isfinitef(f32) -> i32;
+#[import(cc = "C", name = "fma")]      fn hls_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "mad")]      fn hls_madf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "copysign")] fn hls_copysignf(f32, f32) -> f32;
+#[import(cc = "C", name = "exp")]      fn hls_exp(f64) -> f64;
+#[import(cc = "C", name = "exp2")]     fn hls_exp2(f64) -> f64;
+#[import(cc = "C", name = "log")]      fn hls_log(f64) -> f64;
+#[import(cc = "C", name = "log2")]     fn hls_log2(f64) -> f64;
+#[import(cc = "C", name = "pow")]      fn hls_pow(f64, f64) -> f64;
+#[import(cc = "C", name = "rsqrt")]    fn hls_rsqrt(f64) -> f64;
+#[import(cc = "C", name = "sqrt")]     fn hls_sqrt(f64) -> f64;
+#[import(cc = "C", name = "fabs")]     fn hls_fabs(f64) -> f64;
+#[import(cc = "C", name = "sin")]      fn hls_sin(f64) -> f64;
+#[import(cc = "C", name = "cos")]      fn hls_cos(f64) -> f64;
+#[import(cc = "C", name = "tan")]      fn hls_tan(f64) -> f64;
+#[import(cc = "C", name = "asin")]     fn hls_asin(f64) -> f64;
+#[import(cc = "C", name = "acos")]     fn hls_acos(f64) -> f64;
+#[import(cc = "C", name = "atan")]     fn hls_atan(f64) -> f64;
+#[import(cc = "C", name = "erf")]      fn hls_erf(f64) -> f64;
+#[import(cc = "C", name = "atan2")]    fn hls_atan2(f64, f64) -> f64;
+#[import(cc = "C", name = "fmod")]     fn hls_fmod(f64, f64) -> f64;
+#[import(cc = "C", name = "floor")]    fn hls_floor(f64) -> f64;
+#[import(cc = "C", name = "isinf")]    fn hls_isinf(f64) -> i32;
+#[import(cc = "C", name = "isnan")]    fn hls_isnan(f64) -> i32;
+#[import(cc = "C", name = "isfinite")] fn hls_isfinite(f64) -> i32;
+#[import(cc = "C", name = "fma")]      fn hls_fma(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "mad")]      fn hls_mad(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "copysign")] fn hls_copysign(f64, f64) -> f64;
+#[import(cc = "C", name = "fmin")]     fn hls_fminf(f32, f32) -> f32;
+#[import(cc = "C", name = "fmax")]     fn hls_fmaxf(f32, f32) -> f32;
+#[import(cc = "C", name = "fmin")]     fn hls_fmin(f64, f64) -> f64;
+#[import(cc = "C", name = "fmax")]     fn hls_fmax(f64, f64) -> f64;
+#[import(cc = "C", name = "min")]      fn hls_min(i32, i32) -> i32;
+#[import(cc = "C", name = "max")]      fn hls_max(i32, i32) -> i32;
+
+struct channel_u8  { data : u8  }
+struct channel_i32 { data : i32 }
+struct channel_f32 { data : f32 }
+
+#[import(cc = "device")] fn print_pragma(&[u8]) -> ();
+// u8
+#[import(cc = "device", name = "read_channel")] fn read_channel_u8  (&mut channel_u8) ->  u8;
+#[import(cc = "device", name = "read_channel")] fn read_channel2_u8 (&mut channel_u8) -> [u8 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_u8 (&mut channel_u8) -> [u8 * 4];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_u8 (&mut channel_u8) -> [u8 * 8];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_u8(&mut channel_u8) -> [u8 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_u8(&mut channel_u8) -> [u8 * 32];
+#[import(cc = "device", name = "write_channel")] fn write_channel_u8  (&mut channel_u8,  u8      ) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_u8 (&mut channel_u8, [u8 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_u8 (&mut channel_u8, [u8 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_u8 (&mut channel_u8, [u8 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_u8(&mut channel_u8, [u8 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_u8(&mut channel_u8, [u8 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_u8(&mut channel_u8) -> [u8 * 2];
+
+// i32
+#[import(cc = "device", name = "read_channel")] fn read_channel_i32  (&mut channel_i32) ->  i32;
+#[import(cc = "device", name = "read_channel")] fn read_channel2_i32 (&mut channel_i32) -> [i32 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_i32 (&mut channel_i32) -> [i32 * 4];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_i32 (&mut channel_i32) -> [i32 * 8];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_i32(&mut channel_i32) -> [i32 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_i32(&mut channel_i32) -> [i32 * 32];
+#[import(cc = "device", name = "write_channel")] fn write_channel_i32  (&mut channel_i32,  i32      ) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_i32 (&mut channel_i32, [i32 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_i32 (&mut channel_i32, [i32 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_i32 (&mut channel_i32, [i32 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_i32(&mut channel_i32, [i32 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_i32(&mut channel_i32, [i32 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_i32(&mut channel_i32) -> [i32 * 2];
+
+// f32
+#[import(cc = "device", name = "read_channel")] fn read_channel_f32  (&mut channel_f32) ->  f32;
+#[import(cc = "device", name = "read_channel")] fn read_channel2_f32 (&mut channel_f32) -> [f32 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_f32 (&mut channel_f32) -> [f32 * 4];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_f32 (&mut channel_f32) -> [f32 * 8];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_f32(&mut channel_f32) -> [f32 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_f32(&mut channel_f32) -> [f32 * 32];
+#[import(cc = "device", name = "write_channel")] fn write_channel_f32  (&mut channel_f32,  f32      ) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_f32 (&mut channel_f32, [f32 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_f32 (&mut channel_f32, [f32 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_f32 (&mut channel_f32, [f32 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_f32(&mut channel_f32, [f32 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_f32(&mut channel_f32, [f32 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
+
+fn @hls_accelerator() = Accelerator {
+    exec          = @|_grid, _block, body| {
+        let work_item = WorkItem {
+            tidx  = @|| 0, tidy  = @|| 0, tidz  = @|| 0,
+            bidx  = @|| 0, bidy  = @|| 0, bidz  = @|| 0,
+            gidx  = @|| 0, gidy  = @|| 0, gidz  = @|| 0,
+            bdimx = @|| 1, bdimy = @|| 1, bdimz = @|| 1,
+            gdimx = @|| 1, gdimy = @|| 1, gdimz = @|| 1,
+            nblkx = @|| 1, nblky = @|| 1, nblkz = @|| 1
+        };
+        hls(|| @body(work_item));
+    },
+    sync          = @|| (),
+    alloc         = @|size| alloc_cpu(size),
+    alloc_unified = @|size| alloc_cpu(size),
+    barrier       = @|| ()
 }
-
-struct channel_u8  { data : u8  };
-struct channel_i32 { data : i32 };
-struct channel_f32 { data : f32 };
-
-extern "device" {
-    fn print_pragma(&[u8]) -> ();
-    // u8
-    fn "read_channel"  read_channel_u8  (&mut channel_u8) ->  u8;
-    fn "read_channel"  read_channel2_u8 (&mut channel_u8) -> [u8 * 2];
-    fn "read_channel"  read_channel4_u8 (&mut channel_u8) -> [u8 * 4];
-    fn "read_channel"  read_channel8_u8 (&mut channel_u8) -> [u8 * 8];
-    fn "read_channel"  read_channel16_u8(&mut channel_u8) -> [u8 * 16];
-    fn "read_channel"  read_channel32_u8(&mut channel_u8) -> [u8 * 32];
-    fn "write_channel" write_channel_u8  (&mut channel_u8,  u8      ) -> ();
-    fn "write_channel" write_channel2_u8 (&mut channel_u8, [u8 * 2 ]) -> ();
-    fn "write_channel" write_channel4_u8 (&mut channel_u8, [u8 * 4 ]) -> ();
-    fn "write_channel" write_channel8_u8 (&mut channel_u8, [u8 * 8 ]) -> ();
-    fn "write_channel" write_channel16_u8(&mut channel_u8, [u8 * 16]) -> ();
-    fn "write_channel" write_channel32_u8(&mut channel_u8, [u8 * 32]) -> ();
-    fn " "             bitcast_channel_u8(&mut channel_u8) -> [u8 * 2];
-
-    // i32
-    fn "read_channel"  read_channel_i32  (&mut channel_i32) ->  i32;
-    fn "read_channel"  read_channel2_i32 (&mut channel_i32) -> [i32 * 2];
-    fn "read_channel"  read_channel4_i32 (&mut channel_i32) -> [i32 * 4];
-    fn "read_channel"  read_channel8_i32 (&mut channel_i32) -> [i32 * 8];
-    fn "read_channel"  read_channel16_i32(&mut channel_i32) -> [i32 * 16];
-    fn "read_channel"  read_channel32_i32(&mut channel_i32) -> [i32 * 32];
-    fn "write_channel" write_channel_i32  (&mut channel_i32,  i32      ) -> ();
-    fn "write_channel" write_channel2_i32 (&mut channel_i32, [i32 * 2 ]) -> ();
-    fn "write_channel" write_channel4_i32 (&mut channel_i32, [i32 * 4 ]) -> ();
-    fn "write_channel" write_channel8_i32 (&mut channel_i32, [i32 * 8 ]) -> ();
-    fn "write_channel" write_channel16_i32(&mut channel_i32, [i32 * 16]) -> ();
-    fn "write_channel" write_channel32_i32(&mut channel_i32, [i32 * 32]) -> ();
-    fn " "             bitcast_channel_i32(&mut channel_i32) -> [i32 * 2];
-
-    // f32
-    fn "read_channel"  read_channel_f32  (&mut channel_f32) ->  f32;
-    fn "read_channel"  read_channel2_f32 (&mut channel_f32) -> [f32 * 2];
-    fn "read_channel"  read_channel4_f32 (&mut channel_f32) -> [f32 * 4];
-    fn "read_channel"  read_channel8_f32 (&mut channel_f32) -> [f32 * 8];
-    fn "read_channel"  read_channel16_f32(&mut channel_f32) -> [f32 * 16];
-    fn "read_channel"  read_channel32_f32(&mut channel_f32) -> [f32 * 32];
-    fn "write_channel" write_channel_f32  (&mut channel_f32,  f32      ) -> ();
-    fn "write_channel" write_channel2_f32 (&mut channel_f32, [f32 * 2 ]) -> ();
-    fn "write_channel" write_channel4_f32 (&mut channel_f32, [f32 * 4 ]) -> ();
-    fn "write_channel" write_channel8_f32 (&mut channel_f32, [f32 * 8 ]) -> ();
-    fn "write_channel" write_channel16_f32(&mut channel_f32, [f32 * 16]) -> ();
-    fn "write_channel" write_channel32_f32(&mut channel_f32, [f32 * 32]) -> ();
-    fn " "             bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
-}
-
-fn @hls_accelerator() -> Accelerator {
-    Accelerator {
-        exec          : @|grid, block, body| {
-            let work_item = WorkItem {
-                tidx  : @|| 0, tidy  : @|| 0, tidz  : @|| 0,
-                bidx  : @|| 0, bidy  : @|| 0, bidz  : @|| 0,
-                gidx  : @|| 0, gidy  : @|| 0, gidz  : @|| 0,
-                bdimx : @|| 1, bdimy : @|| 1, bdimz : @|| 1,
-                gdimx : @|| 1, gdimy : @|| 1, gdimz : @|| 1,
-                nblkx : @|| 1, nblky : @|| 1, nblkz : @|| 1
-            };
-            hls(|| @@body(work_item));
-        },
-        sync          : @|| (),
-        alloc         : @|size| alloc_cpu(size),
-        alloc_unified : @|size| alloc_cpu(size),
-        barrier       : @|| ()
-    }
-};
 
 static hls_intrinsics = Intrinsics {
-    expf        : hls_expf,
-    exp2f       : hls_exp2f,
-    logf        : hls_logf,
-    log2f       : hls_log2f,
-    powf        : hls_powf,
-    rsqrtf      : hls_rsqrtf,
-    sqrtf       : hls_sqrtf,
-    fabsf       : hls_fabsf,
-    sinf        : hls_sinf,
-    cosf        : hls_cosf,
-    tanf        : hls_tanf,
-    asinf       : hls_asinf,
-    acosf       : hls_acosf,
-    atanf       : hls_atanf,
-    erff        : hls_erff,
-    atan2f      : hls_atan2f,
-    copysignf   : hls_copysignf,
-    fmaf        : hls_fmaf,
-    fmaxf       : hls_fmaxf,
-    fminf       : hls_fminf,
-    fmodf       : hls_fmodf,
-    floorf      : hls_floorf,
-    isinff      : hls_isinff,
-    isnanf      : hls_isnanf,
-    isfinitef   : hls_isfinitef,
-    exp         : hls_exp,
-    exp2        : hls_exp2,
-    log         : hls_log,
-    log2        : hls_log2,
-    pow         : hls_pow,
-    rsqrt       : hls_rsqrt,
-    sqrt        : hls_sqrt,
-    fabs        : hls_fabs,
-    sin         : hls_sin,
-    cos         : hls_cos,
-    tan         : hls_tan,
-    asin        : hls_asin,
-    acos        : hls_acos,
-    atan        : hls_atan,
-    erf         : hls_erf,
-    atan2       : hls_atan2,
-    copysign    : hls_copysign,
-    fma         : hls_fma,
-    fmax        : hls_fmax,
-    fmin        : hls_fmin,
-    fmod        : hls_fmod,
-    floor       : hls_floor,
-    isinf       : hls_isinf,
-    isnan       : hls_isnan,
-    isfinite    : hls_isfinite,
-    min         : hls_min,
-    max         : hls_max,
+    expf        = hls_expf,
+    exp2f       = hls_exp2f,
+    logf        = hls_logf,
+    log2f       = hls_log2f,
+    powf        = hls_powf,
+    rsqrtf      = hls_rsqrtf,
+    sqrtf       = hls_sqrtf,
+    fabsf       = hls_fabsf,
+    sinf        = hls_sinf,
+    cosf        = hls_cosf,
+    tanf        = hls_tanf,
+    asinf       = hls_asinf,
+    acosf       = hls_acosf,
+    atanf       = hls_atanf,
+    erff        = hls_erff,
+    atan2f      = hls_atan2f,
+    copysignf   = hls_copysignf,
+    fmaf        = hls_fmaf,
+    fmaxf       = hls_fmaxf,
+    fminf       = hls_fminf,
+    fmodf       = hls_fmodf,
+    floorf      = hls_floorf,
+    isinff      = hls_isinff,
+    isnanf      = hls_isnanf,
+    isfinitef   = hls_isfinitef,
+    exp         = hls_exp,
+    exp2        = hls_exp2,
+    log         = hls_log,
+    log2        = hls_log2,
+    pow         = hls_pow,
+    rsqrt       = hls_rsqrt,
+    sqrt        = hls_sqrt,
+    fabs        = hls_fabs,
+    sin         = hls_sin,
+    cos         = hls_cos,
+    tan         = hls_tan,
+    asin        = hls_asin,
+    acos        = hls_acos,
+    atan        = hls_atan,
+    erf         = hls_erf,
+    atan2       = hls_atan2,
+    copysign    = hls_copysign,
+    fma         = hls_fma,
+    fmax        = hls_fmax,
+    fmin        = hls_fmin,
+    fmod        = hls_fmod,
+    floor       = hls_floor,
+    isinf       = hls_isinf,
+    isnan       = hls_isnan,
+    isfinite    = hls_isfinite,
+    min         = hls_min,
+    max         = hls_max,
 };
