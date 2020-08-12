@@ -110,8 +110,8 @@ fn @copy_offset(src: Buffer, off_src: i64, dst: Buffer, off_dst: i64, size: i64)
 
 
 // range, range_step, unroll, unroll_step, etc.
-fn @unroll_step(body: fn(i32) -> i32) {
-    fn @(?beg & ?end & ? step) loop(beg: i32, end: i32, step: i32) -> () {
+fn @unroll_step(body: fn(i32) -> ()) {
+    fn @(?beg & ?end & ?step) loop(beg: i32, end: i32, step: i32) -> () {
         if beg < end {
             @body(beg);
             loop(beg + step, end, step)
@@ -120,8 +120,8 @@ fn @unroll_step(body: fn(i32) -> i32) {
     loop
 }
 
-fn @unroll_step_rev(body: fn(i32) -> i32) {
-    fn @(?beg & ?end & ? step) loop(beg: i32, end: i32, step: i32) -> () {
+fn @unroll_step_rev(body: fn(i32) -> ()) {
+    fn @(?beg & ?end & ?step) loop(beg: i32, end: i32, step: i32) -> () {
         if end > beg {
             @body(end);
             loop(end - step, beg, step)
@@ -130,9 +130,9 @@ fn @unroll_step_rev(body: fn(i32) -> i32) {
     loop
 }
 
-fn @range(lower: i32, upper: i32, body: fn(i32) -> i32) = unroll_step(body)($lower, $upper, 1)
-fn @range_step(lower: i32, upper: i32, step: i32, body: fn(i32) -> i32) = unroll_step(body)($lower, $upper, step)
-fn @range_rev(upper: i32, lower: i32, body: fn(i32) -> i32) = unroll_step_rev(body)(upper, lower, 1)
+fn @range(body: fn(i32) -> ()) = @|lower: i32, upper: i32| unroll_step(body)($lower, $upper, 1)
+fn @range_step(body: fn(i32) -> ()) = @|lower: i32, upper: i32, step: i32| unroll_step(body)($lower, $upper, step)
+fn @range_rev(body: fn(i32) -> ()) = @|upper: i32, lower: i32| unroll_step_rev(body)(upper, lower, 1)
 
-fn @unroll(lower: i32, upper: i32, body: fn(i32) -> i32) = unroll_step(body)(lower, upper, 1)
-fn @unroll_rev(upper: i32, lower: i32, body: fn(i32) -> i32) = unroll_step_rev(body)(upper, lower, 1)
+fn @unroll(body: fn(i32) -> ()) = @|lower: i32, upper: i32| unroll_step(body)(lower, upper, 1)
+fn @unroll_rev(body: fn(i32) -> ()) = @|upper: i32, lower: i32| unroll_step_rev(body)(upper, lower, 1)
