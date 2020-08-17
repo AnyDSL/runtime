@@ -24,9 +24,9 @@
 #ifdef AnyDSL_runtime_HAS_TBB_SUPPORT
 #define NOMINMAX
 #include <tbb/flow_graph.h>
-#include <tbb/tbb.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
+#include <tbb/task_arena.h>
+#include <tbb/task_group.h>
 #else
 #include <thread>
 #endif
@@ -400,12 +400,20 @@ void anydsl_create_edge(int32_t, int32_t) { tbb_required(); }
 void anydsl_execute_graph(int32_t, int32_t) { tbb_required(); }
 #else // TBB version
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
-    tbb::task_scheduler_init init((num_threads == 0) ? tbb::task_scheduler_init::automatic : num_threads);
+    tbb::task_arena limited((num_threads == 0) ? tbb::task_arena::automatic : num_threads);
+    tbb::task_group tg;
+
     void (*fun_ptr) (void*, int32_t, int32_t) = reinterpret_cast<void (*) (void*, int32_t, int32_t)>(fun);
 
-    tbb::parallel_for(tbb::blocked_range<int32_t>(lower, upper), [=] (const tbb::blocked_range<int32_t>& range) {
-        fun_ptr(args, range.begin(), range.end());
+    limited.execute([&] {
+        tg.run([&] {
+            tbb::parallel_for(tbb::blocked_range<int32_t>(lower, upper), [=] (const tbb::blocked_range<int32_t>& range) {
+                fun_ptr(args, range.begin(), range.end());
+            });
+        });
     });
+
+    limited.execute([&] { tg.wait(); });
 }
 
 static std::unordered_map<int32_t, tbb::task*> task_pool;
