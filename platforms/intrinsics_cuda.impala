@@ -57,12 +57,12 @@
 #[import(cc = "device", name = "__ldg")] fn cuda_ldg_f32(&addrspace(1)f32) -> f32;
 #[import(cc = "device", name = "__ldg")] fn cuda_ldg_i32(&addrspace(1)i32) -> i32;
 #[import(cc = "device", name = "__ldg")] fn cuda_ldg_u8(&addrspace(1)u8) -> u8;
-//#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_f32(&addrspace(1)simd[f32 * 4]) -> simd[f32 * 4];
-//#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_i32(&addrspace(1)simd[i32 * 4]) -> simd[i32 * 4];
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_f32(&addrspace(1)simd[f32 * 4]) -> simd[f32 * 4];
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_i32(&addrspace(1)simd[i32 * 4]) -> simd[i32 * 4];
 #[import(cc = "device", name = "min")] fn cuda_min(i32, i32) -> i32;
 #[import(cc = "device", name = "max")] fn cuda_max(i32, i32) -> i32;
 
-// wrappers for threadIdx.x etc. are provided
+// wrappers for threadIdx.x etc. are provided by the CUDA backend
 #[import(cc = "device", name = "threadIdx_x")] fn cuda_threadIdx_x() -> i32;
 #[import(cc = "device", name = "threadIdx_y")] fn cuda_threadIdx_y() -> i32;
 #[import(cc = "device", name = "threadIdx_z")] fn cuda_threadIdx_z() -> i32;
@@ -200,21 +200,21 @@
 
 #[import(cc = "device", name = "__nanosleep")] fn cuda_nanosleep(u32) -> ();
 
-//fn @cuda_vprintf(fmt: &[u8], args: &[u8]) -> i32 {
-//    let mut res: i32;
-//    asm(
-//        "{\n"
-//        ".param.b64 param0;\n"
-//        ".param.b64 param1;\n"
-//        ".param.b32 retval;\n"
-//        "st.param.b64 [param0], %1;\n"
-//        "st.param.b64 [param1], %2;\n"
-//        "call.uni (retval), vprintf, (param0, param1);\n"
-//        "ld.param.b32 %0, [retval];\n"
-//        "}" : "=r"(res) : "l"(fmt), "l"(args) : "memory" : "volatile"
-//    );
-//    res
-//}
+fn @cuda_vprintf(fmt: &[u8], args: &[u8]) -> i32 {
+    let mut res: i32;
+    asm(
+        "{\n"
+        ".param.b64 param0;\n"
+        ".param.b64 param1;\n"
+        ".param.b32 retval;\n"
+        "st.param.b64 [param0], %1;\n"
+        "st.param.b64 [param1], %2;\n"
+        "call.uni (retval), vprintf, (param0, param1);\n"
+        "ld.param.b32 %0, [retval];\n"
+        "}" : "=r"(res) : "l"(fmt), "l"(args) : "memory" : "volatile"
+    );
+    res
+}
 
 fn @cuda_laneid() -> u32 {
     let mut id: u32;

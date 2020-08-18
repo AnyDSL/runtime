@@ -145,10 +145,10 @@ fn @amdgcn_atomic_max_global_i32(addr: &mut addrspace(1)i32, val: i32) -> i32 = 
 fn @amdgcn_atomic_max_global_u32(addr: &mut addrspace(1)u32, val: u32) -> u32 = atomic_p1[u32](9, addr, val, 2, "agent")
 fn @amdgcn_atomic_max_global_u64(addr: &mut addrspace(1)u64, val: u64) -> u64 = atomic_p1[u64](9, addr, val, 2, "agent")
 
-//fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) -> u16 = cmpxchg_p1[u16](addr, cmp, new, 2, "agent")(0)
-//fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) -> i32 = cmpxchg_p1[i32](addr, cmp, new, 2, "agent")(0)
-//fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) -> u32 = cmpxchg_p1[u32](addr, cmp, new, 2, "agent")(0)
-//fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) -> u64 = cmpxchg_p1[u64](addr, cmp, new, 2, "agent")(0)
+fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) -> u16 = match cmpxchg_p1[u16](addr, cmp, new, 2, "agent") { (old, _success) => old }
+fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) -> i32 = match cmpxchg_p1[i32](addr, cmp, new, 2, "agent") { (old, _success) => old }
+fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) -> u32 = match cmpxchg_p1[u32](addr, cmp, new, 2, "agent") { (old, _success) => old }
+fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) -> u64 = match cmpxchg_p1[u64](addr, cmp, new, 2, "agent") { (old, _success) => old }
 
 fn @amdgcn_lane_id() -> i32 {
     if amdgcn_wavefrontsize() == 64 {
@@ -210,15 +210,11 @@ fn @amdgcn_lanemask_ge() -> u64 {
 
 fn @amdgcn_sync_all(p: i32) -> i32 {
     amdgcn_wave_barrier();
-    // TODO
-    // (amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo()) as i32
     if amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo() { 1 } else { 0 }
 }
 
 fn @amdgcn_sync_any(p: i32) -> i32 {
     amdgcn_wave_barrier();
-    // TODO
-    // (amdgcn_icmp_i32(p, 0, ICMP_NE) != 0) as i32
     if amdgcn_icmp_i32(p, 0, ICMP_NE) != 0 { 1 } else { 0 }
 }
 
@@ -264,13 +260,13 @@ fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
 fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32,i32](amdgcn_shfl_xor_i32(bitcast[i32,u32](var), lane_mask, width)) }
 fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32,i32](amdgcn_shfl_xor_i32(bitcast[i32,f32](var), lane_mask, width)) }
 
-//fn @amdgcn_read_exec() -> i64 {
-//    let mut exec_lo: i32;
-//    let mut exec_hi: i32;
-//    asm("v_mov_b32_e32 $0, exec_lo\n"
-//        "v_mov_b32_e32 $1, exec_hi" : "=v"(exec_lo), "=v"(exec_hi) : :: "volatile");
-//    exec_hi as i64 << 32i64 | exec_lo as i64
-//}
+fn @amdgcn_read_exec() -> i64 {
+    let mut exec_lo: i32;
+    let mut exec_hi: i32;
+    asm("v_mov_b32_e32 $0, exec_lo\n"
+        "v_mov_b32_e32 $1, exec_hi" : "=v"(exec_lo), "=v"(exec_hi) : :: "volatile");
+    exec_hi as i64 << 32:i64 | exec_lo as i64
+}
 
 fn @amdgcn_read_exec_lo() -> i32 {
     let mut res: i32;
