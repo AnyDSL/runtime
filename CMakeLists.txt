@@ -21,9 +21,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 find_path(Impala_DIR
-    NAMES impala-config.cmake
+    NAMES artic-config.cmake
     PATHS ${Impala_DIR} $ENV{Impala_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
-find_package(Impala)
+find_package(Artic)
 
 add_subdirectory(src)
 

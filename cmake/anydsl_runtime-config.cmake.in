@@ -57,17 +57,17 @@ endif()
 
 # determine impala binary for toolchain
 find_path(Impala_DIR
-    NAMES impala-config.cmake
+    NAMES artic-config.cmake
     PATHS ${Impala_DIR} $ENV{Impala_DIR} @Impala_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
     PATH_SUFFIXES share/anydsl/cmake
 )
 find_package(Impala QUIET)
-if(TARGET impala AND NOT Impala_BIN)
-    get_target_property(Impala_BIN impala LOCATION)
-    set(Impala_BIN ${Impala_BIN} CACHE FILEPATH "path to impala executable")
+if(TARGET artic AND NOT Artic_BIN)
+    get_target_property(Artic_BIN artic LOCATION)
+    set(Impala_BIN ${Artic_BIN} CACHE FILEPATH "path to artic executable")
 endif()
-find_program(Impala_BIN impala
-    PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
+find_program(Impala_BIN artic
+    PATHS ${Artic_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
 find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@" NO_DEFAULT_PATH)
@@ -209,10 +209,10 @@ function(anydsl_runtime_wrap outfiles)
     set(_impala_flags ${PARGS_IMPALA_FLAGS} ${OPT_FLAGS})
     set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
 
-    list(FIND PARGS_IMPALA_FLAGS "--log-level" IMPALA_FLAGS_LOG_LEVEL_IDX)
-    if(IMPALA_FLAGS_LOG_LEVEL_IDX EQUAL -1)
-        list(APPEND _impala_flags --log-level $<IF:$<CONFIG:Release>,error,info>)
-    endif()
+    #list(FIND PARGS_IMPALA_FLAGS "--log-level" IMPALA_FLAGS_LOG_LEVEL_IDX)
+    #if(IMPALA_FLAGS_LOG_LEVEL_IDX EQUAL -1)
+    #    list(APPEND _impala_flags --log-level $<IF:$<CONFIG:Release>,error,info>)
+    #endif()
 
     if(NOT MSVC)
         list(APPEND _clang_flags -fPIE)
@@ -220,7 +220,7 @@ function(anydsl_runtime_wrap outfiles)
 
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} -emit-llvm -o ${_basepath}
+        COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} --emit-llvm -o ${_basepath}
         COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
