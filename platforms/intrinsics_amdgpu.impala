@@ -323,7 +323,7 @@ struct hsa_dispatch_packet_t {
 fn @amdgpu_accelerator(dev: i32) -> Accelerator {
     fn @div_round_up(num: i32, multiple: i32) -> i32 { (num + multiple - 1) / multiple }
     Accelerator {
-        exec          = @|grid, block, body| {
+        exec          = @|body| |grid, block| {
             let work_item = WorkItem {
                 tidx  = amdgcn_workitem_id_x,
                 tidy  = amdgcn_workitem_id_y,

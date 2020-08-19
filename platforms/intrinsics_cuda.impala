@@ -284,7 +284,7 @@ fn @cuda_madf(a: f32, b: f32, c: f32) -> f32 { cuda_fmaf(a, b, c) }
 fn @cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
 
 fn @cuda_accelerator(dev: i32) = Accelerator {
-    exec          = @|grid, block, body| {
+    exec          = @|body| |grid, block| {
         let work_item = WorkItem {
             tidx  = cuda_threadIdx_x,
             tidy  = cuda_threadIdx_y,

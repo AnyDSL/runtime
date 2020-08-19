@@ -592,7 +592,7 @@ fn @nvvm_ballot(a: i32) -> i32 {
 fn @nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
 fn @nvvm_accelerator(dev: i32) = Accelerator {
-    exec          = @|grid, block, body| {
+    exec          = @|body| |grid, block| {
         let work_item = WorkItem {
             tidx  = nvvm_read_ptx_sreg_tid_x,
             tidy  = nvvm_read_ptx_sreg_tid_y,

@@ -71,7 +71,7 @@ static CLK_LOCAL_MEM_FENCE  = 1:u32;
 static CLK_GLOBAL_MEM_FENCE = 2:u32;
 
 fn @opencl_accelerator(dev: i32) = Accelerator {
-    exec          = @|grid, block, body| {
+    exec          = @|body| |grid, block| {
         let work_item = WorkItem {
             tidx  = @|| opencl_get_local_id(0) as i32,
             tidy  = @|| opencl_get_local_id(1) as i32,
