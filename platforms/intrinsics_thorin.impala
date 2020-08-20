@@ -18,9 +18,10 @@
 #[import(cc = "thorin")] fn hls(_body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "pipeline")] fn thorin_pipeline(_initiation_interval: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> (); // only for HLS/OpenCL backend
 #[import(cc = "thorin", name = "parallel")] fn thorin_parallel(_num_threads: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> ();
-#[import(cc = "thorin")] fn spawn(_body: fn() -> ()) -> i32;
+#[import(cc = "thorin", name = "spawn")] fn thorin_spawn(_body: fn() -> ()) -> i32;
 #[import(cc = "thorin")] fn sync(_id: i32) -> ();
 #[import(cc = "thorin")] fn vectorize(_vector_length: i32, _body: fn(i32) -> ()) -> ();
+fn spawn(body: fn() -> ()) = @|| thorin_spawn(body)
 
 #[import(cc = "thorin", name = "atomic")] fn atomic_p1[T](_binop: u32, _addr: &mut addrspace(1)T, _val: T, _order: u32, _scope: &[u8]) -> T;
 #[import(cc = "thorin", name = "atomic")] fn atomic_p3[T](_binop: u32, _addr: &mut addrspace(3)T, _val: T, _order: u32, _scope: &[u8]) -> T;
@@ -38,6 +39,7 @@ fn @parallel(body: fn (i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32|
 struct FlowGraph { empty: i32 }
 struct FlowTask { empty: i32 }
 #[import(cc = "thorin", name = "anydsl_create_graph")]  fn create_graph() -> FlowGraph;
-#[import(cc = "thorin", name = "anydsl_create_task")]   fn create_task(_graph: FlowGraph, _body: fn() -> ()) -> FlowTask;
+#[import(cc = "thorin", name = "anydsl_create_task")]   fn thorin_create_task(_graph: FlowGraph, _body: fn() -> ()) -> FlowTask;
 #[import(cc = "thorin", name = "anydsl_create_edge")]   fn create_edge(_src: FlowTask, _dst: FlowTask) -> ();
 #[import(cc = "thorin", name = "anydsl_execute_graph")] fn execute_flowgraph(_graph: FlowGraph, _task: FlowTask) -> ();
+fn create_task(body: fn() -> ()) = @|graph: FlowGraph| thorin_create_task(graph, body)
