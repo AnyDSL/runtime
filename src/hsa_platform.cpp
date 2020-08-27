@@ -333,6 +333,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
 
     auto& kernel_info = load_kernel(dev, file, name);
 
+    auto align_up = [&] (unsigned int start, unsigned int align) -> unsigned int {
+        return (start + align - 1U) & -align;
+    };
+
     // set up arguments
     if (num_args) {
         if (!kernel_info.kernarg_segment) {
@@ -350,9 +354,29 @@ void HSAPlatform::launch_kernel(DeviceId dev,
             if (!std::align(aligns[i], allocs[i], cur, space))
                 error("Incorrect kernel argument alignment detected");
             std::memcpy(cur, args[i], sizes[i]);
+            info("arg at %", cur);
             cur = reinterpret_cast<uint8_t*>(cur) + allocs[i];
         }
+
         size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
+        if (align_up(total, sizeof(int64_t)) == kernel_info.kernarg_segment_size - 32) {
+            // implicit kernel args: global offset x, y, z
+            for (int i=0; i<3; ++i) {
+                if (!std::align(sizeof(int64_t), sizeof(int64_t), cur, space))
+                    error("Incorrect kernel argument alignment detected");
+                std::memset(cur, 0, sizeof(int64_t));
+                cur = reinterpret_cast<uint8_t*>(cur) + sizeof(int64_t);
+            }
+
+            // TODO: implicit kernel arg: printf buffer
+            //void* printf_buffer = alloc_unified(dev, 1024*1024);
+            //if (!std::align(sizeof(int64_t), sizeof(int64_t), cur, space))
+            //    error("Incorrect kernel argument alignment detected");
+            //std::memcpy(cur, &printf_buffer, sizeof(int64_t));
+            cur = reinterpret_cast<uint8_t*>(cur) + sizeof(int64_t);
+        }
+
+        total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
         if (total != kernel_info.kernarg_segment_size)
             error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
     }
