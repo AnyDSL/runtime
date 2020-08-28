@@ -233,32 +233,32 @@ fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) -> i32 {
     let idx = src_lane + (lane_id & !(width - 1));
     amdgcn_ds_bpermute(idx << 2, var)
 }
-fn @amdgcn_shfl_u32(var: u32, src_lane: i32, width: i32) -> u32 { bitcast[u32,i32](amdgcn_shfl_i32(bitcast[i32,u32](var), src_lane, width)) }
-fn @amdgcn_shfl_f32(var: f32, src_lane: i32, width: i32) -> f32 { bitcast[f32,i32](amdgcn_shfl_i32(bitcast[i32,f32](var), src_lane, width)) }
+fn @amdgcn_shfl_u32(var: u32, src_lane: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
+fn @amdgcn_shfl_f32(var: f32, src_lane: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
 
 fn @amdgcn_shfl_up_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
     let lane_id = amdgcn_lane_id();
     let idx = if lane_id - lane_delta as i32 < lane_id & !(width - 1) { lane_id } else { lane_id - lane_delta as i32 };
     amdgcn_ds_bpermute(idx << 2, var)
 }
-fn @amdgcn_shfl_up_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32,i32](amdgcn_shfl_up_i32(bitcast[i32,u32](var), lane_delta, width)) }
-fn @amdgcn_shfl_up_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32,i32](amdgcn_shfl_up_i32(bitcast[i32,f32](var), lane_delta, width)) }
+fn @amdgcn_shfl_up_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_up_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
 
 fn @amdgcn_shfl_down_i32(var: i32, lane_delta: u32, width: i32) -> i32 {
     let lane_id = amdgcn_lane_id();
     let idx = if (lane_id & (width - 1)) + lane_delta as i32 >= width { lane_id } else { lane_id + lane_delta as i32 };
     amdgcn_ds_bpermute(idx << 2, var)
 }
-fn @amdgcn_shfl_down_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32,i32](amdgcn_shfl_down_i32(bitcast[i32,u32](var), lane_delta, width)) }
-fn @amdgcn_shfl_down_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32,i32](amdgcn_shfl_down_i32(bitcast[i32,f32](var), lane_delta, width)) }
+fn @amdgcn_shfl_down_u32(var: u32, lane_delta: u32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_down_f32(var: f32, lane_delta: u32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
 
 fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) -> i32 {
     let lane_id = amdgcn_lane_id();
     let idx = if lane_id ^ lane_mask >= (lane_id + width) & !(width - 1) { lane_id } else { lane_id ^ lane_mask };
     amdgcn_ds_bpermute(idx << 2, var)
 }
-fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32,i32](amdgcn_shfl_xor_i32(bitcast[i32,u32](var), lane_mask, width)) }
-fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32,i32](amdgcn_shfl_xor_i32(bitcast[i32,f32](var), lane_mask, width)) }
+fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) -> u32 { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) -> f32 { bitcast[f32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
 
 fn @amdgcn_read_exec() -> i64 {
     let mut exec_lo: i32;
@@ -331,18 +331,18 @@ fn @amdgpu_accelerator(dev: i32) -> Accelerator {
                 bidx  = amdgcn_workgroup_id_x,
                 bidy  = amdgcn_workgroup_id_y,
                 bidz  = amdgcn_workgroup_id_z,
-                gidx  = @|| amdgcn_workitem_id_x() + bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
-                gidy  = @|| amdgcn_workitem_id_y() + bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
-                gidz  = @|| amdgcn_workitem_id_z() + bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
-                bdimx = @|| bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(2) as i32,
-                bdimy = @|| bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(3) as i32,
-                bdimz = @|| bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(4) as i32,
-                gdimx = @|| bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(3) as i32,
-                gdimy = @|| bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(4) as i32,
-                gdimz = @|| bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(5) as i32,
-                nblkx = @|| div_round_up(bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(3) as i32, bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(2) as i32),
-                nblky = @|| div_round_up(bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(4) as i32, bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(3) as i32),
-                nblkz = @|| div_round_up(bitcast[&addrspace(4)[u32],&addrspace(4)i8](amdgcn_dispatch_ptr())(5) as i32, bitcast[&addrspace(4)[u16],&addrspace(4)i8](amdgcn_dispatch_ptr())(4) as i32)
+                gidx  = @|| amdgcn_workitem_id_x() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
+                gidy  = @|| amdgcn_workitem_id_y() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
+                gidz  = @|| amdgcn_workitem_id_z() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
+                bdimx = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32,
+                bdimy = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32,
+                bdimz = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimx = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(3) as i32,
+                gdimy = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(4) as i32,
+                gdimz = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(5) as i32,
+                nblkx = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(3) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32),
+                nblky = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32),
+                nblkz = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32)
             };
             amdgpu(dev, grid, block, || @body(work_item))
         },
