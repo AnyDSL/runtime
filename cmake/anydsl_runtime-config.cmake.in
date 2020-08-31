@@ -61,7 +61,7 @@ find_path(Impala_DIR
     PATHS ${Impala_DIR} $ENV{Impala_DIR} @Impala_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
     PATH_SUFFIXES share/anydsl/cmake
 )
-find_package(Impala QUIET)
+find_package(Artic QUIET PATHS ${Impala_DIR})
 if(TARGET artic AND NOT Artic_BIN)
     get_target_property(Artic_BIN artic LOCATION)
     set(Impala_BIN ${Artic_BIN} CACHE FILEPATH "path to artic executable")

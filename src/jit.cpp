@@ -1,6 +1,7 @@
+#include <memory>
 #include <fstream>
 #include <sstream>
-#include <memory>
+#include <string_view>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
@@ -12,25 +13,55 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include <impala/impala.h>
-#include <impala/ast.h>
+#include <artic/bind.h>
+#include <artic/check.h>
+#include <artic/emit.h>
+#include <artic/lexer.h>
+#include <artic/locator.h>
+#include <artic/log.h>
+#include <artic/parser.h>
+#include <artic/print.h>
 #include <thorin/world.h>
+#include <thorin/util/log.h>
 #include <thorin/transform/codegen_prepare.h>
 #include <thorin/be/llvm/llvm.h>
 
 #include "anydsl_runtime.h"
+#include "log.h"
 #include "runtime.h"
 
 struct MemBuf : public std::streambuf {
-    MemBuf(const char* string, uint32_t size) {
-        auto begin = const_cast<char*>(string);
-        auto end   = const_cast<char*>(string + size);
-        setg(begin, begin, end);
+    MemBuf(const std::string& str) {
+        setg(
+            const_cast<char*>(str.data()),
+            const_cast<char*>(str.data()),
+            const_cast<char*>(str.data() + str.size()));
+    }
+
+    std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way, std::ios_base::openmode) override {
+        if (way == std::ios_base::beg)
+            setg(eback(), eback() + off, egptr());
+        else if (way == std::ios_base::cur)
+            setg(eback(), gptr() + off, egptr());
+        else if (way == std::ios_base::end)
+            setg(eback(), egptr() + off, egptr());
+        else
+            return std::streampos(-1);
+        return gptr() - eback();
+    }
+
+    std::streampos seekpos(std::streampos pos, std::ios_base::openmode mode) override {
+        return seekoff(std::streamoff(pos), std::ios_base::beg, mode);
+    }
+
+    std::streamsize showmanyc() override {
+        return egptr() - gptr();
     }
 };
 
 static const char runtime_srcs[] = {
 #include "runtime_srcs.inc"
+    0
 };
 
 struct JIT {
@@ -42,38 +73,61 @@ struct JIT {
     std::vector<Program> programs;
 
     JIT() {
-        impala::init();
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    int32_t compile(const char* program, uint32_t size, uint32_t opt) {
+    int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
-        std::string cached_llvm = runtime().load_cache(std::string(program), ".llvm");
+        std::string program_str = std::string(program_src, size);
+        std::string cached_llvm = runtime().load_cache(program_str, ".llvm");
         std::string module_name = "jit";
         if (cached_llvm.empty()) {
             bool debug = false;
             assert(opt <= 3);
 
-            impala::Items items;
-            MemBuf program_buf(program, size);
-            MemBuf runtime_buf(runtime_srcs, sizeof(runtime_srcs));
-            std::istream program_is(&program_buf);
-            std::istream runtime_is(&runtime_buf);
-            impala::parse(items, runtime_is, "runtime");
-            impala::parse(items, program_is, module_name.c_str());
+            artic::Locator locator;
+            artic::Log log(artic::log::err, &locator);
+            artic::ast::ModDecl program;
+            std::vector<std::string> contents;
+            auto parse = [&] (std::string input, std::string filename) {
+                contents.emplace_back(input);
+                log.locator->register_file(filename, contents.back());
+                MemBuf mem_buf(contents.back());
 
-            auto module = std::make_unique<impala::Module>(module_name.c_str(), std::move(items));
-            impala::num_warnings() = 0;
-            impala::num_errors()   = 0;
-            std::unique_ptr<impala::TypeTable> typetable;
-            impala::check(typetable, module.get(), false);
-            if (impala::num_errors() != 0)
-                return -1;
+                std::istream is(&mem_buf);
 
+                artic::Lexer lexer(log, filename, is);
+                artic::Parser parser(log, lexer);
+                auto module = parser.parse();
+                if (log.errors > 0)
+                    return false;
+
+                program.decls.insert(
+                    program.decls.end(),
+                    std::make_move_iterator(module->decls.begin()),
+                    std::make_move_iterator(module->decls.end())
+                );
+
+                return true;
+            };
+
+            artic::NameBinder name_binder(log);
+            artic::TypeTable type_table;
+            artic::TypeChecker type_checker(log, type_table);
+
+            if (!parse(std::string(runtime_srcs), "runtime") ||
+                !parse(program_str, module_name) ||
+                !name_binder.run(program) ||
+                !type_checker.run(program))
+                error("JIT: error during type checking");
+
+            thorin::Log::set(thorin::Log::Error, &std::cerr);
             thorin::World world(module_name);
-            impala::emit(world, module.get());
+            artic::Emitter emitter(log, world);
+            if (!emitter.run(program))
+                error("JIT: error during IR emission");
 
             world.opt();
 
