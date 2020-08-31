@@ -137,13 +137,13 @@ struct JIT {
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
-            runtime().store_cache(std::string(program), stream.str(), ".llvm");
+            runtime().store_cache(program_str, stream.str(), ".llvm");
 
             auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
                 if (cg) {
                     std::ostringstream stream;
                     cg->emit(stream, opt, debug);
-                    runtime().store_cache(ext + std::string(program), stream.str(), ext);
+                    runtime().store_cache(ext + program_str, stream.str(), ext);
                     runtime().register_file(std::string(module_name) + ext, stream.str());
                 }
             };
@@ -159,7 +159,7 @@ struct JIT {
             llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, *llvm_context);
 
             auto load_backend_src = [&](std::string ext) {
-                std::string cached_src = runtime().load_cache(ext + std::string(program), ext);
+                std::string cached_src = runtime().load_cache(ext + program_str, ext);
                 if (!cached_src.empty())
                     runtime().register_file(module_name + ext, cached_src);
             };
