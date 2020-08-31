@@ -5,5 +5,5 @@ if(EXISTS "${_basename}.hls" AND EXISTS "./anydsl_fpga/")
     # all kernels are contained in each library; take the last one
     list(GET kernels -1 kernel)
     execute_process(COMMAND cp ${_objfile} ${_objfile}.orig)
-    execute_process(COMMAND ld -r ${_objfile}.orig anydsl_fpga/${_basename}_${kernel}/csim/build/obj/${_basename}_hls.o -o ${_objfile})
+    #execute_process(COMMAND ld -r ${_objfile}.orig anydsl_fpga/${_basename}_${kernel}/csim/build/obj/${_basename}_hls.o -o ${_objfile})
 endif()

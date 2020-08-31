@@ -330,7 +330,7 @@ function(anydsl_runtime_wrap outfiles)
         # run clang on the .ll file to get the .o
         add_custom_command(OUTPUT ${_objfile}
             COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
-            COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
+            #COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
             DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
     endif()
 

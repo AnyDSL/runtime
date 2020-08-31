@@ -108,7 +108,7 @@ extern "device" {
     fn " "             bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
 }
 
-fn @hls_accelerator() -> Accelerator {
+fn @hls_accelerator(dev: i32) -> Accelerator {
     Accelerator {
         exec          : @|grid, block, body| {
             let work_item = WorkItem {
@@ -119,11 +119,11 @@ fn @hls_accelerator() -> Accelerator {
                 gdimx : @|| 1, gdimy : @|| 1, gdimz : @|| 1,
                 nblkx : @|| 1, nblky : @|| 1, nblkz : @|| 1
             };
-            hls(|| @@body(work_item));
+            hls(dev, || @@body(work_item));
         },
-        sync          : @|| (),
-        alloc         : @|size| alloc_cpu(size),
-        alloc_unified : @|size| alloc_cpu(size),
+        sync          : @|| synchronize_hls(dev),
+        alloc         : @|size| alloc_hls(dev, size),
+        alloc_unified : @|size| alloc_hls_unified(dev, size),
         barrier       : @|| ()
     }
 };
