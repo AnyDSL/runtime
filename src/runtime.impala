@@ -121,7 +121,7 @@ fn @unroll_step(body: fn(i32) -> ()) {
 }
 
 fn @unroll_step_rev(body: fn(i32) -> ()) {
-    fn @(?beg & ?end & ?step) loop(beg: i32, end: i32, step: i32) -> () {
+    fn @(?beg & ?end & ?step) loop(end: i32, beg: i32, step: i32) -> () {
         if end > beg {
             @body(end);
             loop(end - step, beg, step)
