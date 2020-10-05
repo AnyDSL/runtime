@@ -1,5 +1,6 @@
 #[import(cc = "device", name = "llvm.amdgcn.dispatch.id")]          fn amdgcn_dispatch_id() -> i64;
 #[import(cc = "device", name = "llvm.amdgcn.dispatch.ptr")]         fn amdgcn_dispatch_ptr() -> &addrspace(4)i8;
+#[import(cc = "device", name = "llvm.amdgcn.implicitarg.ptr")]      fn amdgcn_implicitarg_ptr() -> &addrspace(4)i8;
 #[import(cc = "device", name = "llvm.amdgcn.ds.gws.barrier")]       fn amdgcn_ds_gws_barrier(i32, i32) -> ();
 #[import(cc = "device", name = "llvm.amdgcn.s.barrier")]            fn amdgcn_s_barrier() -> ();
 #[import(cc = "device", name = "llvm.amdgcn.wave.barrier")]         fn amdgcn_wave_barrier() -> ();

@@ -27,6 +27,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 #endif
 
 #define CHECK_HSA(err, name) check_hsa_error(err, name, __FILE__, __LINE__)
@@ -332,6 +333,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
 
     auto& kernel_info = load_kernel(dev, file, name);
 
+    auto align_up = [&] (unsigned int start, unsigned int align) -> unsigned int {
+        return (start + align - 1U) & -align;
+    };
+
     // set up arguments
     if (num_args) {
         if (!kernel_info.kernarg_segment) {
@@ -349,9 +354,29 @@ void HSAPlatform::launch_kernel(DeviceId dev,
             if (!std::align(aligns[i], allocs[i], cur, space))
                 error("Incorrect kernel argument alignment detected");
             std::memcpy(cur, args[i], sizes[i]);
+            info("arg at %", cur);
             cur = reinterpret_cast<uint8_t*>(cur) + allocs[i];
         }
+
         size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
+        if (align_up(total, sizeof(int64_t)) == kernel_info.kernarg_segment_size - 32) {
+            // implicit kernel args: global offset x, y, z
+            for (int i=0; i<3; ++i) {
+                if (!std::align(sizeof(int64_t), sizeof(int64_t), cur, space))
+                    error("Incorrect kernel argument alignment detected");
+                std::memset(cur, 0, sizeof(int64_t));
+                cur = reinterpret_cast<uint8_t*>(cur) + sizeof(int64_t);
+            }
+
+            // TODO: implicit kernel arg: printf buffer
+            //void* printf_buffer = alloc_unified(dev, 1024*1024);
+            //if (!std::align(sizeof(int64_t), sizeof(int64_t), cur, space))
+            //    error("Incorrect kernel argument alignment detected");
+            //std::memcpy(cur, &printf_buffer, sizeof(int64_t));
+            cur = reinterpret_cast<uint8_t*>(cur) + sizeof(int64_t);
+        }
+
+        total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
         if (total != kernel_info.kernarg_segment_size)
             error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
     }
@@ -633,37 +658,52 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     if (linker.linkInModule(std::move(config_module), llvm::Linker::Flags::None))
         error("Can't link config into module");
 
-    llvm::legacy::FunctionPassManager function_pass_manager(llvm_module.get());
-    llvm::legacy::PassManager module_pass_manager;
+    auto run_pass_manager = [&] (std::unique_ptr<llvm::Module> module, llvm::CodeGenFileType cogen_file_type, std::string out_filename, bool print_ir=false) {
+        llvm::legacy::FunctionPassManager function_pass_manager(module.get());
+        llvm::legacy::PassManager module_pass_manager;
 
-    module_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
-    function_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+        module_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+        function_pass_manager.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
 
-    llvm::PassManagerBuilder builder;
-    builder.OptLevel = opt;
-    builder.Inliner = llvm::createFunctionInliningPass(builder.OptLevel, 0, false);
-    machine->adjustPassManager(builder);
-    builder.populateFunctionPassManager(function_pass_manager);
-    builder.populateModulePassManager(module_pass_manager);
+        llvm::PassManagerBuilder builder;
+        builder.OptLevel = opt;
+        builder.Inliner = llvm::createFunctionInliningPass(builder.OptLevel, 0, false);
+        machine->adjustPassManager(builder);
+        builder.populateFunctionPassManager(function_pass_manager);
+        builder.populateModulePassManager(module_pass_manager);
 
-    machine->Options.MCOptions.AsmVerbose = true;
+        machine->Options.MCOptions.AsmVerbose = true;
 
-    llvm::SmallString<0> outstr;
-    llvm::raw_svector_ostream llvm_stream(outstr);
+        llvm::SmallString<0> outstr;
+        llvm::raw_svector_ostream llvm_stream(outstr);
 
-    //machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile, true);
-    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile, true);
+        machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, cogen_file_type, true);
 
-    function_pass_manager.doInitialization();
-    for (auto func = llvm_module->begin(); func != llvm_module->end(); ++func)
-        function_pass_manager.run(*func);
-    function_pass_manager.doFinalization();
-    module_pass_manager.run(*llvm_module);
+        function_pass_manager.doInitialization();
+        for (auto func = module->begin(); func != module->end(); ++func)
+            function_pass_manager.run(*func);
+        function_pass_manager.doFinalization();
+        module_pass_manager.run(*module);
 
-    std::string obj(outstr.begin(), outstr.end());
+        if (print_ir) {
+            std::error_code EC;
+            llvm::raw_fd_ostream outstream(filename + "_final.ll", EC);
+            module->print(outstream, nullptr);
+        }
+
+        std::string out(outstr.begin(), outstr.end());
+        runtime().store_file(out_filename, out);
+    };
+
+    std::string asm_file = filename + ".asm";
     std::string obj_file = filename + ".obj";
     std::string gcn_file = filename + ".gcn";
-    runtime().store_file(obj_file, obj);
+
+    bool print_ir = false;
+    if (print_ir)
+        run_pass_manager(llvm::CloneModule(*llvm_module.get()), llvm::CodeGenFileType::CGFT_AssemblyFile, asm_file, print_ir);
+    run_pass_manager(std::move(llvm_module), llvm::CodeGenFileType::CGFT_ObjectFile, obj_file);
+
     llvm::raw_os_ostream lld_cout(std::cout);
     llvm::raw_os_ostream lld_cerr(std::cerr);
     std::vector<const char*> lld_args = {

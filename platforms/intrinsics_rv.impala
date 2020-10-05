@@ -9,3 +9,5 @@
 #[import(cc = "C")] fn rv_shuffle(_: f32, _: i32) -> f32;
 #[import(cc = "C")] fn rv_align(_: &i8, _: i32)-> &i8;
 #[import(cc = "C")] fn rv_compact(_: f32, _: bool) -> f32;
+#[import(cc = "C")] fn rv_lane_id() -> i32;
+#[import(cc = "C")] fn rv_num_lanes() -> i32;
