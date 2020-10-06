@@ -56,56 +56,112 @@ extern "device" {
     fn "max"        hls_max(i32, i32) -> i32;
 }
 
+// channel scalar types
 struct channel_u8  { data : u8  };
 struct channel_i32 { data : i32 };
 struct channel_f32 { data : f32 };
 
+// channel array types
+struct channel1_u8   { data : [u8 * 1  ] };
+struct channel2_u8   { data : [u8 * 2  ] };
+struct channel4_u8   { data : [u8 * 4  ] };
+struct channel8_u8   { data : [u8 * 8  ] };
+struct channel16_u8  { data : [u8 * 16 ] };
+struct channel32_u8  { data : [u8 * 32 ] };
+struct channel64_u8  { data : [u8 * 64 ] };
+struct channel128_u8 { data : [u8 * 128] };
+
+struct channel1_i32   { data : [i32 * 1  ] };
+struct channel2_i32   { data : [i32 * 2  ] };
+struct channel4_i32   { data : [i32 * 4  ] };
+struct channel8_i32   { data : [i32 * 8  ] };
+struct channel16_i32  { data : [i32 * 16 ] };
+struct channel32_i32  { data : [i32 * 32 ] };
+struct channel64_i32  { data : [i32 * 64 ] };
+struct channel128_i32 { data : [i32 * 128] };
+
+struct channel1_f32   { data : [f32 * 1  ] };
+struct channel2_f32   { data : [f32 * 2  ] };
+struct channel4_f32   { data : [f32 * 4  ] };
+struct channel8_f32   { data : [f32 * 8  ] };
+struct channel16_f32  { data : [f32 * 16 ] };
+struct channel32_f32  { data : [f32 * 32 ] };
+struct channel64_f32  { data : [f32 * 64 ] };
+struct channel128_f32 { data : [f32 * 128] };
+
 extern "device" {
     fn print_pragma(&[u8]) -> ();
-    // u8
-    fn "read_channel"  read_channel_u8  (&mut channel_u8) ->  u8;
-    fn "read_channel"  read_channel2_u8 (&mut channel_u8) -> [u8 * 2];
-    fn "read_channel"  read_channel4_u8 (&mut channel_u8) -> [u8 * 4];
-    fn "read_channel"  read_channel8_u8 (&mut channel_u8) -> [u8 * 8];
-    fn "read_channel"  read_channel16_u8(&mut channel_u8) -> [u8 * 16];
-    fn "read_channel"  read_channel32_u8(&mut channel_u8) -> [u8 * 32];
-    fn "write_channel" write_channel_u8  (&mut channel_u8,  u8      ) -> ();
-    fn "write_channel" write_channel2_u8 (&mut channel_u8, [u8 * 2 ]) -> ();
-    fn "write_channel" write_channel4_u8 (&mut channel_u8, [u8 * 4 ]) -> ();
-    fn "write_channel" write_channel8_u8 (&mut channel_u8, [u8 * 8 ]) -> ();
-    fn "write_channel" write_channel16_u8(&mut channel_u8, [u8 * 16]) -> ();
-    fn "write_channel" write_channel32_u8(&mut channel_u8, [u8 * 32]) -> ();
-    fn " "             bitcast_channel_u8(&mut channel_u8) -> [u8 * 2];
+    // u8 scalar
+    fn "read_channel"  read_channel_u8  ( &mut channel_u8    ) -> u8 ;
+    fn "write_channel" write_channel_u8 ( &mut channel_u8, u8) -> ();
 
-    // i32
-    fn "read_channel"  read_channel_i32  (&mut channel_i32) ->  i32;
-    fn "read_channel"  read_channel2_i32 (&mut channel_i32) -> [i32 * 2];
-    fn "read_channel"  read_channel4_i32 (&mut channel_i32) -> [i32 * 4];
-    fn "read_channel"  read_channel8_i32 (&mut channel_i32) -> [i32 * 8];
-    fn "read_channel"  read_channel16_i32(&mut channel_i32) -> [i32 * 16];
-    fn "read_channel"  read_channel32_i32(&mut channel_i32) -> [i32 * 32];
-    fn "write_channel" write_channel_i32  (&mut channel_i32,  i32      ) -> ();
-    fn "write_channel" write_channel2_i32 (&mut channel_i32, [i32 * 2 ]) -> ();
-    fn "write_channel" write_channel4_i32 (&mut channel_i32, [i32 * 4 ]) -> ();
-    fn "write_channel" write_channel8_i32 (&mut channel_i32, [i32 * 8 ]) -> ();
-    fn "write_channel" write_channel16_i32(&mut channel_i32, [i32 * 16]) -> ();
-    fn "write_channel" write_channel32_i32(&mut channel_i32, [i32 * 32]) -> ();
-    fn " "             bitcast_channel_i32(&mut channel_i32) -> [i32 * 2];
+    // u8 array
+    fn "read_channel"  read_channel1_u8  ( &mut channel1_u8  ) -> [u8 * 1  ];
+    fn "read_channel"  read_channel2_u8  ( &mut channel2_u8  ) -> [u8 * 2  ];
+    fn "read_channel"  read_channel4_u8  ( &mut channel4_u8  ) -> [u8 * 4  ];
+    fn "read_channel"  read_channel8_u8  ( &mut channel8_u8  ) -> [u8 * 8  ];
+    fn "read_channel"  read_channel16_u8 ( &mut channel16_u8 ) -> [u8 * 16 ];
+    fn "read_channel"  read_channel32_u8 ( &mut channel32_u8 ) -> [u8 * 32 ];
+    fn "read_channel"  read_channel64_u8 ( &mut channel64_u8 ) -> [u8 * 64 ];
+    fn "read_channel"  read_channel128_u8( &mut channel128_u8) -> [u8 * 128];
 
-    // f32
-    fn "read_channel"  read_channel_f32  (&mut channel_f32) ->  f32;
-    fn "read_channel"  read_channel2_f32 (&mut channel_f32) -> [f32 * 2];
-    fn "read_channel"  read_channel4_f32 (&mut channel_f32) -> [f32 * 4];
-    fn "read_channel"  read_channel8_f32 (&mut channel_f32) -> [f32 * 8];
-    fn "read_channel"  read_channel16_f32(&mut channel_f32) -> [f32 * 16];
-    fn "read_channel"  read_channel32_f32(&mut channel_f32) -> [f32 * 32];
-    fn "write_channel" write_channel_f32  (&mut channel_f32,  f32      ) -> ();
-    fn "write_channel" write_channel2_f32 (&mut channel_f32, [f32 * 2 ]) -> ();
-    fn "write_channel" write_channel4_f32 (&mut channel_f32, [f32 * 4 ]) -> ();
-    fn "write_channel" write_channel8_f32 (&mut channel_f32, [f32 * 8 ]) -> ();
-    fn "write_channel" write_channel16_f32(&mut channel_f32, [f32 * 16]) -> ();
-    fn "write_channel" write_channel32_f32(&mut channel_f32, [f32 * 32]) -> ();
-    fn " "             bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
+    fn "write_channel" write_channel1_u8  ( &mut channel1_u8,   [u8 * 1  ] ) -> ();
+    fn "write_channel" write_channel2_u8  ( &mut channel2_u8,   [u8 * 2  ] ) -> ();
+    fn "write_channel" write_channel4_u8  ( &mut channel4_u8,   [u8 * 4  ] ) -> ();
+    fn "write_channel" write_channel8_u8  ( &mut channel8_u8,   [u8 * 8  ] ) -> ();
+    fn "write_channel" write_channel16_u8 ( &mut channel16_u8,  [u8 * 16 ] ) -> ();
+    fn "write_channel" write_channel32_u8 ( &mut channel32_u8,  [u8 * 32 ] ) -> ();
+    fn "write_channel" write_channel64_u8 ( &mut channel64_u8,  [u8 * 64 ] ) -> ();
+    fn "write_channel" write_channel128_u8( &mut channel128_u8, [u8 * 128] ) -> ();
+    fn " "             bitcast_channel_u8 ( &mut channel1_u8) -> [u8 * 2 ];
+
+    // i32 scalar
+    fn "read_channel"  read_channel_i32  ( &mut channel_i32      ) -> i32;
+    fn "write_channel" write_channel_i32 ( &mut channel_i32, i32 ) -> ();
+
+    // i32 array
+    fn "read_channel"  read_channel1_i32  ( &mut channel1_i32  ) -> [i32 * 1  ];
+    fn "read_channel"  read_channel2_i32  ( &mut channel2_i32  ) -> [i32 * 2  ];
+    fn "read_channel"  read_channel4_i32  ( &mut channel4_i32  ) -> [i32 * 4  ];
+    fn "read_channel"  read_channel8_i32  ( &mut channel8_i32  ) -> [i32 * 8  ];
+    fn "read_channel"  read_channel16_i32 ( &mut channel16_i32 ) -> [i32 * 16 ];
+    fn "read_channel"  read_channel32_i32 ( &mut channel32_i32 ) -> [i32 * 32 ];
+    fn "read_channel"  read_channel64_i32 ( &mut channel64_i32 ) -> [i32 * 64 ];
+    fn "read_channel"  read_channel128_i32( &mut channel128_i32) -> [i32 * 128];
+
+    fn "write_channel" write_channel1_i32  ( &mut channel1_i32,   [i32 * 1  ] )-> ();
+    fn "write_channel" write_channel2_i32  ( &mut channel2_i32,   [i32 * 2  ] ) -> ();
+    fn "write_channel" write_channel4_i32  ( &mut channel4_i32,   [i32 * 4  ] ) -> ();
+    fn "write_channel" write_channel8_i32  ( &mut channel8_i32,   [i32 * 8  ] ) -> ();
+    fn "write_channel" write_channel16_i32 ( &mut channel16_i32,  [i32 * 16 ] ) -> ();
+    fn "write_channel" write_channel32_i32 ( &mut channel32_i32,  [i32 * 32 ] ) -> ();
+    fn "write_channel" write_channel64_i32 ( &mut channel64_i32,  [i32 * 64 ] ) -> ();
+    fn "write_channel" write_channel128_i32( &mut channel128_i32, [i32 * 128])  -> ();
+    fn " "             bitcast_channel_i32 ( &mut channel1_i32) -> [i32 * 2 ];
+
+    // f32 scalar
+    fn "read_channel"  read_channel_f32  ( &mut channel_f32      ) -> f32;
+    fn "write_channel" write_channel_f32 ( &mut channel_f32, f32 ) -> ();
+
+    // f32 array
+    fn "read_channel"  read_channel1_f32  ( &mut channel1_f32  ) -> [f32 * 1  ];
+    fn "read_channel"  read_channel2_f32  ( &mut channel2_f32  ) -> [f32 * 2  ];
+    fn "read_channel"  read_channel4_f32  ( &mut channel4_f32  ) -> [f32 * 4  ];
+    fn "read_channel"  read_channel8_f32  ( &mut channel8_f32  ) -> [f32 * 8  ];
+    fn "read_channel"  read_channel16_f32 ( &mut channel16_f32 ) -> [f32 * 16 ];
+    fn "read_channel"  read_channel32_f32 ( &mut channel32_f32 ) -> [f32 * 32 ];
+    fn "read_channel"  read_channel64_f32 ( &mut channel64_f32 ) -> [f32 * 64 ];
+    fn "read_channel"  read_channel128_f32( &mut channel128_f32) -> [f32 * 128];
+
+    fn "write_channel" write_channel1_f32  ( &mut channel1_f32,   [f32 * 1  ]) -> ();
+    fn "write_channel" write_channel2_f32  ( &mut channel2_f32,   [f32 * 2  ]) -> ();
+    fn "write_channel" write_channel4_f32  ( &mut channel4_f32,   [f32 * 4  ]) -> ();
+    fn "write_channel" write_channel8_f32  ( &mut channel8_f32,   [f32 * 8  ]) -> ();
+    fn "write_channel" write_channel16_f32 ( &mut channel16_f32,  [f32 * 16 ]) -> ();
+    fn "write_channel" write_channel32_f32 ( &mut channel32_f32,  [f32 * 32 ]) -> ();
+    fn "write_channel" write_channel64_f32 ( &mut channel64_f32,  [f32 * 64 ]) -> ();
+    fn "write_channel" write_channel128_f32( &mut channel128_f32, [f32 * 128]) -> ();
+    fn " "             bitcast_channel_f32 ( &mut channel1_f32) -> [f32 * 2  ];
 }
 
 fn @hls_accelerator(dev: i32) -> Accelerator {
