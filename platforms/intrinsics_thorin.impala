@@ -21,7 +21,7 @@
 #[import(cc = "thorin", name = "spawn")] fn thorin_spawn(_body: fn() -> ()) -> i32;
 #[import(cc = "thorin")] fn sync(_id: i32) -> ();
 #[import(cc = "thorin")] fn vectorize(_vector_length: i32, _body: fn(i32) -> ()) -> ();
-fn spawn(body: fn() -> ()) = @|| thorin_spawn(body)
+fn spawn(body: fn() -> ()) = @|| thorin_spawn(body);
 
 #[import(cc = "thorin", name = "atomic")] fn atomic_p1[T](_binop: u32, _addr: &mut addrspace(1)T, _val: T, _order: u32, _scope: &[u8]) -> T;
 #[import(cc = "thorin", name = "atomic")] fn atomic_p3[T](_binop: u32, _addr: &mut addrspace(3)T, _val: T, _order: u32, _scope: &[u8]) -> T;
@@ -32,8 +32,8 @@ fn spawn(body: fn() -> ()) = @|| thorin_spawn(body)
 #[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _order: u32, _scope: &[u8]) -> (T, bool);
 #[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _order: u32, _scope: &[u8]) -> (T, bool);
 
-fn @pipeline(body: fn (i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body)
-fn @parallel(body: fn (i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body)
+fn @pipeline(body: fn (i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);
+fn @parallel(body: fn (i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body);
 
 // intrinsics for flow graphs
 struct FlowGraph { empty: i32 }
@@ -42,4 +42,4 @@ struct FlowTask { empty: i32 }
 #[import(cc = "thorin", name = "anydsl_create_task")]   fn thorin_create_task(_graph: FlowGraph, _body: fn() -> ()) -> FlowTask;
 #[import(cc = "thorin", name = "anydsl_create_edge")]   fn create_edge(_src: FlowTask, _dst: FlowTask) -> ();
 #[import(cc = "thorin", name = "anydsl_execute_graph")] fn execute_flowgraph(_graph: FlowGraph, _task: FlowTask) -> ();
-fn create_task(body: fn() -> ()) = @|graph: FlowGraph| thorin_create_task(graph, body)
+fn create_task(body: fn() -> ()) = @|graph: FlowGraph| thorin_create_task(graph, body);

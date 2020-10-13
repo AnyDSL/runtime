@@ -105,7 +105,7 @@ struct channel_f32 { data : f32 }
 #[import(cc = "device", name = " ")]             fn bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
 
 fn @hls_accelerator() = Accelerator {
-    exec          = @|body| |_grid, _block| {
+    exec = @|body| |_grid, _block| {
         let work_item = WorkItem {
             tidx  = @|| 0, tidy  = @|| 0, tidz  = @|| 0,
             bidx  = @|| 0, bidy  = @|| 0, bidz  = @|| 0,
@@ -120,7 +120,7 @@ fn @hls_accelerator() = Accelerator {
     alloc         = @|size| alloc_cpu(size),
     alloc_unified = @|size| alloc_cpu(size),
     barrier       = @|| ()
-}
+};
 
 static hls_intrinsics = Intrinsics {
     expf        = hls_expf,

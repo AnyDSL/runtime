@@ -74,11 +74,11 @@
 // syncscope: singlethread "" (system)
 //
 
-fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 = atomic[i32](0, a, b, 7, "")
-fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32  = atomic[i32](1, a, b, 7, "")
-fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32  = atomic[i32](2, a, b, 7, "")
-fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32  = atomic[i32](7, a, b, 7, "")
-fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32  = atomic[i32](8, a, b, 7, "")
+fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 = atomic[i32](0, a, b, 7, "");
+fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32  = atomic[i32](1, a, b, 7, "");
+fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32  = atomic[i32](2, a, b, 7, "");
+fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32  = atomic[i32](7, a, b, 7, "");
+fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32  = atomic[i32](8, a, b, 7, "");
 
 static cpu_intrinsics = Intrinsics {
     expf        = cpu_expf,
