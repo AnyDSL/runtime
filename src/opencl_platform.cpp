@@ -375,7 +375,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     auto queue = devices_[dev].queue;
     if (devices_[dev].is_intel_fpga)
         queue = devices_[dev].kernels_queue[kernel];
-    cl_int err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, &event);
+    cl_int err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
     if (runtime_->profiling_enabled() && event) {
         err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
