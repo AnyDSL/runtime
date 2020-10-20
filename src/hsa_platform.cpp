@@ -397,7 +397,8 @@ void HSAPlatform::launch_kernel(DeviceId dev,
 
     aql.header = (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_ACQUIRE_FENCE_SCOPE) |
                  (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_RELEASE_FENCE_SCOPE) |
-                 (HSA_PACKET_TYPE_KERNEL_DISPATCH << HSA_PACKET_HEADER_TYPE);
+                 (HSA_PACKET_TYPE_KERNEL_DISPATCH << HSA_PACKET_HEADER_TYPE) |
+                 (1 << HSA_PACKET_HEADER_BARRIER);
     aql.setup = 3 << HSA_KERNEL_DISPATCH_PACKET_SETUP_DIMENSIONS;
     aql.workgroup_size_x = (uint16_t)block[0];
     aql.workgroup_size_y = (uint16_t)block[1];
