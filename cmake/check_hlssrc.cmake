@@ -45,7 +45,7 @@ if(EXISTS ${_basename}.hls)
 
     list(FIND kernels "hls_top" top_module)
     list(GET kernels ${top_module} kernel)
-
+    #TODO opening a Vitis solution
     string(CONCAT tcl_script "set project_name    \"${PROJECT_NAME}\"\n"
                             "set kernel_name      \"${kernel}\"\n"
                             "set kernel_file      \"${_basename}_hls.cpp\"\n"
@@ -80,7 +80,7 @@ if(EXISTS ${_basename}.hls)
                             "set lower $kernel_platform\n"
                             "set_part $kernel_platform\n"
                             "create_clock -period 10 -name default\n"
-                            "csim_design -compiler clang -ldflags {-lrt} -clean\n"
+                            "csim_design -ldflags {-lrt} -clean\n"
                             "\n"
                             "set lower ${SYNTHESIS}\n"
                             "if [string match {on} ${SYNTHESIS}] {\n"
@@ -95,13 +95,12 @@ if(EXISTS ${_basename}.hls)
                             "        } else {\n"
                             "            puts { **** HW synthesis for HPC **** }\n"
                             "            file mkdir xoFlow\n"
-                            "            config_sdx -optimization_level none -target xocc\n"
-                            "            config_export -vivado_optimization_level 0 -vivado_phys_opt none\n"
+                            "            config_flow -target vitis\n"
                             "            config_compile -name_max_length 256 -pipeline_loops 64\n"
                             "            config_schedule -enable_dsp_full_reg\n"
                             "            csynth_design\n"
-                            "            export_design -rtl verilog -format ip_catalog -xo \\\n"
-                            "            $xoflow_path/$kernel_name.xo\n"
+                            "            export_design -flow impl -format xo \\\n"
+                            "            -output $xoflow_path/$kernel_name.xo\n"
                             "        }\n"
                             "    }\n"
                             "exit\n"
