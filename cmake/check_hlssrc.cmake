@@ -196,6 +196,7 @@ if(EXISTS ${_basename}.hls)
         # Vitis linking
         set(VPP_flags ${VPP_target} ${VPP_opt} ${VPP_platform} ${VPP_out})
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${kernel_workspace}/${kernel}.xo
+                                ${VPP_kernel} ${kernel}
                                 ${VPP_profile} ${PROFILE_TYPE} ${VPP_config} ${kernel_workspace}/config.cfg)
         if(NOT WIN32)
             file(MAKE_DIRECTORY "${kernel}_xlbin")
