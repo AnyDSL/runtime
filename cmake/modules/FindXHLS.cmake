@@ -40,7 +40,7 @@ set(Vitis_VERSION ${VITIS_VERSION} CACHE INTERNAL "Version of Vitis found")
 set(Vitis_MAJOR_VERSION ${VITIS_MAJOR_VERSION} CACHE INTERNAL "Major version of Vitis found")
 set(Vitis_MINOR_VERSION ${VITIS_MINOR_VERSION} CACHE INTERNAL "Minor version of Vitis found")
 
-find_program(Xilinx_HLS NAMES vivado_hls vitis_hls PATHS
+find_program(Xilinx_HLS NAMES vitis_hls vivado_hls PATHS
     ${VITIS_ROOT_DIR}/bin
     ${VITIS_ROOT_DIR}/../../Vivado/${Vitis_VERSION}/bin
     ${VITIS_ROOT_DIR}/Vivado_HLS/bin NO_DEFAULT_PATH)
