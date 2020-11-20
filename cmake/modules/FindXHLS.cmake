@@ -17,6 +17,7 @@ endif()
 find_program(Xilinx_XOCC xocc PATHS ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_VPP v++ PATHS ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_PLATFORM_INFO platforminfo PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
+find_program(Xilinx_KERNEL_INFO kernelinfo PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_EMU_CONFIG emconfigutil PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 
 if(Xilinx_XOCC)
@@ -106,6 +107,7 @@ mark_as_advanced(XILINX_SEARCH_PATH
     Xilinx_TOOL_IS_LEGACY
     Xilinx_INCLUDE_DIRS
     Xilinx_PLATFORM_INFO
+    Xilinx_KERNEL_INFO
     Xilinx_VIVADO)
 
 set(Xilinx_EXPORTS
