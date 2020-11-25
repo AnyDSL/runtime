@@ -45,8 +45,9 @@ if(EXISTS ${_basename}.hls)
 
     list(FIND kernels "hls_top" top_module)
     list(GET kernels ${top_module} kernel)
-    #TODO opening a Vitis solution
+    #TODO opening a Vitis solution in TCL for SoC
     string(CONCAT tcl_script "set project_name    \"${PROJECT_NAME}\"\n"
+                            "set lower ${SYNTHESIS}\n"
                             "set kernel_name      \"${kernel}\"\n"
                             "set kernel_file      \"${_basename}_hls.cpp\"\n"
                             "set kernel_testbench \"${_basename}_tb.cpp\"\n"
@@ -74,13 +75,13 @@ if(EXISTS ${_basename}.hls)
                             "\n"
                             "open_project -reset $project_name\n"
                             "set_top $kernel_name\n"
-                            "add_files $kernel_file\n"
+                            "add_files -cflags {-DNO_SYNTH} $kernel_file\n"
                             "add_files -tb $kernel_testbench\n"
-                            "open_solution -reset $solution\n"
+                            "open_solution -flow_target vitis -reset $solution\n"
                             "set lower $kernel_platform\n"
                             "set_part $kernel_platform\n"
                             "create_clock -period 10 -name default\n"
-                            "csim_design -ldflags {-lrt} -clean\n"
+                            "#csim_design -ldflags {-lrt} -clean\n"
                             "\n"
                             "set lower ${SYNTHESIS}\n"
                             "if [string match {on} ${SYNTHESIS}] {\n"
@@ -95,11 +96,10 @@ if(EXISTS ${_basename}.hls)
                             "        } else {\n"
                             "            puts { **** HW synthesis for HPC **** }\n"
                             "            file mkdir xoFlow\n"
-                            "            config_flow -target vitis\n"
                             "            config_compile -name_max_length 256 -pipeline_loops 64\n"
                             "            config_schedule -enable_dsp_full_reg\n"
                             "            csynth_design\n"
-                            "            export_design -flow impl -format xo \\\n"
+                            "            export_design -flow syn -format xo \\\n"
                             "            -output $xoflow_path/$kernel_name.xo\n"
                             "        }\n"
                             "    }\n"
@@ -138,18 +138,27 @@ if(EXISTS ${_basename}.hls)
     endif()
 
     if(PROFILER)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini "[Debug]\n
+                                                        profile=true\n
+                                                        power_profile=true\n
+                                                        timeline_trace=true\n
+                                                        data_transfer_trace=coarse\n
+                                                        stall_trace=all\n")
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_profile} ${PROFILE_TYPE})
+    elseif(NOT SOC)
+        execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
+                                ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
+                                ${VPP_out} ${kernel_workspace}/${kernel}.xo)
     else()
-
         execute_process(COMMAND echo "${tcl_script}" OUTPUT_FILE ${_basename}_${kernel}.tcl)
         # Compiling with vivado/Vitis HLS (only when synthesis is enabled and no profiling is requested)
         # TCL script skips any compilation withous synthesis
         execute_process(COMMAND ${Xilinx_HLS} -f ${_basename}_${kernel}.tcl)
 
     endif()
-    if (Xilinx_KERNEL_INFO)
+    if(Xilinx_KERNEL_INFO)
         execute_process(COMMAND ${Xilinx_KERNEL_INFO} ${kernel_workspace}/${kernel}.xo OUTPUT_VARIABLE KERNEL_INFO)
         STRING(REGEX MATCHALL "${kernel}_[0-9]+" arg_matches "${KERNEL_INFO}")
     endif()
@@ -158,7 +167,7 @@ if(EXISTS ${_basename}.hls)
         message(STATUS "Integrating ${kernel} into ${PLATFORM_NAME}")
 
         STRING(APPEND VPP_platform "${PLATFORM_NAME}")
-        #        file(WRITE ${kernel_workspace}/config.cfg "[connectivity]\n")
+        file(WRITE ${kernel_workspace}/config.cfg "[connectivity]\n")
         #set(arg_num 0)
         #foreach (arg ${arg_matches})
         #file(APPEND ${kernel_workspace}/config.cfg "sp=${kernel}_1.${arg}:DDR[${arg_num}]\n")
@@ -187,7 +196,7 @@ if(EXISTS ${_basename}.hls)
             STRING(APPEND VPP_out "${kernel_workspace}/${kernel}.xo")
             set(VPP_flags ${VPP_target} ${VPP_opt} ${VPP_platform} ${VPP_out})
             # Vitis compiling (just for software emulation)
-            execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_compile} ${VPP_kernel} ${kernel}
+            execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
                                     ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config.cfg)
             set(VPP_out "-o${kernel_workspace}/${kernel}_sw_emu.xclbin")
         endif()
@@ -222,7 +231,9 @@ if(EXISTS ${_basename}.hls)
         message(STATUS "${BoldWhite}XCL_EMULATION_MODE=sw_emu is required${ColourReset}")
     else()
         STRING(REGEX REPLACE "-t([^ ]*)" "\\1"  VPP_target ${VPP_target})
-        message(STATUS "${BoldWhite}XCL_EMULATION_MODE=${VPP_target} is required${ColourReset}")
+        if(NOT ${VPP_target} STREQUAL "hw")
+            message(STATUS "${BoldWhite}XCL_EMULATION_MODE=${VPP_target} is required${ColourReset}")
+        endif()
         if(PROFILER)
             message(STATUS "${BoldWhite} Runtime profiling: vitis_analyzer timeline_trace.csv${ColourReset}")
         endif()
