@@ -45,9 +45,7 @@ if(EXISTS ${_basename}.hls)
 
     list(FIND kernels "hls_top" top_module)
     list(GET kernels ${top_module} kernel)
-    #TODO opening a Vitis solution in TCL for SoC
     string(CONCAT tcl_script "set project_name    \"${PROJECT_NAME}\"\n"
-                            "set lower ${SYNTHESIS}\n"
                             "set kernel_name      \"${kernel}\"\n"
                             "set kernel_file      \"${_basename}_hls.cpp\"\n"
                             "set kernel_testbench \"${_basename}_tb.cpp\"\n"
@@ -77,19 +75,17 @@ if(EXISTS ${_basename}.hls)
                             "set_top $kernel_name\n"
                             "add_files -cflags {-DNO_SYNTH} $kernel_file\n"
                             "add_files -tb $kernel_testbench\n"
-                            "open_solution -flow_target vitis -reset $solution\n"
+                            "open_solution -flow_target vivado -reset $solution\n"
                             "set lower $kernel_platform\n"
                             "set_part $kernel_platform\n"
                             "create_clock -period 10 -name default\n"
-                            "#csim_design -ldflags {-lrt} -clean\n"
+                            "csim_design -ldflags {-lrt} -clean\n"
                             "\n"
                             "set lower ${SYNTHESIS}\n"
                             "if [string match {on} ${SYNTHESIS}] {\n"
                             "    if [string match {hls_top} $kernel_name] {\n"
                             "        if [string match {on} ${SOC}] {\n"
                             "            puts { **** HW synthesis for SoC **** }\n"
-                            "            config_bind -effort high\n"
-                            "            config_schedule -effort high\n"
                             "            csynth_design\n"
                             "            get_clock_period\n"
                             "            export_design -format ip_catalog -evaluate verilog\n"
@@ -137,13 +133,16 @@ if(EXISTS ${_basename}.hls)
         STRING(APPEND VPP_target "sw_emu")
     endif()
 
-    if(PROFILER)
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini "[Debug]\n
-                                                        profile=true\n
-                                                        power_profile=true\n
-                                                        timeline_trace=true\n
-                                                        data_transfer_trace=coarse\n
-                                                        stall_trace=all\n")
+    if (PROFILER)
+        string(CONCAT XRT_INI "[Debug]\n"
+        "profile=true\n"
+        "power_profile=true\n"
+        "timeline_trace=true\n"
+        "data_transfer_trace=coarse\n"
+        "stall_trace=all\n")
+
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini ${XRT_INI})
+
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_profile} ${PROFILE_TYPE})
