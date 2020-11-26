@@ -147,7 +147,7 @@ if(EXISTS ${_basename}.hls)
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_profile} ${PROFILE_TYPE})
     elseif(NOT SOC)
-        execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
+        execute_process(COMMAND ${Xilinx_VPP} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo)
     else()
