@@ -43,6 +43,7 @@ set(Vitis_MINOR_VERSION ${VITIS_MINOR_VERSION} CACHE INTERNAL "Minor version of 
 find_program(Xilinx_HLS NAMES vitis_hls vivado_hls PATHS
     ${VITIS_ROOT_DIR}/bin
     ${VITIS_ROOT_DIR}/../../Vivado/${Vitis_VERSION}/bin
+    ${VITIS_ROOT_DIR}/../../Vitis_HLS/${Vitis_VERSION}/bin
     ${VITIS_ROOT_DIR}/Vivado_HLS/bin NO_DEFAULT_PATH)
 
 find_program(Xilinx_VIVADO vivado PATHS
