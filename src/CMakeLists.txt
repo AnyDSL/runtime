@@ -92,7 +92,7 @@ if(RUNTIME_JIT)
         list(APPEND CONF_RUNTIME_LIBRARIES ${LLD_CORE_LIBRARY} ${LLD_ELF_LIBRARY} ${LLD_DRIVER_LIBRARY} ${LLD_COMMON_LIBRARY})
     endif()
 
-    find_package(PythonInterp REQUIRED)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
     set(RUNTIME_IMPALA_SRCS
         ../platforms/intrinsics_rv.impala
         ../platforms/intrinsics_cpu.impala
@@ -105,7 +105,7 @@ if(RUNTIME_JIT)
         ../platforms/intrinsics.impala
         runtime.impala)
     add_custom_command(OUTPUT ${RUNTIME_SOURCES_INC_FILE}
-        COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > ${RUNTIME_SOURCES_INC_FILE}
+        COMMAND ${Python3_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > ${RUNTIME_SOURCES_INC_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
     set_source_files_properties(${RUNTIME_SOURCES_INC_FILE} PROPERTIES GENERATED TRUE)

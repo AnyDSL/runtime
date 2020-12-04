@@ -7,7 +7,7 @@
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.12)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
@@ -116,10 +116,8 @@ else()
     message(STATUS "opt is required to apply selective optimization passes for HLS code generation ")
 endif()
 
-
 # find python for post-patcher.py
-find_package(PythonInterp REQUIRED)
-set(PYTHON_BIN ${PYTHON_EXECUTABLE})
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # prepare function
 # anydsl_runtime_wrap(
@@ -221,12 +219,12 @@ function(anydsl_runtime_wrap outfiles)
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
         COMMAND ${Impala_BIN} ${_impala_platform_files} ${_infiles} ${_impala_flags} --emit-llvm -o ${_basepath}
-        COMMAND ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
+        COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
         ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${Impala_BIN} ${PYTHON_BIN} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+        DEPENDS ${Impala_BIN} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_impala_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
 
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
