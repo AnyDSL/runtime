@@ -1,7 +1,6 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
-#include <string_view>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
@@ -13,10 +12,9 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include <thorin/world.h>
-#include <thorin/util/log.h>
-#include <thorin/transform/codegen_prepare.h>
 #include <thorin/be/llvm/llvm.h>
+#include <thorin/util/log.h>
+#include <thorin/world.h>
 
 #include "anydsl_runtime.h"
 #include "log.h"
@@ -29,10 +27,7 @@ bool compile(
     thorin::Log::Level log_level,
     std::ostream& error_stream);
 
-static const char runtime_srcs[] = {
-#include "runtime_srcs.inc"
-    0
-};
+extern const char runtime_srcs[];
 
 struct JIT {
     struct Program {

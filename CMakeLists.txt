@@ -20,10 +20,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-find_path(Impala_DIR
+find_path(Artic_DIR
     NAMES artic-config.cmake
-    PATHS ${Impala_DIR} $ENV{Impala_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
-find_package(Artic PATHS ${Impala_DIR})
+    PATHS ${Artic_DIR} $ENV{Artic_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
+find_package(Artic PATHS ${Artic_DIR})
 
 add_subdirectory(src)
 
@@ -33,5 +33,5 @@ if(DEFINED CMAKE_BUILD_TYPE)
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-export(TARGETS runtime FILE ${CMAKE_BINARY_DIR}/share/anydsl/cmake/anydsl_runtime-exports.cmake)
+export(TARGETS runtime ${CONF_RUNTIME_JIT_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/share/anydsl/cmake/anydsl_runtime-exports.cmake)
 configure_file(cmake/anydsl_runtime-config.cmake.in ${CMAKE_BINARY_DIR}/share/anydsl/cmake/anydsl_runtime-config.cmake @ONLY)
