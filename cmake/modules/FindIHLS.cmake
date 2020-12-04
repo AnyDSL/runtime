@@ -66,4 +66,4 @@ mark_as_advanced(IntelFPGAOpenCL_EXPORTS)
 
 include(FindPackageHandleStandardArgs)
 # Set IntelFPGAOpenCLHLS_FOUND to TRUE if all listed variables were found.
-find_package_handle_standard_args(IntelFPGAOpenCL DEFAULT_MSG ${IntelFPGAOpenCL_EXPORTS})
+find_package_handle_standard_args(IHLS DEFAULT_MSG ${IntelFPGAOpenCL_EXPORTS})

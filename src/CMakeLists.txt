@@ -77,7 +77,7 @@ if(OpenCL_FOUND)
 
     # look for Intel FPGA OpenCL
     find_package(IHLS)
-    if(IntelFPGAOpenCL_FOUND)
+    if(IHLS_FOUND)
         target_include_directories(runtime_opencl PRIVATE ${IntelFPGAOpenCL_INCLUDE_DIRS})
         target_link_libraries(runtime_opencl PRIVATE ${IntelFPGAOpenCL_LIBRARIES})
     endif()
