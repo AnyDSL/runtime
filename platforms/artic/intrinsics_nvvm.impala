@@ -1,0 +1,677 @@
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ctaid.x")] fn nvvm_read_ptx_sreg_ctaid_x() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ctaid.y")] fn nvvm_read_ptx_sreg_ctaid_y() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ctaid.z")] fn nvvm_read_ptx_sreg_ctaid_z() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.nctaid.x")] fn nvvm_read_ptx_sreg_nctaid_x() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.nctaid.y")] fn nvvm_read_ptx_sreg_nctaid_y() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.nctaid.z")] fn nvvm_read_ptx_sreg_nctaid_z() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ntid.x")] fn nvvm_read_ptx_sreg_ntid_x() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ntid.y")] fn nvvm_read_ptx_sreg_ntid_y() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.ntid.z")] fn nvvm_read_ptx_sreg_ntid_z() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.tid.x")] fn nvvm_read_ptx_sreg_tid_x() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.tid.y")] fn nvvm_read_ptx_sreg_tid_y() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.tid.z")] fn nvvm_read_ptx_sreg_tid_z() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.warpsize")] fn nvvm_read_ptx_sreg_warpsize() -> i32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.laneid")] fn nvvm_laneid() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.warpid")] fn nvvm_warpid() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.nwarpid")] fn nvvm_nwarpid() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.smid")] fn nvvm_smid() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.nsmid")] fn nvvm_nsmid() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.lanemask_eq")] fn nvvm_lanemask() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.lanemask_le")] fn nvvm_lanemask_le() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.lanemask_lt")] fn nvvm_lanemask_lt() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.lanemask_ge")] fn nvvm_lanemask_ge() -> u32;
+#[import(cc = "device", name = "llvm.nvvm.read.ptx.sreg.lanemask_gt")] fn nvvm_lanemask_gt() -> u32;
+
+#[import(cc = "device", name = "llvm.nvvm.barrier0")] fn nvvm_barrier() -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.abs.i")] fn nvvm_abs_i(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.abs.ll")] fn nvvm_abs_ll(i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.add.rm.d")] fn nvvm_add_rm_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.add.rm.f")] fn nvvm_add_rm_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rm.ftz.f")] fn nvvm_add_rm_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rn.d")] fn nvvm_add_rn_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.add.rn.f")] fn nvvm_add_rn_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rn.ftz.f")] fn nvvm_add_rn_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rp.d")] fn nvvm_add_rp_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.add.rp.f")] fn nvvm_add_rp_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rp.ftz.f")] fn nvvm_add_rp_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rz.d")] fn nvvm_add_rz_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.add.rz.f")] fn nvvm_add_rz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.add.rz.ftz.f")] fn nvvm_add_rz_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.barrier0.and")] fn nvvm_barrier0_and(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.barrier0.or")] fn nvvm_barrier0_or(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.barrier0.popc")] fn nvvm_barrier0_popc(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.bitcast.d2ll")] fn nvvm_bitcast_d2ll(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.bitcast.f2i")] fn nvvm_bitcast_f2i(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.bitcast.i2f")] fn nvvm_bitcast_i2f(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.bitcast.ll2d")] fn nvvm_bitcast_ll2d(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.brev32")] fn nvvm_brev32(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.brev64")] fn nvvm_brev64(i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.ceil.d")] fn nvvm_ceil_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ceil.f")] fn nvvm_ceil_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ceil.ftz.f")] fn nvvm_ceil_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.clz.i")] fn nvvm_clz_i(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.clz.ll")] fn nvvm_clz_ll(i64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.cos.approx.f")] fn nvvm_cos_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.cos.approx.ftz.f")] fn nvvm_cos_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rm")] fn nvvm_d2f_rm(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rm.ftz")] fn nvvm_d2f_rm_ftz(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rn")] fn nvvm_d2f_rn(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rn.ftz")] fn nvvm_d2f_rn_ftz(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rp")] fn nvvm_d2f_rp(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rp.ftz")] fn nvvm_d2f_rp_ftz(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rz")] fn nvvm_d2f_rz(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2f.rz.ftz")] fn nvvm_d2f_rz_ftz(f64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.hi")] fn nvvm_d2i_hi(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.lo")] fn nvvm_d2i_lo(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.rm")] fn nvvm_d2i_rm(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.rn")] fn nvvm_d2i_rn(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.rp")] fn nvvm_d2i_rp(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2i.rz")] fn nvvm_d2i_rz(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2ll.rm")] fn nvvm_d2ll_rm(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ll.rn")] fn nvvm_d2ll_rn(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ll.rp")] fn nvvm_d2ll_rp(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ll.rz")] fn nvvm_d2ll_rz(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ui.rm")] fn nvvm_d2ui_rm(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2ui.rn")] fn nvvm_d2ui_rn(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2ui.rp")] fn nvvm_d2ui_rp(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2ui.rz")] fn nvvm_d2ui_rz(f64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.d2ull.rm")] fn nvvm_d2ull_rm(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ull.rn")] fn nvvm_d2ull_rn(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ull.rp")] fn nvvm_d2ull_rp(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.d2ull.rz")] fn nvvm_d2ull_rz(f64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.div.approx.f")] fn nvvm_div_approx_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.approx.ftz.f")] fn nvvm_div_approx_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rm.d")] fn nvvm_div_rm_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.div.rm.f")] fn nvvm_div_rm_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rm.ftz.f")] fn nvvm_div_rm_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rn.d")] fn nvvm_div_rn_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.div.rn.f")] fn nvvm_div_rn_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rn.ftz.f")] fn nvvm_div_rn_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rp.d")] fn nvvm_div_rp_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.div.rp.f")] fn nvvm_div_rp_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rp.ftz.f")] fn nvvm_div_rp_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rz.d")] fn nvvm_div_rz_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.div.rz.f")] fn nvvm_div_rz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.div.rz.ftz.f")] fn nvvm_div_rz_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ex2.approx.d")] fn nvvm_ex2_approx_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ex2.approx.f")] fn nvvm_ex2_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ex2.approx.ftz.f")] fn nvvm_ex2_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.f2h.rn")] fn nvvm_f2h_rn(f32) -> i16;
+#[import(cc = "device", name = "llvm.nvvm.f2h.rn.ftz")] fn nvvm_f2h_rn_ftz(f32) -> i16;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rm")] fn nvvm_f2i_rm(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rm.ftz")] fn nvvm_f2i_rm_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rn")] fn nvvm_f2i_rn(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rn.ftz")] fn nvvm_f2i_rn_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rp")] fn nvvm_f2i_rp(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rp.ftz")] fn nvvm_f2i_rp_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rz")] fn nvvm_f2i_rz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2i.rz.ftz")] fn nvvm_f2i_rz_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rm")] fn nvvm_f2ll_rm(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rm.ftz")] fn nvvm_f2ll_rm_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rn")] fn nvvm_f2ll_rn(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rn.ftz")] fn nvvm_f2ll_rn_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rp")] fn nvvm_f2ll_rp(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rp.ftz")] fn nvvm_f2ll_rp_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rz")] fn nvvm_f2ll_rz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ll.rz.ftz")] fn nvvm_f2ll_rz_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rm")] fn nvvm_f2ui_rm(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rm.ftz")] fn nvvm_f2ui_rm_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rn")] fn nvvm_f2ui_rn(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rn.ftz")] fn nvvm_f2ui_rn_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rp")] fn nvvm_f2ui_rp(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rp.ftz")] fn nvvm_f2ui_rp_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rz")] fn nvvm_f2ui_rz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ui.rz.ftz")] fn nvvm_f2ui_rz_ftz(f32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rm")] fn nvvm_f2ull_rm(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rm.ftz")] fn nvvm_f2ull_rm_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rn")] fn nvvm_f2ull_rn(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rn.ftz")] fn nvvm_f2ull_rn_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rp")] fn nvvm_f2ull_rp(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rp.ftz")] fn nvvm_f2ull_rp_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rz")] fn nvvm_f2ull_rz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.f2ull.rz.ftz")] fn nvvm_f2ull_rz_ftz(f32) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.fabs.d")] fn nvvm_fabs_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.fabs.f")] fn nvvm_fabs_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fabs.ftz.f")] fn nvvm_fabs_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.floor.d")] fn nvvm_floor_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.floor.f")] fn nvvm_floor_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.floor.ftz.f")] fn nvvm_floor_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rm.d")] fn nvvm_fma_rm_d(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.fma.rm.f")] fn nvvm_fma_rm_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rm.ftz.f")] fn nvvm_fma_rm_ftz_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rn.d")] fn nvvm_fma_rn_d(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.fma.rn.f")] fn nvvm_fma_rn_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rn.ftz.f")] fn nvvm_fma_rn_ftz_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rp.d")] fn nvvm_fma_rp_d(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.fma.rp.f")] fn nvvm_fma_rp_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rp.ftz.f")] fn nvvm_fma_rp_ftz_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rz.d")] fn nvvm_fma_rz_d(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.fma.rz.f")] fn nvvm_fma_rz_f(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fma.rz.ftz.f")] fn nvvm_fma_rz_ftz_f(f32, f32, f32) -> f32;
+//#[import(cc = "device", name = "llvm.nvvm.fmax.d")] fn nvvm_fmax(f64, f64) -> f64;
+//#[import(cc = "device", name = "llvm.nvvm.fmax.f")] fn nvvm_fmaxf(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fmax.ftz.f")] fn nvvm_fmax_ftz_f(f32, f32) -> f32;
+//#[import(cc = "device", name = "llvm.nvvm.fmin.d")] fn nvvm_fmin(f64, f64) -> f64;
+//#[import(cc = "device", name = "llvm.nvvm.fmin.f")] fn nvvm_fminf(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.fmin.ftz.f")] fn nvvm_fmin_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.h2f")] fn nvvm_h2f(i16) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.i2d.rm")] fn nvvm_i2d_rm(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.i2d.rn")] fn nvvm_i2d_rn(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.i2d.rp")] fn nvvm_i2d_rp(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.i2d.rz")] fn nvvm_i2d_rz(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.i2f.rm")] fn nvvm_i2f_rm(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.i2f.rn")] fn nvvm_i2f_rn(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.i2f.rp")] fn nvvm_i2f_rp(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.i2f.rz")] fn nvvm_i2f_rz(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.lg2.approx.d")] fn nvvm_lg2_approx_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.lg2.approx.f")] fn nvvm_lg2_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.lg2.approx.ftz.f")] fn nvvm_lg2_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ll2d.rm")] fn nvvm_ll2d_rm(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ll2d.rn")] fn nvvm_ll2d_rn(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ll2d.rp")] fn nvvm_ll2d_rp(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ll2d.rz")] fn nvvm_ll2d_rz(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ll2f.rm")] fn nvvm_ll2f_rm(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ll2f.rn")] fn nvvm_ll2f_rn(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ll2f.rp")] fn nvvm_ll2f_rp(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ll2f.rz")] fn nvvm_ll2f_rz(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.lohi.i2d")] fn nvvm_lohi_i2d(i32, i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.max.i")] fn nvvm_max(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.max.ll")] fn nvvm_max_ll(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.max.ui")] fn nvvm_max_ui(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.max.ull")] fn nvvm_max_ull(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.membar.cta")] fn nvvm_membar_cta() -> ();
+#[import(cc = "device", name = "llvm.nvvm.membar.gl")] fn nvvm_membar_gl() -> ();
+#[import(cc = "device", name = "llvm.nvvm.membar.sys")] fn nvvm_membar_sys() -> ();
+#[import(cc = "device", name = "llvm.nvvm.min.i")] fn nvvm_min(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.min.ll")] fn nvvm_min_ll(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.min.ui")] fn nvvm_min_ui(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.min.ull")] fn nvvm_min_ull(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.move.f64")] fn nvvm_move_f64(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.move.f32")] fn nvvm_move_f32(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.move.i16")] fn nvvm_move_i16(i16) -> i16;
+#[import(cc = "device", name = "llvm.nvvm.move.i32")] fn nvvm_move_i32(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.move.i64")] fn nvvm_move_i64(i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.mul24.i")] fn nvvm_mul24_i(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.mul24.ui")] fn nvvm_mul24_ui(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rm.d")] fn nvvm_mul_rm_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.mul.rm.f")] fn nvvm_mul_rm_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rm.ftz.f")] fn nvvm_mul_rm_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rn.d")] fn nvvm_mul_rn_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.mul.rn.f")] fn nvvm_mul_rn_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rn.ftz.f")] fn nvvm_mul_rn_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rp.d")] fn nvvm_mul_rp_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.mul.rp.f")] fn nvvm_mul_rp_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rp.ftz.f")] fn nvvm_mul_rp_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rz.d")] fn nvvm_mul_rz_d(f64, f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.mul.rz.f")] fn nvvm_mul_rz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mul.rz.ftz.f")] fn nvvm_mul_rz_ftz_f(f32, f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.mulhi.i")] fn nvvm_mulhi_i(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.mulhi.ll")] fn nvvm_mulhi_ll(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.mulhi.ui")] fn nvvm_mulhi_ui(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.mulhi.ull")] fn nvvm_mulhi_ull(i64, i64) -> i64;
+#[import(cc = "device", name = "llvm.nvvm.popc.i")] fn nvvm_popc_i(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.popc.ll")] fn nvvm_popc_ll(i64) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.prmt")] fn nvvm_prmt(i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.approx.ftz.d")] fn nvvm_rcp_approx_ftz_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rm.d")] fn nvvm_rcp_rm_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rm.f")] fn nvvm_rcp_rm_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rm.ftz.f")] fn nvvm_rcp_rm_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rn.d")] fn nvvm_rcp_rn_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rn.f")] fn nvvm_rcp_rn_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rn.ftz.f")] fn nvvm_rcp_rn_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rp.d")] fn nvvm_rcp_rp_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rp.f")] fn nvvm_rcp_rp_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rp.ftz.f")] fn nvvm_rcp_rp_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rz.d")] fn nvvm_rcp_rz_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rz.f")] fn nvvm_rcp_rz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rcp.rz.ftz.f")] fn nvvm_rcp_rz_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.round.d")] fn nvvm_round_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.round.f")] fn nvvm_round_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.round.ftz.f")] fn nvvm_round_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rsqrt.approx.d")] fn nvvm_rsqrt_approx_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.rsqrt.approx.f")] fn nvvm_rsqrt_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.rsqrt.approx.ftz.f")] fn nvvm_rsqrt_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sad.i")] fn nvvm_sad_i(i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.sad.ui")] fn nvvm_sad_ui(i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.saturate.d")] fn nvvm_saturate_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.saturate.f")] fn nvvm_saturate_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.saturate.ftz.f")] fn nvvm_saturate_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sin.approx.f")] fn nvvm_sin_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sin.approx.ftz.f")] fn nvvm_sin_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.approx.f")] fn nvvm_sqrt_approx_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.approx.ftz.f")] fn nvvm_sqrt_approx_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.f")] fn nvvm_sqrt_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rm.d")] fn nvvm_sqrt_rm_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rm.f")] fn nvvm_sqrt_rm_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rm.ftz.f")] fn nvvm_sqrt_rm_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rn.d")] fn nvvm_sqrt_rn_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rn.f")] fn nvvm_sqrt_rn_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rn.ftz.f")] fn nvvm_sqrt_rn_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rp.d")] fn nvvm_sqrt_rp_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rp.f")] fn nvvm_sqrt_rp_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rp.ftz.f")] fn nvvm_sqrt_rp_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rz.d")] fn nvvm_sqrt_rz_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rz.f")] fn nvvm_sqrt_rz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.sqrt.rz.ftz.f")] fn nvvm_sqrt_rz_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.trunc.d")] fn nvvm_trunc_d(f64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.trunc.f")] fn nvvm_trunc_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.trunc.ftz.f")] fn nvvm_trunc_ftz_f(f32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ui2d.rm")] fn nvvm_ui2d_rm(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ui2d.rn")] fn nvvm_ui2d_rn(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ui2d.rp")] fn nvvm_ui2d_rp(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ui2d.rz")] fn nvvm_ui2d_rz(i32) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ui2f.rm")] fn nvvm_ui2f_rm(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ui2f.rn")] fn nvvm_ui2f_rn(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ui2f.rp")] fn nvvm_ui2f_rp(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ui2f.rz")] fn nvvm_ui2f_rz(i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ull2d.rm")] fn nvvm_ull2d_rm(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ull2d.rn")] fn nvvm_ull2d_rn(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ull2d.rp")] fn nvvm_ull2d_rp(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ull2d.rz")] fn nvvm_ull2d_rz(i64) -> f64;
+#[import(cc = "device", name = "llvm.nvvm.ull2f.rm")] fn nvvm_ull2f_rm(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ull2f.rn")] fn nvvm_ull2f_rn(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ull2f.rp")] fn nvvm_ull2f_rp(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ull2f.rz")] fn nvvm_ull2f_rz(i64) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i8.p1i8")] fn nvvm_ldg_u8_p1(&addrspace(1)u8, i32) -> u8;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i32.p1i32")] fn nvvm_ldg_i32_p1(&addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.f32.p1f32")] fn nvvm_ldg_f32_p1(&addrspace(1)f32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.v4i32.p1v4i32")] fn nvvm_ldg4_i32_p1(&addrspace(1)simd[i32 * 4], i32) -> simd[i32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.v4f32.p1v4f32")] fn nvvm_ldg4_f32_p1(&addrspace(1)simd[f32 * 4], i32) -> simd[f32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.inc.32.p1i32")] fn nvvm_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.dec.32.p1i32")] fn nvvm_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
+
+#[import(cc = "device", name = "llvm.nvvm.membar.gl")] fn nvvm_threadfence() -> ();
+#[import(cc = "device", name = "llvm.nvvm.membar.cta")] fn nvvm_threadfence_block() -> ();
+#[import(cc = "device", name = "llvm.nvvm.membar.sys")] fn nvvm_threadfence_system() -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.barrier0")] fn nvvm_block_sync() -> ();
+#[import(cc = "device", name = "llvm.nvvm.barrier0.popc")] fn nvvm_block_sync_count(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.barrier0.and")] fn nvvm_block_sync_all(i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.barrier0.or")] fn nvvm_block_sync_any(i32) -> i32;
+
+#[import(cc = "device", name = "llvm.nvvm.bar.warp.sync")] fn nvvm_warp_sync(u32) -> ();
+// #[import(cc = "device", name = "llvm.nvvm.vote.sync")] fn nvvm_warp_vote_sync(u32, i32, bool) -> (u32, bool);               // seems to not be supported by LLVM
+#[import(cc = "device", name = "llvm.nvvm.vote.all.sync")] fn nvvm_warp_sync_all(u32, bool) -> bool;
+#[import(cc = "device", name = "llvm.nvvm.vote.any.sync")] fn nvvm_warp_sync_any(u32, bool) -> bool;
+#[import(cc = "device", name = "llvm.nvvm.vote.ballot.sync")] fn nvvm_warp_sync_ballot(u32, bool) -> u32;
+
+// #[import(cc = "device", name = "llvm.nvvm.shfl.sync.i32")] fn nvvm_warp_shfl_sync(i32, i32, i32, i32, i32) -> (i32, bool);  // seems to not be supported by LLVM
+
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.idx.i32")] fn nvvm_warp_shfl_sync_idx_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.idx.f32")] fn nvvm_warp_shfl_sync_idx_f32(u32, f32, i32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.up.i32")] fn nvvm_warp_shfl_sync_up_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.up.f32")] fn nvvm_warp_shfl_sync_up_f32(u32, f32, i32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.down.i32")] fn nvvm_warp_shfl_sync_down_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.down.f32")] fn nvvm_warp_shfl_sync_down_f32(u32, f32, i32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.i32")] fn nvvm_warp_shfl_sync_bfly_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.f32")] fn nvvm_warp_shfl_sync_bfly_f32(u32, f32, i32, i32) -> f32;
+
+// libdevice intrinsics: http://docs.nvidia.com/cuda/libdevice-users-guide
+#[import(cc = "C", name = "__nv_expf")]      fn nvvm_expf(f32) -> f32;
+#[import(cc = "C", name = "__nv_exp2f")]     fn nvvm_exp2f(f32) -> f32;
+#[import(cc = "C", name = "__nv_logf")]      fn nvvm_logf(f32) -> f32;
+#[import(cc = "C", name = "__nv_log2f")]     fn nvvm_log2f(f32) -> f32;
+#[import(cc = "C", name = "__nv_powf")]      fn nvvm_powf(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_rsqrtf")]    fn nvvm_rsqrtf(f32) -> f32;
+#[import(cc = "C", name = "__nv_sqrtf")]     fn nvvm_sqrtf(f32) -> f32;
+#[import(cc = "C", name = "__nv_fabsf")]     fn nvvm_fabsf(f32) -> f32;
+#[import(cc = "C", name = "__nv_sinf")]      fn nvvm_sinf(f32) -> f32;
+#[import(cc = "C", name = "__nv_cosf")]      fn nvvm_cosf(f32) -> f32;
+#[import(cc = "C", name = "__nv_tanf")]      fn nvvm_tanf(f32) -> f32;
+#[import(cc = "C", name = "__nv_asinf")]     fn nvvm_asinf(f32) -> f32;
+#[import(cc = "C", name = "__nv_acosf")]     fn nvvm_acosf(f32) -> f32;
+#[import(cc = "C", name = "__nv_atanf")]     fn nvvm_atanf(f32) -> f32;
+#[import(cc = "C", name = "__nv_erff")]      fn nvvm_erff(f32) -> f32;
+#[import(cc = "C", name = "__nv_atan2f")]    fn nvvm_atan2f(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_fmaxf")]     fn nvvm_fmaxf(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_fminf")]     fn nvvm_fminf(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_fmodf")]     fn nvvm_fmodf(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_floorf")]    fn nvvm_floorf(f32) -> f32;
+#[import(cc = "C", name = "__nv_fmaf")]      fn nvvm_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_fmaf")]      fn nvvm_madf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_isinff")]    fn nvvm_isinff(f32) -> i32;
+#[import(cc = "C", name = "__nv_isnanf")]    fn nvvm_isnanf(f32) -> i32;
+#[import(cc = "C", name = "__nv_finitef")]   fn nvvm_isfinitef(f32) -> i32;
+#[import(cc = "C", name = "__nv_copysignf")] fn nvvm_copysignf(f32, f32) -> f32;
+#[import(cc = "C", name = "__nv_exp")]       fn nvvm_exp(f64) -> f64;
+#[import(cc = "C", name = "__nv_exp2")]      fn nvvm_exp2(f64) -> f64;
+#[import(cc = "C", name = "__nv_log")]       fn nvvm_log(f64) -> f64;
+#[import(cc = "C", name = "__nv_log2")]      fn nvvm_log2(f64) -> f64;
+#[import(cc = "C", name = "__nv_pow")]       fn nvvm_pow(f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_rsqrt")]     fn nvvm_rsqrt(f64) -> f64;
+#[import(cc = "C", name = "__nv_sqrt")]      fn nvvm_sqrt(f64) -> f64;
+#[import(cc = "C", name = "__nv_fabs")]      fn nvvm_fabs(f64) -> f64;
+#[import(cc = "C", name = "__nv_sin")]       fn nvvm_sin(f64) -> f64;
+#[import(cc = "C", name = "__nv_cos")]       fn nvvm_cos(f64) -> f64;
+#[import(cc = "C", name = "__nv_tan")]       fn nvvm_tan(f64) -> f64;
+#[import(cc = "C", name = "__nv_asin")]      fn nvvm_asin(f64) -> f64;
+#[import(cc = "C", name = "__nv_acos")]      fn nvvm_acos(f64) -> f64;
+#[import(cc = "C", name = "__nv_atan")]      fn nvvm_atan(f64) -> f64;
+#[import(cc = "C", name = "__nv_erf")]       fn nvvm_erf(f64) -> f64;
+#[import(cc = "C", name = "__nv_atan2")]     fn nvvm_atan2(f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_fmin")]      fn nvvm_fmin(f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_fmax")]      fn nvvm_fmax(f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_fmod")]      fn nvvm_fmod(f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_floor")]     fn nvvm_floor(f64) -> f64;
+#[import(cc = "C", name = "__nv_fma")]       fn nvvm_fma(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_fma")]       fn nvvm_mad(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "__nv_isinfd")]    fn nvvm_isinf(f64) -> i32;
+#[import(cc = "C", name = "__nv_isnand")]    fn nvvm_isnan(f64) -> i32;
+#[import(cc = "C", name = "__nv_isfinited")] fn nvvm_isfinite(f64) -> i32;
+#[import(cc = "C", name = "__nv_copysign")]  fn nvvm_copysign(f64, f64) -> f64;
+
+// https://github.com/nvidia-compiler-sdk/nvvmir-samples/tree/master/syscalls/vprintf.ll
+// There is no direct printf() support. In order to use vprintf(), a local buffer is allocated.
+// Integer types that are shorter than int need to be extended to int and float needs to be
+// extended to double before being pushed into the local buffer.
+#[import(cc = "device", name = "vprintf")] fn nvvm_vprintf(_fmt: &[u8], _args: &[u8]) -> i32;
+
+//
+// atomics
+//            0    1   2   3   4    5  6   7   8   9    10   11   12
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
+//            0         1         2         4       5       6              7
+// ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
+// syncscope: "" (system)
+//
+
+fn @nvvm_atomic_xchg_global(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](0, addr, val, 2, "");
+fn @nvvm_atomic_xchg_shared(addr: &mut addrspace(3)i32, val: i32) = atomic_p3[i32](0, addr, val, 2, "");
+fn @nvvm_atomic_add_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](1, addr, val, 2, "");
+fn @nvvm_atomic_add_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](1, addr, val, 2, "");
+fn @nvvm_atomic_sub_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](2, addr, val, 2, "");
+fn @nvvm_atomic_sub_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](2, addr, val, 2, "");
+fn @nvvm_atomic_max_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](7, addr, val, 2, "");
+fn @nvvm_atomic_max_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](7, addr, val, 2, "");
+fn @nvvm_atomic_min_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](8, addr, val, 2, "");
+fn @nvvm_atomic_min_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](8, addr, val, 2, "");
+
+fn @nvvm_atomic_add_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 1, addr, val, 2, "");
+fn @nvvm_atomic_add_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32]( 1, addr, val, 2, "");
+fn @nvvm_atomic_add_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64]( 1, addr, val, 2, "");
+fn @nvvm_atomic_add_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](11, addr, val, 2, "");
+fn @nvvm_atomic_add_global_f64(addr: &mut addrspace(1)f64, val: f64) = atomic_p1[f64](11, addr, val, 2, "");
+
+fn @nvvm_atomic_sub_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 2, addr, val, 2, "");
+fn @nvvm_atomic_sub_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32]( 2, addr, val, 2, "");
+fn @nvvm_atomic_sub_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64]( 2, addr, val, 2, "");
+fn @nvvm_atomic_sub_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](12, addr, val, 2, "");
+fn @nvvm_atomic_sub_global_f64(addr: &mut addrspace(1)f64, val: f64) = atomic_p1[f64](12, addr, val, 2, "");
+
+fn @nvvm_atomic_and_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](3, addr, val, 2, "");
+fn @nvvm_atomic_and_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](3, addr, val, 2, "");
+fn @nvvm_atomic_and_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](3, addr, val, 2, "");
+
+fn @nvvm_atomic_or_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](5, addr, val, 2, "");
+fn @nvvm_atomic_or_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](5, addr, val, 2, "");
+fn @nvvm_atomic_or_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](5, addr, val, 2, "");
+
+fn @nvvm_atomic_xor_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](6, addr, val, 2, "");
+fn @nvvm_atomic_xor_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](6, addr, val, 2, "");
+fn @nvvm_atomic_xor_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](6, addr, val, 2, "");
+
+fn @nvvm_atomic_exch_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](0, addr, val, 2, "");
+fn @nvvm_atomic_exch_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](0, addr, val, 2, "");
+fn @nvvm_atomic_exch_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](0, addr, val, 2, "");
+fn @nvvm_atomic_exch_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](0, addr, val, 2, "");
+
+fn @nvvm_atomic_min_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 8, addr, val, 2, "");
+fn @nvvm_atomic_min_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](10, addr, val, 2, "");
+fn @nvvm_atomic_min_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](10, addr, val, 2, "");
+
+fn @nvvm_atomic_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](7, addr, val, 2, "");
+fn @nvvm_atomic_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](9, addr, val, 2, "");
+fn @nvvm_atomic_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](9, addr, val, 2, "");
+
+fn @nvvm_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @nvvm_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @nvvm_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @nvvm_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, "agent") { (old, _success) => old };
+
+// fn @nvvm_warp_sync_all(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 0, predicate) { (_ballot, bit) => bit };
+// fn @nvvm_warp_sync_any(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 1, predicate) { (_ballot, bit) => bit };
+// fn @nvvm_warp_sync_ballot(membermask: u32, predicate: bool) -> u32 = match nvvm_warp_vote_sync(membermask, 3, predicate) { (ballot, _bit) => ballot };
+
+fn @nvvm_warp_activemask() -> u32 {
+    let mut mask: u32;
+    asm("activemask.b32 %0;" : "=r" (mask));
+    mask
+}
+
+// fn @nvvm_warp_shfl_i32(membermask: u32, x: i32, src_lane: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 0, x, src_lane, width)(0) }
+// fn @nvvm_warp_shfl_u32(membermask: u32, x: u32, src_lane: i32, width: i32) -> u32 { nvvm_warp_shfl_i32(membermask, x as i32, src_lane, width) as u32 }
+// fn @nvvm_warp_shfl_i64(membermask: u32, x: i64, src_lane: i32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_u64(membermask: u32, x: u64, src_lane: i32, width: i32) -> u64;
+// fn @nvvm_warp_shfl_f32(membermask: u32, x: f32, src_lane: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_i32(membermask, nvvm_bitcast_f2i(x), src_lane, width)) }
+// fn @nvvm_warp_shfl_f64(membermask: u32, x: f64, src_lane: i32, width: i32) -> f64 {
+//     let lo = nvvm_warp_shfl_i32(membermask, nvvm_d2i_lo x, src_lane, width)
+// }
+
+// fn @nvvm_warp_shfl_up_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 1, x, delta as i32, width)(0) }
+// fn @nvvm_warp_shfl_up_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_up_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_up_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_up_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
+// fn @nvvm_warp_shfl_up_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_up_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_up_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
+
+// fn @nvvm_warp_shfl_down_i32(membermask: u32, x: i32, delta: u32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 2, x, delta as i32, width)(0) }
+// fn @nvvm_warp_shfl_down_u32(membermask: u32, x: u32, delta: u32, width: i32) -> u32 { nvvm_warp_shfl_down_i32(membermask, x as i32, delta, width) as u32 }
+// fn @nvvm_warp_shfl_down_i64(membermask: u32, x: i64, delta: u32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_down_u64(membermask: u32, x: u64, delta: u32, width: i32) -> u64;
+// fn @nvvm_warp_shfl_down_f32(membermask: u32, x: f32, delta: u32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_down_i32(membermask, nvvm_bitcast_f2i(x), delta, width)) }
+// fn @nvvm_warp_shfl_down_f64(membermask: u32, x: f64, delta: u32, width: i32) -> f64;
+
+// fn @nvvm_warp_shfl_xor_i32(membermask: u32, x: i32, lane_mask: i32, width: i32) -> i32 { nvvm_warp_shfl_sync(membermask as i32, 3, x, lane_mask, width)(0) }
+// fn @nvvm_warp_shfl_xor_u32(membermask: u32, x: u32, lane_mask: i32, width: i32) -> u32 { nvvm_warp_shfl_xor_i32(membermask, x as i32, lane_mask, width) as u32 }
+// fn @nvvm_warp_shfl_xor_i64(membermask: u32, x: i64, lane_mask: i32, width: i32) -> i64;
+// fn @nvvm_warp_shfl_xor_u64(membermask: u32, x: u64, lane_mask: i32, width: i32) -> u64;
+// fn @nvvm_warp_shfl_xor_f32(membermask: u32, x: f32, lane_mask: i32, width: i32) -> f32 { nvvm_bitcast_i2f(nvvm_warp_shfl_xor_i32(membermask, nvvm_bitcast_f2i(x), lane_mask, width)) }
+// fn @nvvm_warp_shfl_xor_f64(membermask: u32, x: f64, lane_mask: i32, width: i32) -> f64;
+
+// fn @nvvm_warp_match_any_i32(membermask: u32, x: i32) -> u32;
+// fn @nvvm_warp_match_any_u32(membermask: u32, x: u32) -> u32;
+// fn @nvvm_warp_match_any_i64(membermask: u32, x: i64) -> u32;
+// fn @nvvm_warp_match_any_u64(membermask: u32, x: u64) -> u32;
+// fn @nvvm_warp_match_any_f32(membermask: u32, x: f32) -> u32;
+// fn @nvvm_warp_match_any_f64(membermask: u32, x: f64) -> u32;
+
+// fn @nvvm_warp_match_all_i32(membermask: u32, x: i32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_u32(membermask: u32, x: u32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_i64(membermask: u32, x: i64, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_u64(membermask: u32, x: u64, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_f32(membermask: u32, x: f32, predicate: &mut i32) -> u32;
+// fn @nvvm_warp_match_all_f64(membermask: u32, x: f64, predicate: &mut i32) -> u32;
+
+fn @nvvm_trap() -> () {
+    asm("trap;");
+}
+
+fn @nvvm_nanosleep(t: u32) -> () {
+    asm("nanosleep.u32 $0;" : : "r"(t));
+}
+
+fn @nvvm_minmin(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("vmin.s32.s32.s32.min $0, $1, $2, $3;"
+        : "=r"(res)
+        : "r"(a), "r"(b), "r"(c)
+    );
+    res
+}
+
+fn @nvvm_maxmax(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("vmax.s32.s32.s32.max $0, $1, $2, $3;"
+        : "=r"(res)
+        : "r"(a), "r"(b), "r"(c)
+    );
+    res
+}
+
+fn @nvvm_minmax(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("vmin.s32.s32.s32.max $0, $1, $2, $3;"
+        : "=r"(res)
+        : "r"(a), "r"(b), "r"(c)
+    );
+    res
+}
+
+fn @nvvm_maxmin(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("vmax.s32.s32.s32.min $0, $1, $2, $3;"
+        : "=r"(res)
+        : "r"(a), "r"(b), "r"(c)
+    );
+    res
+}
+
+fn @nvvm_ldg_u8(addr: &addrspace(1)u8) -> u8 = nvvm_ldg_u8_p1(addr, 1);
+fn @nvvm_ldg_i32(addr: &addrspace(1)i32) -> i32 = nvvm_ldg_i32_p1(addr, 4);
+fn @nvvm_ldg_f32(addr: &addrspace(1)f32) -> f32 = nvvm_ldg_f32_p1(addr, 4);
+fn @nvvm_ldg4_i32(addr: &addrspace(1)simd[i32 * 4]) -> simd[i32 * 4] = nvvm_ldg4_i32_p1(addr, 16);
+fn @nvvm_ldg4_f32(addr: &addrspace(1)simd[f32 * 4]) -> simd[f32 * 4] = nvvm_ldg4_f32_p1(addr, 16);
+
+/*
+ * TODO: remove after testing the nvvm intrinsics above
+fn @nvvm_ldg_f32(addr: &addrspace(1)f32) -> f32 {
+    let mut res: f32;
+    asm("ld.global.nc.f32 $0, [$1];" : "=f"(res) : "l"(addr));
+    res
+}
+
+fn @nvvm_ldg_i32(addr: &addrspace(1)i32) -> i32 {
+    let mut res: i32;
+    asm("ld.global.nc.s32 $0, [$1];" : "=r"(res) : "l"(addr));
+    res
+}
+
+fn @nvvm_ldg_u8(addr: &addrspace(1)u8) -> u8 {
+    let mut res: u8;
+    asm("ld.global.nc.s8 $0, [$1];" : "=r"(res) : "l"(addr));
+    res
+}
+
+fn @nvvm_ldg4_f32(addr: &addrspace(1)simd[f32 * 4]) -> simd[f32 * 4] {
+    let mut r1 : f32;
+    let mut r2 : f32;
+    let mut r3 : f32;
+    let mut r4 : f32;
+    asm("ld.global.nc.v4.f32 {$0, $1, $2, $3}, [$4];"
+        : "=f"(r1), "=f"(r2), "=f"(r3), "=f"(r4)
+        : "l"(addr)
+    );
+    simd[r1, r2, r3, r4]
+}
+
+fn @nvvm_ldg4_i32(addr: &addrspace(1)simd[i32 * 4]) -> simd[i32 * 4] {
+    let mut r1 : i32;
+    let mut r2 : i32;
+    let mut r3 : i32;
+    let mut r4 : i32;
+    asm("ld.global.nc.v4.s32 {$0, $1, $2, $3}, [$4];"
+        : "=r"(r1), "=r"(r2), "=r"(r3), "=r"(r4)
+        : "l"(addr)
+    );
+    simd[r1, r2, r3, r4]
+}
+*/
+
+fn @nvvm_ballot(a: i32) -> i32 {
+    let mut res: i32;
+    asm("{ .reg .pred %p1;"
+        "setp.ne.u32 %p1, $1, 0;"
+        "vote.ballot.b32 $0, %p1; }"
+        : "=r"(res)
+        : "r"(a)
+    );
+    res
+}
+
+fn @nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
+
+fn @nvvm_accelerator(dev: i32) = Accelerator {
+    exec = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = nvvm_read_ptx_sreg_tid_x,
+            tidy  = nvvm_read_ptx_sreg_tid_y,
+            tidz  = nvvm_read_ptx_sreg_tid_z,
+            bidx  = nvvm_read_ptx_sreg_ctaid_x,
+            bidy  = nvvm_read_ptx_sreg_ctaid_y,
+            bidz  = nvvm_read_ptx_sreg_ctaid_z,
+            gidx  = @|| nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
+            gidy  = @|| nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
+            gidz  = @|| nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
+            bdimx = nvvm_read_ptx_sreg_ntid_x,
+            bdimy = nvvm_read_ptx_sreg_ntid_y,
+            bdimz = nvvm_read_ptx_sreg_ntid_z,
+            gdimx = @|| nvvm_read_ptx_sreg_nctaid_x() * nvvm_read_ptx_sreg_ntid_x(),
+            gdimy = @|| nvvm_read_ptx_sreg_nctaid_y() * nvvm_read_ptx_sreg_ntid_y(),
+            gdimz = @|| nvvm_read_ptx_sreg_nctaid_z() * nvvm_read_ptx_sreg_ntid_z(),
+            nblkx = nvvm_read_ptx_sreg_nctaid_x,
+            nblky = nvvm_read_ptx_sreg_nctaid_y,
+            nblkz = nvvm_read_ptx_sreg_nctaid_z
+        };
+        nvvm(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_cuda(dev),
+    alloc         = @|size| alloc_cuda(dev, size),
+    alloc_unified = @|size| alloc_cuda_unified(dev, size),
+    barrier       = nvvm_barrier
+};
+
+static nvvm_intrinsics = Intrinsics {
+    expf        = nvvm_expf,
+    exp2f       = nvvm_exp2f,
+    logf        = nvvm_logf,
+    log2f       = nvvm_log2f,
+    powf        = nvvm_powf,
+    rsqrtf      = nvvm_rsqrtf,
+    sqrtf       = nvvm_sqrtf,
+    fabsf       = nvvm_fabsf,
+    sinf        = nvvm_sinf,
+    cosf        = nvvm_cosf,
+    tanf        = nvvm_tanf,
+    asinf       = nvvm_asinf,
+    acosf       = nvvm_acosf,
+    atanf       = nvvm_atanf,
+    erff        = nvvm_erff,
+    atan2f      = nvvm_atan2f,
+    copysignf   = nvvm_copysignf,
+    fmaf        = nvvm_fmaf,
+    fmaxf       = nvvm_fmaxf,
+    fminf       = nvvm_fminf,
+    fmodf       = nvvm_fmodf,
+    floorf      = nvvm_floorf,
+    isinff      = nvvm_isinff,
+    isnanf      = nvvm_isnanf,
+    isfinitef   = nvvm_isfinitef,
+    exp         = nvvm_exp,
+    exp2        = nvvm_exp2,
+    log         = nvvm_log,
+    log2        = nvvm_log2,
+    pow         = nvvm_pow,
+    rsqrt       = nvvm_rsqrt,
+    sqrt        = nvvm_sqrt,
+    fabs        = nvvm_fabs,
+    sin         = nvvm_sin,
+    cos         = nvvm_cos,
+    tan         = nvvm_tan,
+    asin        = nvvm_asin,
+    acos        = nvvm_acos,
+    atan        = nvvm_atan,
+    erf         = nvvm_erf,
+    atan2       = nvvm_atan2,
+    copysign    = nvvm_copysign,
+    fma         = nvvm_fma,
+    fmax        = nvvm_fmax,
+    fmin        = nvvm_fmin,
+    fmod        = nvvm_fmod,
+    floor       = nvvm_floor,
+    isinf       = nvvm_isinf,
+    isnan       = nvvm_isnan,
+    isfinite    = nvvm_isfinite,
+    min         = nvvm_min,
+    max         = nvvm_max,
+};

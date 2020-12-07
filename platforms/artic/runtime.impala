@@ -1,0 +1,138 @@
+#[import(cc = "C", name = "anydsl_info")]           fn runtime_info() -> ();
+#[import(cc = "C", name = "anydsl_alloc")]          fn runtime_alloc(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_alloc_host")]     fn runtime_alloc_host(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_alloc_unified")]  fn runtime_alloc_unified(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_copy")]           fn runtime_copy(_src_device: i32, _src_ptr: &[i8], _src_offset: i64, _dst_device: i32, _dst_ptr: &mut [i8], _dst_offset: i64, _size: i64) -> ();
+#[import(cc = "C", name = "anydsl_get_device_ptr")] fn runtime_get_device_ptr(_device: i32, _ptr: &[i8]) -> &[i8];
+#[import(cc = "C", name = "anydsl_synchronize")]    fn runtime_synchronize(_device: i32) -> ();
+#[import(cc = "C", name = "anydsl_release")]        fn runtime_release(_device: i32, _ptr: &[i8]) -> ();
+#[import(cc = "C", name = "anydsl_release_host")]   fn runtime_release_host(_device: i32, _ptr: &[i8]) -> ();
+
+#[import(cc = "C", name = "anydsl_random_seed")]    fn random_seed(_: u32) -> ();
+#[import(cc = "C", name = "anydsl_random_val_f32")] fn random_val_f32() -> f32;
+#[import(cc = "C", name = "anydsl_random_val_u64")] fn random_val_u64() -> u64;
+
+#[import(cc = "C", name = "anydsl_get_micro_time")]  fn get_micro_time() -> i64;
+#[import(cc = "C", name = "anydsl_get_kernel_time")] fn get_kernel_time() -> i64;
+
+#[import(cc = "C", name = "anydsl_print_i16")]    fn print_i16(_: i16) -> ();
+#[import(cc = "C", name = "anydsl_print_i32")]    fn print_i32(_: i32) -> ();
+#[import(cc = "C", name = "anydsl_print_i64")]    fn print_i64(_: i64) -> ();
+#[import(cc = "C", name = "anydsl_print_u16")]    fn print_u16(_: u16) -> ();
+#[import(cc = "C", name = "anydsl_print_u32")]    fn print_u32(_: u32) -> ();
+#[import(cc = "C", name = "anydsl_print_u64")]    fn print_u64(_: u64) -> ();
+#[import(cc = "C", name = "anydsl_print_f32")]    fn print_f32(_: f32) -> ();
+#[import(cc = "C", name = "anydsl_print_f64")]    fn print_f64(_: f64) -> ();
+#[import(cc = "C", name = "anydsl_print_char")]   fn print_char(_: u8) -> ();
+#[import(cc = "C", name = "anydsl_print_string")] fn print_string(_: &[u8]) -> ();
+#[import(cc = "C", name = "anydsl_print_flush")]  fn print_flush() -> ();
+
+// TODO
+//struct Buffer[T] {
+//    data : &mut [T],
+//    size : i64,
+//    device : i32
+//}
+//
+//fn @alloc[T](device: i32, size: i64) = Buffer[T] {
+//    data = runtime_alloc(device, size * sizeof[T]()) as &mut [T],
+//    size = size,
+//    device = device
+//};
+//fn @alloc_host[T](device: i32, size: i64) = Buffer[T] {
+//    data = runtime_alloc_host(device, size * sizeof[T]()) as &mut [T],
+//    size = size,
+//    device = device
+//};
+//fn @alloc_unified[T](device: i32, size: i64) = Buffer[T] {
+//    data = runtime_alloc_unified(device, size * sizeof[T]()) as &mut [T],
+//    size = size,
+//    device = device
+//};
+//
+//fn @release[T](buf: Buffer[T]) = runtime_release(buf.device, buf.data as &[i8]);
+//fn @alloc_cpu[T](size: i64) = alloc[T](0, size);
+//fn @alloc_cuda[T](dev: i32, size: i64) = alloc[T](runtime_device(1, dev), size);
+//fn @alloc_cuda_host[T](dev: i32, size: i64) = alloc_host[T](runtime_device(1, dev), size);
+//fn @alloc_cuda_unified[T](dev: i32, size: i64) = alloc_unified[T](runtime_device(1, dev), size);
+//fn @synchronize_cuda(dev: i32) = runtime_synchronize(runtime_device(1, dev));
+//fn @alloc_opencl[T](dev: i32, size: i64) = alloc[T](runtime_device(2, dev), size);
+//fn @alloc_opencl_unified[T](dev: i32, size: i64) = alloc_unified[T](runtime_device(2, dev), size);
+//fn @synchronize_opencl(dev: i32) = runtime_synchronize(runtime_device(2, dev));
+//fn @alloc_hsa[T](dev: i32, size: i64) = alloc[T](runtime_device(3, dev), size);
+//fn @alloc_hsa_host[T](dev: i32, size: i64) = alloc_host[T](runtime_device(3, dev), size);
+//fn @alloc_hsa_unified[T](dev: i32, size: i64) = alloc_unified[T](runtime_device(3, dev), size);
+//fn @synchronize_hsa(dev: i32) = runtime_synchronize(runtime_device(3, dev));
+//
+//fn @copy[T](src: Buffer[T], dst: Buffer[T]) = runtime_copy(src.device, src.data as &[i8], 0, dst.device, dst.data as &mut [i8], 0, src.size);
+//fn @copy_offset[T](src: Buffer[T], off_src: i64, dst: Buffer[T], off_dst: i64, size: i64) = runtime_copy(src.device, src.data as &[i8], off_src, dst.device, dst.data as &mut [i8], off_dst, size);
+
+struct Buffer {
+    data : &mut [i8],
+    size : i64,
+    device : i32
+}
+
+fn @alloc(device: i32, size: i64) = Buffer {
+    data = runtime_alloc(device, size),
+    size = size,
+    device = device
+};
+fn @alloc_host(device: i32, size: i64) = Buffer {
+    data = runtime_alloc_host(device, size),
+    size = size,
+    device = device
+};
+fn @alloc_unified(device: i32, size: i64) = Buffer {
+    data = runtime_alloc_unified(device, size),
+    size = size,
+    device = device
+};
+fn @release(buf: Buffer) = runtime_release(buf.device, buf.data);
+
+fn @runtime_device(platform: i32, device: i32) -> i32 { platform | (device << 4) }
+
+fn @alloc_cpu(size: i64) = alloc(0, size);
+fn @alloc_cuda(dev: i32, size: i64) = alloc(runtime_device(1, dev), size);
+fn @alloc_cuda_host(dev: i32, size: i64) = alloc_host(runtime_device(1, dev), size);
+fn @alloc_cuda_unified(dev: i32, size: i64) = alloc_unified(runtime_device(1, dev), size);
+fn @synchronize_cuda(dev: i32) = runtime_synchronize(runtime_device(1, dev));
+fn @alloc_opencl(dev: i32, size: i64) = alloc(runtime_device(2, dev), size);
+fn @alloc_opencl_unified(dev: i32, size: i64) = alloc_unified(runtime_device(2, dev), size);
+fn @synchronize_opencl(dev: i32) = runtime_synchronize(runtime_device(2, dev));
+fn @alloc_hsa(dev: i32, size: i64) = alloc(runtime_device(3, dev), size);
+fn @alloc_hsa_host(dev: i32, size: i64) = alloc_host(runtime_device(3, dev), size);
+fn @alloc_hsa_unified(dev: i32, size: i64) = alloc_unified(runtime_device(3, dev), size);
+fn @synchronize_hsa(dev: i32) = runtime_synchronize(runtime_device(3, dev));
+
+fn @copy(src: Buffer, dst: Buffer) = runtime_copy(src.device, src.data, 0, dst.device, dst.data, 0, src.size);
+fn @copy_offset(src: Buffer, off_src: i64, dst: Buffer, off_dst: i64, size: i64) = runtime_copy(src.device, src.data, off_src, dst.device, dst.data, off_dst, size);
+
+
+// range, range_step, unroll, unroll_step, etc.
+fn @unroll_step(body: fn(i32) -> ()) {
+    fn @(?beg & ?end & ?step) loop(beg: i32, end: i32, step: i32) -> () {
+        if beg < end {
+            @body(beg);
+            loop(beg + step, end, step)
+        }
+    }
+    loop
+}
+
+fn @unroll_step_rev(body: fn(i32) -> ()) {
+    fn @(?beg & ?end & ?step) loop(end: i32, beg: i32, step: i32) -> () {
+        if end > beg {
+            @body(end);
+            loop(end - step, beg, step)
+        }
+    }
+    loop
+}
+
+fn @range(body: fn(i32) -> ()) = @|lower: i32, upper: i32| unroll_step(body)($lower, $upper, 1);
+fn @range_step(body: fn(i32) -> ()) = @|lower: i32, upper: i32, step: i32| unroll_step(body)($lower, $upper, step);
+fn @range_rev(body: fn(i32) -> ()) = @|upper: i32, lower: i32| unroll_step_rev(body)(upper, lower, 1);
+
+fn @unroll(body: fn(i32) -> ()) = @|lower: i32, upper: i32| unroll_step(body)(lower, upper, 1);
+fn @unroll_rev(body: fn(i32) -> ()) = @|upper: i32, lower: i32| unroll_step_rev(body)(upper, lower, 1);

@@ -354,7 +354,6 @@ void HSAPlatform::launch_kernel(DeviceId dev,
             if (!std::align(aligns[i], allocs[i], cur, space))
                 error("Incorrect kernel argument alignment detected");
             std::memcpy(cur, args[i], sizes[i]);
-            info("arg at %", cur);
             cur = reinterpret_cast<uint8_t*>(cur) + allocs[i];
         }
 

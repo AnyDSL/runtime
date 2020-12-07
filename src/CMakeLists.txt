@@ -1,4 +1,5 @@
 set(CONF_RUNTIME_LIBRARIES)
+set(CONF_RUNTIME_JIT_LIBRARIES)
 
 # Look for CUDA
 find_package(CUDA QUIET)
@@ -68,13 +69,13 @@ set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
 else()
-    add_compile_options("-Wall" "-Wextra" "-fvisibility=hidden")
+    add_compile_options("-Wall" "-Wextra")
 endif()
 
 if(RUNTIME_JIT)
-    set(RUNTIME_SOURCES_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/runtime_srcs.inc)
-    set(RUNTIME_JIT_SRC jit.cpp ${RUNTIME_SOURCES_INC_FILE})
-    find_package(Impala REQUIRED)
+    set(RUNTIME_SOURCES_ARTIC_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/runtime_srcs_artic.cpp)
+    set(RUNTIME_JIT_SRC jit.cpp)
+    find_package(Artic REQUIRED)
     find_package(Thorin REQUIRED)
     if(NOT Thorin_HAS_LLVM_SUPPORT)
         message(FATAL_ERROR "RUNTIME_JIT requires Thorin to be built with LLVM")
@@ -82,8 +83,7 @@ if(RUNTIME_JIT)
 
     find_package(LLVM REQUIRED)
     add_definitions(${LLVM_DEFINITIONS})
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY} ${LLVM_JIT_LIBRARIES})
-    include_directories(${Impala_INCLUDE_DIR} ${Thorin_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Artic_LIBRARY})
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     if(AnyDSL_runtime_HAS_HSA_SUPPORT)
         find_library(LLD_COMMON_LIBRARY lldCommon HINTS ${LLVM_LIBRARY_DIRS})
@@ -93,23 +93,27 @@ if(RUNTIME_JIT)
         list(APPEND CONF_RUNTIME_LIBRARIES ${LLD_CORE_LIBRARY} ${LLD_ELF_LIBRARY} ${LLD_DRIVER_LIBRARY} ${LLD_COMMON_LIBRARY})
     endif()
 
-    find_package(PythonInterp REQUIRED)
-    set(RUNTIME_IMPALA_SRCS
-        ../platforms/intrinsics_rv.impala
-        ../platforms/intrinsics_cpu.impala
-        ../platforms/intrinsics_hls.impala
-        ../platforms/intrinsics_cuda.impala
-        ../platforms/intrinsics_nvvm.impala
-        ../platforms/intrinsics_amdgpu.impala
-        ../platforms/intrinsics_opencl.impala
-        ../platforms/intrinsics_thorin.impala
-        ../platforms/intrinsics.impala
-        runtime.impala)
-    add_custom_command(OUTPUT ${RUNTIME_SOURCES_INC_FILE}
-        COMMAND ${PYTHON_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS} > ${RUNTIME_SOURCES_INC_FILE}
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    set(RUNTIME_ARTIC_SRCS
+        ../platforms/artic/intrinsics_rv.impala
+        ../platforms/artic/intrinsics_cpu.impala
+        ../platforms/artic/intrinsics_hls.impala
+        ../platforms/artic/intrinsics_cuda.impala
+        ../platforms/artic/intrinsics_nvvm.impala
+        ../platforms/artic/intrinsics_amdgpu.impala
+        ../platforms/artic/intrinsics_opencl.impala
+        ../platforms/artic/intrinsics_thorin.impala
+        ../platforms/artic/intrinsics.impala
+        ../platforms/artic/runtime.impala)
+    add_custom_command(OUTPUT ${RUNTIME_SOURCES_ARTIC_INC_FILE}
+        COMMAND ${Python3_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_ARTIC_SRCS} > ${RUNTIME_SOURCES_ARTIC_INC_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS extract_runtime_srcs.py ${RUNTIME_IMPALA_SRCS})
-    set_source_files_properties(${RUNTIME_SOURCES_INC_FILE} PROPERTIES GENERATED TRUE)
+        DEPENDS extract_runtime_srcs.py ${RUNTIME_ARTIC_SRCS})
+    set_source_files_properties(${RUNTIME_SOURCES_ARTIC_INC_FILE} PROPERTIES GENERATED TRUE)
+    set_source_files_properties(${RUNTIME_JIT_SRC} PROPERTIES INCLUDE_DIRECTORIES ${Thorin_INCLUDE_DIRS})
+    add_library(runtime_srcs_artic ${AnyDSL_runtime_BUILD} ${RUNTIME_SOURCES_ARTIC_INC_FILE})
+    set_target_properties(runtime_srcs_artic PROPERTIES CXX_VISIBILITY_PRESET default)
+    list(APPEND CONF_RUNTIME_JIT_LIBRARIES runtime_srcs_artic)
 endif()
 set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT} CACHE INTERNAL "enables anydsl_compile() api")
 
@@ -143,9 +147,12 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
 
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
+set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 if(RUNTIME_JIT AND Thorin_HAS_LLVM_SUPPORT AND LLVM_FOUND)
     set(AnyDSL_runtime_LLVM_COMPONENTS mcjit irreader support ${LLVM_TARGETS_TO_BUILD})
     llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
+set(CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} PARENT_SCOPE)
+set(CONF_RUNTIME_JIT_LIBRARIES ${CONF_RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)

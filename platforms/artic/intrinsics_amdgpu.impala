@@ -1,0 +1,416 @@
+#[import(cc = "device", name = "llvm.amdgcn.dispatch.id")]          fn amdgcn_dispatch_id() -> i64;
+#[import(cc = "device", name = "llvm.amdgcn.dispatch.ptr")]         fn amdgcn_dispatch_ptr() -> &addrspace(4)i8;
+#[import(cc = "device", name = "llvm.amdgcn.implicitarg.ptr")]      fn amdgcn_implicitarg_ptr() -> &addrspace(4)i8;
+#[import(cc = "device", name = "llvm.amdgcn.ds.gws.barrier")]       fn amdgcn_ds_gws_barrier(i32, i32) -> ();
+#[import(cc = "device", name = "llvm.amdgcn.s.barrier")]            fn amdgcn_s_barrier() -> ();
+#[import(cc = "device", name = "llvm.amdgcn.wave.barrier")]         fn amdgcn_wave_barrier() -> ();
+#[import(cc = "device", name = "llvm.amdgcn.wavefrontsize")]        fn amdgcn_wavefrontsize() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.mbcnt.hi")]             fn amdgcn_mbcnt_hi(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.mbcnt.lo")]             fn amdgcn_mbcnt_lo(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.ds.bpermute")]          fn amdgcn_ds_bpermute(i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workgroup.id.x")]       fn amdgcn_workgroup_id_x() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workgroup.id.y")]       fn amdgcn_workgroup_id_y() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workgroup.id.z")]       fn amdgcn_workgroup_id_z() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workitem.id.x")]        fn amdgcn_workitem_id_x() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workitem.id.y")]        fn amdgcn_workitem_id_y() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.workitem.id.z")]        fn amdgcn_workitem_id_z() -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.sin.f32")]              fn amdgcn_sinf(f32) -> f32;
+#[import(cc = "device", name = "llvm.amdgcn.cos.f32")]              fn amdgcn_cosf(f32) -> f32;
+#[import(cc = "device", name = "llvm.amdgcn.sin.f64")]              fn amdgcn_sin(f64) -> f64;
+#[import(cc = "device", name = "llvm.amdgcn.cos.f64")]              fn amdgcn_cos(f64) -> f64;
+#[import(cc = "device", name = "llvm.amdgcn.s.sleep")]              fn amdgcn_s_sleep(i32) -> ();
+#[import(cc = "device", name = "llvm.amdgcn.icmp.i32.i32")]         fn amdgcn_icmp_i32(i32, i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.amdgcn.icmp.i64.i32")]         fn amdgcn_icmp_i64(i32, i32, i32) -> i64;
+#[import(cc = "device", name = "llvm.amdgcn.atomic.inc.i32.p1i32")] fn amdgcn_atomic_inc_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
+#[import(cc = "device", name = "llvm.amdgcn.atomic.dec.i32.p1i32")] fn amdgcn_atomic_dec_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
+
+// https://github.com/RadeonOpenCompute/ROCm-Device-Libs/blob/master/doc/OCML.md
+#[import(cc = "C", name = "__ocml_exp_f32")]      fn ocml_expf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_exp2_f32")]     fn ocml_exp2f(f32) -> f32;
+#[import(cc = "C", name = "__ocml_log_f32")]      fn ocml_logf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_log2_f32")]     fn ocml_log2f(f32) -> f32;
+#[import(cc = "C", name = "__ocml_powr_f32")]     fn ocml_powrf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_pown_f32")]     fn ocml_pownf(f32, i32) -> f32;
+#[import(cc = "C", name = "__ocml_pow_f32")]      fn ocml_powf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_rsqrt_f32")]    fn ocml_rsqrtf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_sqrt_f32")]     fn ocml_sqrtf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_fabs_f32")]     fn ocml_fabsf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_sin_f32")]      fn ocml_sinf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_cos_f32")]      fn ocml_cosf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_tan_f32")]      fn ocml_tanf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_asin_f32")]     fn ocml_asinf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_acos_f32")]     fn ocml_acosf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_atan_f32")]     fn ocml_atanf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_erf_f32")]      fn ocml_erff(f32) -> f32;
+#[import(cc = "C", name = "__ocml_atan2_f32")]    fn ocml_atan2f(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_copysign_f32")] fn ocml_copysignf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_fma_f32")]      fn ocml_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_fmax_f32")]     fn ocml_fmaxf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_fmin_f32")]     fn ocml_fminf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_fmod_f32")]     fn ocml_fmodf(f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_floor_f32")]    fn ocml_floorf(f32) -> f32;
+#[import(cc = "C", name = "__ocml_isinf_f32")]    fn ocml_isinff(f32) -> i32;
+#[import(cc = "C", name = "__ocml_isnan_f32")]    fn ocml_isnanf(f32) -> i32;
+#[import(cc = "C", name = "__ocml_isfinite_f32")] fn ocml_isfinitef(f32) -> i32;
+#[import(cc = "C", name = "__ocml_mad_f32")]      fn ocml_madf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "__ocml_exp_f64")]      fn ocml_exp(f64) -> f64;
+#[import(cc = "C", name = "__ocml_exp2_f64")]     fn ocml_exp2(f64) -> f64;
+#[import(cc = "C", name = "__ocml_log_f64")]      fn ocml_log(f64) -> f64;
+#[import(cc = "C", name = "__ocml_log2_f64")]     fn ocml_log2(f64) -> f64;
+#[import(cc = "C", name = "__ocml_powr_f64")]     fn ocml_powr(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_pown_f64")]     fn ocml_pown(f64, i32) -> f64;
+#[import(cc = "C", name = "__ocml_pow_f64")]      fn ocml_pow(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_rsqrt_f64")]    fn ocml_rsqrt(f64) -> f64;
+#[import(cc = "C", name = "__ocml_sqrt_f64")]     fn ocml_sqrt(f64) -> f64;
+#[import(cc = "C", name = "__ocml_fabs_f64")]     fn ocml_fabs(f64) -> f64;
+#[import(cc = "C", name = "__ocml_sin_f64")]      fn ocml_sin(f64) -> f64;
+#[import(cc = "C", name = "__ocml_cos_f64")]      fn ocml_cos(f64) -> f64;
+#[import(cc = "C", name = "__ocml_tan_f64")]      fn ocml_tan(f64) -> f64;
+#[import(cc = "C", name = "__ocml_asin_f64")]     fn ocml_asin(f64) -> f64;
+#[import(cc = "C", name = "__ocml_acos_f64")]     fn ocml_acos(f64) -> f64;
+#[import(cc = "C", name = "__ocml_atan_f64")]     fn ocml_atan(f64) -> f64;
+#[import(cc = "C", name = "__ocml_erf_f64")]      fn ocml_erf(f64) -> f64;
+#[import(cc = "C", name = "__ocml_atan2_f64")]    fn ocml_atan2(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_copysign_f64")] fn ocml_copysign(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_fma_f64")]      fn ocml_fma(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_fmax_f64")]     fn ocml_fmax(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_fmin_f64")]     fn ocml_fmin(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_fmod_f64")]     fn ocml_fmod(f64, f64) -> f64;
+#[import(cc = "C", name = "__ocml_floor_f64")]    fn ocml_floor(f64) -> f64;
+#[import(cc = "C", name = "__ocml_isinf_f64")]    fn ocml_isinf(f64) -> i32;
+#[import(cc = "C", name = "__ocml_isnan_f64")]    fn ocml_isnan(f64) -> i32;
+#[import(cc = "C", name = "__ocml_isfinite_f64")] fn ocml_isfinite(f64) -> i32;
+#[import(cc = "C", name = "__ocml_mad_f64")]      fn ocml_mad(f64, f64, f64) -> f64;
+
+//
+// atomics
+//            0    1   2   3   4    5  6   7   8   9    10   11   12
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
+//            0         1         2         4       5       6              7
+// ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
+// syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
+//
+
+fn @amdgcn_atomic_load_global_i32(addr: &mut addrspace(1)i32) = atomic_load_p1[i32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u32(addr: &mut addrspace(1)u32) = atomic_load_p1[u32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u64(addr: &mut addrspace(1)u64) = atomic_load_p1[u64](addr, 2, "agent");
+fn @amdgcn_atomic_store_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_store_p1[i32](addr, val, 2, "agent");
+fn @amdgcn_atomic_store_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_store_p1[u32](addr, val, 2, "agent");
+fn @amdgcn_atomic_store_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_store_p1[u64](addr, val, 2, "agent");
+
+fn @amdgcn_atomic_xchg_global(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](0, addr, val, 2, "agent");
+fn @amdgcn_atomic_xchg_shared(addr: &mut addrspace(3)i32, val: i32) = atomic_p3[i32](0, addr, val, 2, "workgroup");
+fn @amdgcn_atomic_add_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](1, addr, val, 2, "agent");
+fn @amdgcn_atomic_add_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](1, addr, val, 2, "workgroup");
+fn @amdgcn_atomic_sub_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](2, addr, val, 2, "agent");
+fn @amdgcn_atomic_sub_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](2, addr, val, 2, "workgroup");
+fn @amdgcn_atomic_max_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](7, addr, val, 2, "agent");
+fn @amdgcn_atomic_max_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](7, addr, val, 2, "workgroup");
+fn @amdgcn_atomic_min_global(addr: &mut addrspace(1)i32, val: i32)  = atomic_p1[i32](8, addr, val, 2, "agent");
+fn @amdgcn_atomic_min_shared(addr: &mut addrspace(3)i32, val: i32)  = atomic_p3[i32](8, addr, val, 2, "workgroup");
+
+fn @amdgcn_atomic_add_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 1, addr, val, 2, "agent");
+fn @amdgcn_atomic_add_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32]( 1, addr, val, 2, "agent");
+fn @amdgcn_atomic_add_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64]( 1, addr, val, 2, "agent");
+fn @amdgcn_atomic_add_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](11, addr, val, 2, "agent");
+fn @amdgcn_atomic_add_global_f64(addr: &mut addrspace(1)f64, val: f64) = atomic_p1[f64](11, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_sub_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 2, addr, val, 2, "agent");
+fn @amdgcn_atomic_sub_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32]( 2, addr, val, 2, "agent");
+fn @amdgcn_atomic_sub_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64]( 2, addr, val, 2, "agent");
+fn @amdgcn_atomic_sub_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](12, addr, val, 2, "agent");
+fn @amdgcn_atomic_sub_global_f64(addr: &mut addrspace(1)f64, val: f64) = atomic_p1[f64](12, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_and_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](3, addr, val, 2, "agent");
+fn @amdgcn_atomic_and_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](3, addr, val, 2, "agent");
+fn @amdgcn_atomic_and_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](3, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_or_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](5, addr, val, 2, "agent");
+fn @amdgcn_atomic_or_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](5, addr, val, 2, "agent");
+fn @amdgcn_atomic_or_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](5, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_xor_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](6, addr, val, 2, "agent");
+fn @amdgcn_atomic_xor_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](6, addr, val, 2, "agent");
+fn @amdgcn_atomic_xor_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](6, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_exch_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](0, addr, val, 2, "agent");
+fn @amdgcn_atomic_exch_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](0, addr, val, 2, "agent");
+fn @amdgcn_atomic_exch_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](0, addr, val, 2, "agent");
+fn @amdgcn_atomic_exch_global_f32(addr: &mut addrspace(1)f32, val: f32) = atomic_p1[f32](0, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_min_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32]( 8, addr, val, 2, "agent");
+fn @amdgcn_atomic_min_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](10, addr, val, 2, "agent");
+fn @amdgcn_atomic_min_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](10, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_p1[i32](7, addr, val, 2, "agent");
+fn @amdgcn_atomic_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](9, addr, val, 2, "agent");
+fn @amdgcn_atomic_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](9, addr, val, 2, "agent");
+
+fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, "agent") { (old, _success) => old };
+
+fn @amdgcn_lane_id() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(-1, amdgcn_mbcnt_lo(-1, 0))
+    } else {
+        amdgcn_mbcnt_lo(-1, 0)
+    }
+}
+
+fn @amdgcn_activelane() -> i32 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_mbcnt_hi(amdgcn_read_exec_hi(), amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0))
+    } else {
+        amdgcn_mbcnt_lo(amdgcn_read_exec_lo(), 0)
+    }
+}
+
+static ICMP_NE = 33;
+fn @amdgcn_ballot(p: i32) -> u64 {
+    if amdgcn_wavefrontsize() == 64 {
+        amdgcn_icmp_i64(p, 0, ICMP_NE) as u64
+    } else {
+        amdgcn_icmp_i32(p, 0, ICMP_NE) as u32 as u64
+    }
+}
+
+fn @amdgcn_lanemask_eq() -> u64 {
+    let lane_id = amdgcn_lane_id();
+    let mask = 1:u64 << lane_id as u64;
+    mask
+}
+
+fn @amdgcn_lanemask_lt() -> u64 {
+    let lane_id = amdgcn_lane_id();
+    let ballot = amdgcn_ballot(1);
+    let mask = (1 :u64<< lane_id as u64) - 1:u64;
+    mask & ballot
+}
+
+fn @amdgcn_lanemask_le() -> u64 {
+    amdgcn_lanemask_lt() | amdgcn_lanemask_eq()
+}
+
+fn @amdgcn_lanemask_gt() -> u64 {
+    let lane_id = amdgcn_lane_id();
+
+    if (amdgcn_wavefrontsize() == 64 && lane_id == 63) || (amdgcn_wavefrontsize() == 32 && lane_id == 31) {
+        return(0:u64)
+    }
+
+    let ballot = amdgcn_ballot(1);
+    let mask = (!0:u64) << (lane_id as u64 + 1:u64);
+    mask & ballot
+}
+
+fn @amdgcn_lanemask_ge() -> u64 {
+    amdgcn_lanemask_gt() | amdgcn_lanemask_eq()
+}
+
+fn @amdgcn_sync_all(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    if amdgcn_icmp_i32(p, 0, ICMP_NE) == amdgcn_read_exec_lo() { 1 } else { 0 }
+}
+
+fn @amdgcn_sync_any(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    if amdgcn_icmp_i32(p, 0, ICMP_NE) != 0 { 1 } else { 0 }
+}
+
+fn @amdgcn_sync_count(p: i32) -> i32 {
+    amdgcn_wave_barrier();
+    cpu_popcount32(amdgcn_icmp_i32(p, 0, ICMP_NE))
+}
+
+fn @amdgcn_sync_vote(p: i32) -> u64 {
+    amdgcn_wave_barrier();
+    (amdgcn_icmp_i32(p, 0, ICMP_NE) as u32) as u64
+}
+
+fn @amdgcn_shfl_i32(var: i32, src_lane: i32, width: i32) {
+    let lane_id = amdgcn_lane_id();
+    let idx = src_lane + (lane_id & !(width - 1));
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_u32(var: u32, src_lane: i32, width: i32) { bitcast[u32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
+fn @amdgcn_shfl_f32(var: f32, src_lane: i32, width: i32) { bitcast[f32](amdgcn_shfl_i32(bitcast[i32](var), src_lane, width)) }
+
+fn @amdgcn_shfl_up_i32(var: i32, lane_delta: u32, width: i32) {
+    let lane_id = amdgcn_lane_id();
+    let idx = if lane_id - lane_delta as i32 < lane_id & !(width - 1) { lane_id } else { lane_id - lane_delta as i32 };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_up_u32(var: u32, lane_delta: u32, width: i32) { bitcast[u32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_up_f32(var: f32, lane_delta: u32, width: i32) { bitcast[f32](amdgcn_shfl_up_i32(bitcast[i32](var), lane_delta, width)) }
+
+fn @amdgcn_shfl_down_i32(var: i32, lane_delta: u32, width: i32) {
+    let lane_id = amdgcn_lane_id();
+    let idx = if (lane_id & (width - 1)) + lane_delta as i32 >= width { lane_id } else { lane_id + lane_delta as i32 };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_down_u32(var: u32, lane_delta: u32, width: i32) { bitcast[u32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
+fn @amdgcn_shfl_down_f32(var: f32, lane_delta: u32, width: i32) { bitcast[f32](amdgcn_shfl_down_i32(bitcast[i32](var), lane_delta, width)) }
+
+fn @amdgcn_shfl_xor_i32(var: i32, lane_mask: i32, width: i32) {
+    let lane_id = amdgcn_lane_id();
+    let idx = if lane_id ^ lane_mask >= (lane_id + width) & !(width - 1) { lane_id } else { lane_id ^ lane_mask };
+    amdgcn_ds_bpermute(idx << 2, var)
+}
+fn @amdgcn_shfl_xor_u32(var: u32, lane_mask: i32, width: i32) { bitcast[u32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+fn @amdgcn_shfl_xor_f32(var: f32, lane_mask: i32, width: i32) { bitcast[f32](amdgcn_shfl_xor_i32(bitcast[i32](var), lane_mask, width)) }
+
+fn @amdgcn_read_exec() -> i64 {
+    let mut exec_lo: i32;
+    let mut exec_hi: i32;
+    asm("v_mov_b32_e32 $0, exec_lo\n"
+        "v_mov_b32_e32 $1, exec_hi" : "=v"(exec_lo), "=v"(exec_hi) : :: "volatile");
+    exec_hi as i64 << 32:i64 | exec_lo as i64
+}
+
+fn @amdgcn_read_exec_lo() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_lo" : "=v"(res) : :: "volatile");
+    res
+}
+
+fn @amdgcn_read_exec_hi() -> i32 {
+    let mut res: i32;
+    asm("v_mov_b32_e32 $0, exec_hi" : "=v"(res) : :: "volatile");
+    res
+}
+
+fn @amdgcn_minmin(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_min3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
+}
+
+fn @amdgcn_maxmax(a: i32, b: i32, c: i32) -> i32 {
+    let mut res: i32;
+    asm("v_max3_i32 $0, $1, $2, $3"
+        : "=v"(res)
+        : "v"(a), "v"(b), "v"(c)
+    );
+    res
+}
+
+struct hsa_signal_t {
+    handle : u64
+}
+
+struct hsa_dispatch_packet_t {
+    header : u16,
+    setup  : u16,
+    workgroup_size_x : u16,
+    workgroup_size_y : u16,
+    workgroup_size_z : u16,
+    reserved0   : u16,
+    grid_size_x : u32,
+    grid_size_y : u32,
+    grid_size_z : u32,
+    private_segment_size : u32,
+    group_segment_size   : u32,
+    kernel_object : u64,
+    kernarg_address : &[i8], // HSA_LARGE_MODEL
+    reserved2 : u64,
+    completion_signal : hsa_signal_t
+}
+
+fn @amdgpu_accelerator(dev: i32) = Accelerator {
+    exec = @|body| |grid, block| {
+        fn @div_round_up(num: i32, multiple: i32) -> i32 { (num + multiple - 1) / multiple }
+        let work_item = WorkItem {
+            tidx  = amdgcn_workitem_id_x,
+            tidy  = amdgcn_workitem_id_y,
+            tidz  = amdgcn_workitem_id_z,
+            bidx  = amdgcn_workgroup_id_x,
+            bidy  = amdgcn_workgroup_id_y,
+            bidz  = amdgcn_workgroup_id_z,
+            gidx  = @|| amdgcn_workitem_id_x() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32 * amdgcn_workgroup_id_x(),
+            gidy  = @|| amdgcn_workitem_id_y() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32 * amdgcn_workgroup_id_y(),
+            gidz  = @|| amdgcn_workitem_id_z() + bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32 * amdgcn_workgroup_id_z(),
+            bdimx = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32,
+            bdimy = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32,
+            bdimz = @|| bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32,
+            gdimx = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(3) as i32,
+            gdimy = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(4) as i32,
+            gdimz = @|| bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(5) as i32,
+            nblkx = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(3) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(2) as i32),
+            nblky = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32),
+            nblkz = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32)
+        };
+        amdgpu(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_hsa(dev),
+    alloc         = @|size| alloc_hsa(dev, size),
+    alloc_unified = @|size| alloc_hsa_unified(dev, size),
+    barrier       = amdgcn_s_barrier,
+};
+
+static amdgpu_intrinsics = Intrinsics {
+    expf        = ocml_sinf,
+    exp2f       = ocml_exp2f,
+    logf        = ocml_logf,
+    log2f       = ocml_log2f,
+    powf        = @ |x, p| {
+        if ?(p == ((p as i32) as f32)) { ocml_pownf(x, p as i32) }
+        else if ?(p >= 0) { ocml_powrf(x, p) }
+        else { ocml_powf(x, p) }
+    },
+    rsqrtf      = ocml_rsqrtf,
+    sqrtf       = ocml_sqrtf,
+    fabsf       = ocml_fabsf,
+    sinf        = ocml_sinf,
+    cosf        = ocml_cosf,
+    tanf        = ocml_tanf,
+    asinf       = ocml_asinf,
+    acosf       = ocml_acosf,
+    atanf       = ocml_atanf,
+    erff        = ocml_erff,
+    atan2f      = ocml_atan2f,
+    copysignf   = ocml_copysignf,
+    fmaf        = ocml_fmaf,
+    fmaxf       = ocml_fmaxf,
+    fminf       = ocml_fminf,
+    fmodf       = ocml_fmodf,
+    floorf      = ocml_floorf,
+    isinff      = ocml_isinff,
+    isnanf      = ocml_isnanf,
+    isfinitef   = ocml_isfinitef,
+    exp         = ocml_exp,
+    exp2        = ocml_exp2,
+    log         = ocml_log,
+    log2        = ocml_log2,
+    pow         = @ |x, p| {
+        if ?(p == ((p as i32) as f64)) { ocml_pown(x, p as i32) }
+        else if ?(p >= 0) { ocml_powr(x, p) }
+        else { ocml_pow(x, p) }
+    },
+    rsqrt       = ocml_rsqrt,
+    sqrt        = ocml_sqrt,
+    fabs        = ocml_fabs,
+    sin         = ocml_sin,
+    cos         = ocml_cos,
+    tan         = ocml_tan,
+    asin        = ocml_asin,
+    acos        = ocml_acos,
+    atan        = ocml_atan,
+    erf         = ocml_erf,
+    atan2       = ocml_atan2,
+    copysign    = ocml_copysign,
+    fma         = ocml_fma,
+    fmax        = ocml_fmax,
+    fmin        = ocml_fmin,
+    fmod        = ocml_fmod,
+    floor       = ocml_floor,
+    isinf       = ocml_isinf,
+    isnan       = ocml_isnan,
+    isfinite    = ocml_isfinite,
+    min         = @|a, b| { if a < b { a } else { b } },
+    max         = @|a, b| { if a > b { a } else { b } },
+};

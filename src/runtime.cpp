@@ -165,6 +165,10 @@ std::string get_cached_filename(const std::string& str, const std::string& ext) 
     return get_cache_directory() + PATH_DIR_SEPARATOR + hex_stream.str() + ext;
 }
 
+inline std::string read_stream(std::istream& stream) {
+    return std::string(std::istreambuf_iterator<char>(stream), (std::istreambuf_iterator<char>()));
+}
+
 std::string Runtime::load_file(const std::string& filename) const {
     auto file_it = files_.find(filename);
     if (file_it != files_.end())
@@ -174,7 +178,7 @@ std::string Runtime::load_file(const std::string& filename) const {
     if (!src_file.is_open())
         error("Can't open source file '%'", filename);
 
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
+    return read_stream(src_file);
 }
 
 void Runtime::store_file(const std::string& filename, const std::string& str) const {
@@ -185,20 +189,33 @@ void Runtime::store_file(const std::string& filename, const std::string& str) co
     dst_file.close();
 }
 
-std::string Runtime::load_cache(const std::string& str, const std::string& ext) const {
-    std::string filename = get_cached_filename(str, ext);
-    std::ifstream src_file(filename);
+std::string Runtime::load_cache(const std::string& key, const std::string& ext) const {
+    std::string filename = get_cached_filename(key, ext);
+    std::ifstream src_file(filename, std::ifstream::binary);
     if (!src_file.is_open())
         return std::string();
+    // prevent collision by storing the key in the cached file
+    size_t size = 0;
+    if (!src_file.read(reinterpret_cast<char*>(&size), sizeof(size_t)))
+        return std::string();
+    auto buf = std::make_unique<char[]>(size);
+    if (!src_file.read(buf.get(), size))
+        return std::string();
+    if (std::memcmp(key.data(), buf.get(), size))
+        return std::string();
     debug("Loading from cache: %", filename);
-    return load_file(filename);
+    return read_stream(src_file);
 }
 
 void Runtime::store_cache(const std::string& key, const std::string& str, const std::string ext) const {
     std::string filename = get_cached_filename(key, ext);
     create_directory(get_cache_directory().c_str());
     debug("Storing to cache: %", filename);
-    store_file(filename, str);
+    std::ofstream dst_file(filename, std::ofstream::binary);
+    size_t size = key.size();
+    dst_file.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+    dst_file.write(key.data(), size);
+    dst_file.write(str.data(), str.size());
 }
 
 inline PlatformId to_platform(int32_t m) {

@@ -1,0 +1,156 @@
+// no declarations are emitted for "device" functions
+#[import(cc = "device", name = "barrier")]           fn opencl_barrier(u32) -> ();
+#[import(cc = "device", name = "exp")]               fn opencl_expf(f32) -> f32;
+#[import(cc = "device", name = "exp2")]              fn opencl_exp2f(f32) -> f32;
+#[import(cc = "device", name = "log")]               fn opencl_logf(f32) -> f32;
+#[import(cc = "device", name = "log2")]              fn opencl_log2f(f32) -> f32;
+#[import(cc = "device", name = "pow")]               fn opencl_powf(f32, f32) -> f32;
+#[import(cc = "device", name = "rsqrt")]             fn opencl_rsqrtf(f32) -> f32;
+#[import(cc = "device", name = "sqrt")]              fn opencl_sqrtf(f32) -> f32;
+#[import(cc = "device", name = "fabs")]              fn opencl_fabsf(f32) -> f32;
+#[import(cc = "device", name = "sin")]               fn opencl_sinf(f32) -> f32;
+#[import(cc = "device", name = "cos")]               fn opencl_cosf(f32) -> f32;
+#[import(cc = "device", name = "tan")]               fn opencl_tanf(f32) -> f32;
+#[import(cc = "device", name = "asin")]              fn opencl_asinf(f32) -> f32;
+#[import(cc = "device", name = "acos")]              fn opencl_acosf(f32) -> f32;
+#[import(cc = "device", name = "atan")]              fn opencl_atanf(f32) -> f32;
+#[import(cc = "device", name = "erf")]               fn opencl_erff(f32) -> f32;
+#[import(cc = "device", name = "atan2")]             fn opencl_atan2f(f32, f32) -> f32;
+#[import(cc = "device", name = "fmod")]              fn opencl_fmodf(f32, f32) -> f32;
+#[import(cc = "device", name = "floor")]             fn opencl_floorf(f32) -> f32;
+#[import(cc = "device", name = "isinf")]             fn opencl_isinff(f32) -> i32;
+#[import(cc = "device", name = "isnan")]             fn opencl_isnanf(f32) -> i32;
+#[import(cc = "device", name = "isfinite")]          fn opencl_isfinitef(f32) -> i32;
+#[import(cc = "device", name = "fma")]               fn opencl_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "mad")]               fn opencl_madf(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "copysign")]          fn opencl_copysignf(f32, f32) -> f32;
+#[import(cc = "device", name = "exp")]               fn opencl_exp(f64) -> f64;
+#[import(cc = "device", name = "exp2")]              fn opencl_exp2(f64) -> f64;
+#[import(cc = "device", name = "log")]               fn opencl_log(f64) -> f64;
+#[import(cc = "device", name = "log2")]              fn opencl_log2(f64) -> f64;
+#[import(cc = "device", name = "pow")]               fn opencl_pow(f64, f64) -> f64;
+#[import(cc = "device", name = "rsqrt")]             fn opencl_rsqrt(f64) -> f64;
+#[import(cc = "device", name = "sqrt")]              fn opencl_sqrt(f64) -> f64;
+#[import(cc = "device", name = "fabs")]              fn opencl_fabs(f64) -> f64;
+#[import(cc = "device", name = "sin")]               fn opencl_sin(f64) -> f64;
+#[import(cc = "device", name = "cos")]               fn opencl_cos(f64) -> f64;
+#[import(cc = "device", name = "tan")]               fn opencl_tan(f64) -> f64;
+#[import(cc = "device", name = "asin")]              fn opencl_asin(f64) -> f64;
+#[import(cc = "device", name = "acos")]              fn opencl_acos(f64) -> f64;
+#[import(cc = "device", name = "atan")]              fn opencl_atan(f64) -> f64;
+#[import(cc = "device", name = "erf")]               fn opencl_erf(f64) -> f64;
+#[import(cc = "device", name = "atan2")]             fn opencl_atan2(f64, f64) -> f64;
+#[import(cc = "device", name = "fmod")]              fn opencl_fmod(f64, f64) -> f64;
+#[import(cc = "device", name = "floor")]             fn opencl_floor(f64) -> f64;
+#[import(cc = "device", name = "isinf")]             fn opencl_isinf(f64) -> i32;
+#[import(cc = "device", name = "isnan")]             fn opencl_isnan(f64) -> i32;
+#[import(cc = "device", name = "isfinite")]          fn opencl_isfinite(f64) -> i32;
+#[import(cc = "device", name = "fma")]               fn opencl_fma(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "mad")]               fn opencl_mad(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "copysign")]          fn opencl_copysign(f64, f64) -> f64;
+#[import(cc = "device", name = "fmin")]              fn opencl_fminf(f32, f32) -> f32;
+#[import(cc = "device", name = "fmax")]              fn opencl_fmaxf(f32, f32) -> f32;
+#[import(cc = "device", name = "fmin")]              fn opencl_fmin(f64, f64) -> f64;
+#[import(cc = "device", name = "fmax")]              fn opencl_fmax(f64, f64) -> f64;
+#[import(cc = "device", name = "min")]               fn opencl_min(i32, i32) -> i32;
+#[import(cc = "device", name = "max")]               fn opencl_max(i32, i32) -> i32;
+#[import(cc = "device", name = "atomic_add")]        fn opencl_atomic_add_global(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomic_add")]        fn opencl_atomic_add_shared(&mut addrspace(3)i32, i32) -> i32;
+#[import(cc = "device", name = "atomic_min")]        fn opencl_atomic_min_global(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomic_min")]        fn opencl_atomic_min_shared(&mut addrspace(3)i32, i32) -> i32;
+#[import(cc = "device", name = "get_work_dim")]      fn opencl_get_work_dim() -> u32;
+#[import(cc = "device", name = "get_global_size")]   fn opencl_get_global_size(u32) -> u64;
+#[import(cc = "device", name = "get_global_id")]     fn opencl_get_global_id(u32) -> u64;
+#[import(cc = "device", name = "get_local_size")]    fn opencl_get_local_size(u32) -> u64;
+#[import(cc = "device", name = "get_local_id")]      fn opencl_get_local_id(u32) -> u64;
+#[import(cc = "device", name = "get_num_groups")]    fn opencl_get_num_groups(u32) -> u64;
+#[import(cc = "device", name = "get_group_id")]      fn opencl_get_group_id(u32) -> u64;
+#[import(cc = "device", name = "get_global_offset")] fn opencl_get_global_offset(u32) -> u64;
+
+static CLK_LOCAL_MEM_FENCE  = 1:u32;
+static CLK_GLOBAL_MEM_FENCE = 2:u32;
+
+fn @opencl_accelerator(dev: i32) = Accelerator {
+    exec          = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = @|| opencl_get_local_id(0) as i32,
+            tidy  = @|| opencl_get_local_id(1) as i32,
+            tidz  = @|| opencl_get_local_id(2) as i32,
+            bidx  = @|| opencl_get_group_id(0) as i32,
+            bidy  = @|| opencl_get_group_id(1) as i32,
+            bidz  = @|| opencl_get_group_id(2) as i32,
+            gidx  = @|| opencl_get_global_id(0) as i32,
+            gidy  = @|| opencl_get_global_id(1) as i32,
+            gidz  = @|| opencl_get_global_id(2) as i32,
+            bdimx = @|| opencl_get_local_size(0) as i32,
+            bdimy = @|| opencl_get_local_size(1) as i32,
+            bdimz = @|| opencl_get_local_size(2) as i32,
+            gdimx = @|| opencl_get_global_size(0) as i32,
+            gdimy = @|| opencl_get_global_size(1) as i32,
+            gdimz = @|| opencl_get_global_size(2) as i32,
+            nblkx = @|| opencl_get_num_groups(0) as i32,
+            nblky = @|| opencl_get_num_groups(1) as i32,
+            nblkz = @|| opencl_get_num_groups(2) as i32
+        };
+        opencl(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_opencl(dev),
+    alloc         = @|size| alloc_opencl(dev, size),
+    alloc_unified = @|size| alloc_opencl_unified(dev, size),
+    barrier       = @|| opencl_barrier(CLK_LOCAL_MEM_FENCE),
+};
+
+static opencl_intrinsics = Intrinsics {
+    expf        = opencl_expf,
+    exp2f       = opencl_exp2f,
+    logf        = opencl_logf,
+    log2f       = opencl_log2f,
+    powf        = opencl_powf,
+    rsqrtf      = opencl_rsqrtf,
+    sqrtf       = opencl_sqrtf,
+    fabsf       = opencl_fabsf,
+    sinf        = opencl_sinf,
+    cosf        = opencl_cosf,
+    tanf        = opencl_tanf,
+    asinf       = opencl_asinf,
+    acosf       = opencl_acosf,
+    atanf       = opencl_atanf,
+    erff        = opencl_erff,
+    atan2f      = opencl_atan2f,
+    copysignf   = opencl_copysignf,
+    fmaf        = opencl_fmaf,
+    fmaxf       = opencl_fmaxf,
+    fminf       = opencl_fminf,
+    fmodf       = opencl_fmodf,
+    floorf      = opencl_floorf,
+    isinff      = opencl_isinff,
+    isnanf      = opencl_isnanf,
+    isfinitef   = opencl_isfinitef,
+    exp         = opencl_exp,
+    exp2        = opencl_exp2,
+    log         = opencl_log,
+    log2        = opencl_log2,
+    pow         = opencl_pow,
+    rsqrt       = opencl_rsqrt,
+    sqrt        = opencl_sqrt,
+    fabs        = opencl_fabs,
+    sin         = opencl_sin,
+    cos         = opencl_cos,
+    tan         = opencl_tan,
+    asin        = opencl_asin,
+    acos        = opencl_acos,
+    atan        = opencl_atan,
+    erf         = opencl_erf,
+    atan2       = opencl_atan2,
+    copysign    = opencl_copysign,
+    fma         = opencl_fma,
+    fmax        = opencl_fmax,
+    fmin        = opencl_fmin,
+    fmod        = opencl_fmod,
+    floor       = opencl_floor,
+    isinf       = opencl_isinf,
+    isnan       = opencl_isnan,
+    isfinite    = opencl_isfinite,
+    min         = opencl_min,
+    max         = opencl_max,
+};

@@ -1,0 +1,136 @@
+//#[import(cc = "C", name = "sinf")]              fn cpu_sinf(f32) -> f32;
+//#[import(cc = "C", name = "cosf")]              fn cpu_cosf(f32) -> f32;
+#[import(cc = "C", name = "tanf")]              fn cpu_tanf(_: f32) -> f32;
+#[import(cc = "C", name = "asinf")]             fn cpu_asinf(_: f32) -> f32;
+#[import(cc = "C", name = "acosf")]             fn cpu_acosf(_: f32) -> f32;
+#[import(cc = "C", name = "atanf")]             fn cpu_atanf(_: f32) -> f32;
+#[import(cc = "C", name = "erff")]              fn cpu_erff(_: f32) -> f32;
+#[import(cc = "C", name = "fmodf")]             fn cpu_fmodf(_: f32, _: f32) -> f32;
+#[import(cc = "C", name = "atan2f")]            fn cpu_atan2f(_: f32, _: f32) -> f32;
+#[import(cc = "C", name = "anydsl_isinff")]     fn cpu_isinff(_: f32) -> i32;
+#[import(cc = "C", name = "anydsl_isnanf")]     fn cpu_isnanf(_: f32) -> i32;
+#[import(cc = "C", name = "anydsl_isfinitef")]  fn cpu_isfinitef(_: f32) -> i32;
+//#[import(cc = "C", name = "sin")]               fn cpu_sin(f64) -> f64;
+//#[import(cc = "C", name = "cos")]               fn cpu_cos(f64) -> f64;
+#[import(cc = "C", name = "tan")]               fn cpu_tan(_: f64) -> f64;
+#[import(cc = "C", name = "asin")]              fn cpu_asin(_: f64) -> f64;
+#[import(cc = "C", name = "acos")]              fn cpu_acos(_: f64) -> f64;
+#[import(cc = "C", name = "atan")]              fn cpu_atan(_: f64) -> f64;
+#[import(cc = "C", name = "erf")]               fn cpu_erf(_: f64) -> f64;
+#[import(cc = "C", name = "fmod")]              fn cpu_fmod(_: f64, _: f64) -> f64;
+#[import(cc = "C", name = "atan2")]             fn cpu_atan2(_: f64, _: f64) -> f64;
+#[import(cc = "C", name = "anydsl_isinf")]      fn cpu_isinf(_: f64) -> i32;
+#[import(cc = "C", name = "anydsl_isnan")]      fn cpu_isnan(_: f64) -> i32;
+#[import(cc = "C", name = "anydsl_isfinite")]   fn cpu_isfinite(_: f64) -> i32;
+
+#[import(cc = "device", name = "llvm.exp.f32")]         fn cpu_expf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.exp2.f32")]        fn cpu_exp2f(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.log.f32")]         fn cpu_logf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.log2.f32")]        fn cpu_log2f(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.pow.f32")]         fn cpu_powf(_: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.sqrt.f32")]        fn cpu_sqrtf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.fabs.f32")]        fn cpu_fabsf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.sin.f32")]         fn cpu_sinf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.cos.f32")]         fn cpu_cosf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.floor.f32")]       fn cpu_floorf(_: f32) -> f32;
+#[import(cc = "device", name = "llvm.fma.f32")]         fn cpu_fmaf(_: f32, _: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.fmuladd.f32")]     fn cpu_madf(_: f32, _: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.copysign.f32")]    fn cpu_copysignf(_: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.minnum.f32")]      fn cpu_fminf(_: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.maxnum.f32")]      fn cpu_fmaxf(_: f32, _: f32) -> f32;
+#[import(cc = "device", name = "llvm.exp.f64")]         fn cpu_exp(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.exp2.f64")]        fn cpu_exp2(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.log.f64")]         fn cpu_log(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.log2.f64")]        fn cpu_log2(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.pow.f64")]         fn cpu_pow(_: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.sqrt.f64")]        fn cpu_sqrt(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.fabs.f64")]        fn cpu_fabs(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.sin.f64")]         fn cpu_sin(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.cos.f64")]         fn cpu_cos(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.floor.f64")]       fn cpu_floor(_: f64) -> f64;
+#[import(cc = "device", name = "llvm.fma.f64")]         fn cpu_fma(_: f64, _: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.fmuladd.f64")]     fn cpu_mad(_: f64, _: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.copysign.f64")]    fn cpu_copysign(_: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.minnum.f64")]      fn cpu_fmin(_: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.maxnum.f64")]      fn cpu_fmax(_: f64, _: f64) -> f64;
+#[import(cc = "device", name = "llvm.ctpop.i32")]       fn cpu_popcount32(_: i32) -> i32;
+#[import(cc = "device", name = "llvm.ctpop.i64")]       fn cpu_popcount64(_: i64) -> i64;
+#[import(cc = "device", name = "llvm.ctlz.i32")]        fn cpu_clz32(_: i32, _: bool) -> i32;
+#[import(cc = "device", name = "llvm.ctlz.i64")]        fn cpu_clz64(_: i64, _: bool) -> i64;
+#[import(cc = "device", name = "llvm.cttz.i32")]        fn cpu_ctz32(_: i32, _: bool) -> i32;
+#[import(cc = "device", name = "llvm.cttz.i64")]        fn cpu_ctz64(_: i64, _: bool) -> i64;
+#[import(cc = "device", name = "llvm.x86.bmi.pext.32")] fn cpu_pext32(_: i32, _: i32) -> i32;
+#[import(cc = "device", name = "llvm.x86.bmi.pext.64")] fn cpu_pext64(_: i64, _: i64) -> i64;
+#[import(cc = "device", name = "llvm.x86.bmi.pdep.32")] fn cpu_pdep32(_: i32, _: i32) -> i32;
+#[import(cc = "device", name = "llvm.x86.bmi.pdep.64")] fn cpu_pdep64(_: i64, _: i64) -> i64;
+#[import(cc = "device", name = "llvm.prefetch.p0i8")]   fn cpu_prefetch(&u8, i32, i32, i32) -> ();
+
+//
+// atomics
+//            0    1   2   3   4    5  6   7   8   9    10   11   12
+// operation: Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
+//            0         1         2         4       5       6              7
+// ordering:  NotAtomic Unordered Monotonic Acquire Release AcquireRelease SequentiallyConsistent
+// syncscope: singlethread "" (system)
+//
+
+fn @cpu_atomic_xchg(a: &mut i32, b: i32) -> i32 = atomic[i32](0, a, b, 7, "");
+fn @cpu_atomic_add(a: &mut i32, b: i32) -> i32  = atomic[i32](1, a, b, 7, "");
+fn @cpu_atomic_sub(a: &mut i32, b: i32) -> i32  = atomic[i32](2, a, b, 7, "");
+fn @cpu_atomic_max(a: &mut i32, b: i32) -> i32  = atomic[i32](7, a, b, 7, "");
+fn @cpu_atomic_min(a: &mut i32, b: i32) -> i32  = atomic[i32](8, a, b, 7, "");
+
+static cpu_intrinsics = Intrinsics {
+    expf        = cpu_expf,
+    exp2f       = cpu_exp2f,
+    logf        = cpu_logf,
+    log2f       = cpu_log2f,
+    powf        = cpu_powf,
+    rsqrtf      = @|a| { 1:f32 / cpu_sqrtf(a) },
+    sqrtf       = cpu_sqrtf,
+    fabsf       = cpu_fabsf,
+    sinf        = cpu_sinf,
+    cosf        = cpu_cosf,
+    tanf        = cpu_tanf,
+    asinf       = cpu_asinf,
+    acosf       = cpu_acosf,
+    atanf       = cpu_atanf,
+    erff        = cpu_erff,
+    atan2f      = cpu_atan2f,
+    copysignf   = cpu_copysignf,
+    fmaf        = cpu_fmaf,
+    fmaxf       = cpu_fmaxf,
+    fminf       = cpu_fminf,
+    fmodf       = cpu_fmodf,
+    floorf      = cpu_floorf,
+    isinff      = cpu_isinff,
+    isnanf      = cpu_isnanf,
+    isfinitef   = cpu_isfinitef,
+    exp         = cpu_exp,
+    exp2        = cpu_exp2,
+    log         = cpu_log,
+    log2        = cpu_log2,
+    pow         = cpu_pow,
+    rsqrt       = @|a| { 1.0 / cpu_sqrt(a) },
+    sqrt        = cpu_sqrt,
+    fabs        = cpu_fabs,
+    sin         = cpu_sin,
+    cos         = cpu_cos,
+    tan         = cpu_tan,
+    asin        = cpu_asin,
+    acos        = cpu_acos,
+    atan        = cpu_atan,
+    erf         = cpu_erf,
+    atan2       = cpu_atan2,
+    copysign    = cpu_copysign,
+    fma         = cpu_fma,
+    fmax        = cpu_fmax,
+    fmin        = cpu_fmin,
+    fmod        = cpu_fmod,
+    floor       = cpu_floor,
+    isinf       = cpu_isinf,
+    isnan       = cpu_isnan,
+    isfinite    = cpu_isfinite,
+    min         = @|a, b| { if a < b { a } else { b } },
+    max         = @|a, b| { if a > b { a } else { b } },
+};
