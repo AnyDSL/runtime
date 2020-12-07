@@ -4,6 +4,7 @@
 // AnyDSL runtime feature support
 
 #cmakedefine AnyDSL_runtime_BUILD_SHARED
+#cmakedefine AnyDSL_runtime_HAS_LLVM_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_JIT_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_CUDA_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_OPENCL_SUPPORT

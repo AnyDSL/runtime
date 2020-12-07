@@ -10,7 +10,7 @@
 #include <sstream>
 #include <thread>
 
-#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
+#ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 #include <lld/Common/Driver.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
@@ -566,7 +566,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
     return kernel_info;
 }
 
-#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
+#ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 bool llvm_amdgpu_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
     if (!llvm_amdgpu_initialized) {
@@ -720,7 +720,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
 }
 #else
 std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, int) const {
-    error("Recompile runtime with RUNTIME_JIT enabled for gcn support.");
+    error("Recompile runtime with LLVM enabled for gcn support.");
 }
 #endif
 
