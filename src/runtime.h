@@ -82,8 +82,8 @@ public:
     std::string load_file(const std::string& filename) const;
     void store_file(const std::string& filename, const std::string& str) const;
 
-    std::string load_cache(const std::string& str, const std::string& ext=".bin") const;
-    void store_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
+    AnyDSL_runtime_API std::string load_cache(const std::string& str, const std::string& ext=".bin") const;
+    AnyDSL_runtime_API void store_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
     /// Launches a kernel on the platform and device.
     void launch_kernel(PlatformId plat, DeviceId dev,
@@ -143,6 +143,6 @@ private:
     std::unordered_map<std::string, std::string> files_;
 };
 
-Runtime& runtime();
+AnyDSL_runtime_API Runtime& runtime();
 
 #endif

@@ -3,6 +3,8 @@
 #
 # AnyDSL_runtime_DIR
 # AnyDSL_runtime_LIBRARIES
+# AnyDSL_runtime_ARTIC_JIT_LIBRARIES
+# AnyDSL_runtime_IMPALA_JIT_LIBRARIES
 # AnyDSL_runtime_INCLUDE_DIRS
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
@@ -50,9 +52,13 @@ if(NOT TARGET runtime)
     include(${AnyDSL_runtime_DIR}/anydsl_runtime-exports.cmake)
 endif()
 
-set(AnyDSL_runtime_LIBRARIES runtime;@CONF_RUNTIME_LIBRARIES@;@CONF_RUNTIME_JIT_LIBRARIES@)
+set(AnyDSL_runtime_LIBRARIES runtime;@CONF_RUNTIME_LIBRARIES@)
+set(AnyDSL_runtime_ARTIC_JIT_LIBRARIES runtime_jit_artic;@CONF_RUNTIME_ARTIC_JIT_LIBRARIES@)
+set(AnyDSL_runtime_IMPALA_JIT_LIBRARIES runtime_jit_impala;@CONF_RUNTIME_IMPALA_JIT_LIBRARIES@)
 if(MSVC)
     set(AnyDSL_runtime_LIBRARIES ${AnyDSL_runtime_LIBRARIES} optimized msvcrt debug msvcrtd)
+    set(AnyDSL_runtime_ARTIC_JIT_LIBRARIES ${AnyDSL_runtime_ARTIC_JIT_LIBRARIES} optimized msvcrt debug msvcrtd)
+    set(AnyDSL_runtime_IMPALA_JIT_LIBRARIES ${AnyDSL_runtime_IMPALA_JIT_LIBRARIES} optimized msvcrt debug msvcrtd)
 endif()
 
 # determine artic binary for toolchain
@@ -249,4 +255,4 @@ endfunction()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(AnyDSL_runtime DEFAULT_MSG AnyDSL_runtime_DIR AnyDSL_runtime_LIBRARIES AnyDSL_runtime_INCLUDE_DIRS)
 
-mark_as_advanced(AnyDSL_runtime_LIBRARIES AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR OPT_BIN)
+mark_as_advanced(AnyDSL_runtime_LIBRARIES AnyDSL_runtime_ARTIC_JIT_LIBRARIES AnyDSL_runtime_IMPALA_JIT_LIBRARIES AnyDSL_runtime_ROOT_DIR AnyDSL_runtime_INCLUDE_DIR OPT_BIN)

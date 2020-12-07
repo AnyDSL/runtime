@@ -27,7 +27,10 @@ bool compile(
     thorin::Log::Level log_level,
     std::ostream& error_stream);
 
-extern const char runtime_srcs[];
+static const char runtime_srcs[] = {
+#include "runtime_srcs.inc"
+0
+};
 
 struct JIT {
     struct Program {

@@ -1,5 +1,7 @@
+set(RUNTIME_LIBRARIES)
 set(CONF_RUNTIME_LIBRARIES)
-set(CONF_RUNTIME_JIT_LIBRARIES)
+set(CONF_RUNTIME_ARTIC_JIT_LIBRARIES)
+set(CONF_RUNTIME_IMPALA_JIT_LIBRARIES)
 
 # look for CUDA
 find_package(CUDA QUIET)
@@ -81,6 +83,13 @@ if(LLVM_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_LLVM_SUPPORT ${LLVM_FOUND} CACHE INTERNAL "enables nvptx / gcn support")
 
+option(AnyDSL_runtime_BUILD_SHARED "whether to build AnyDSL_runtime as shared or static library" ${BUILD_SHARED_LIBS})
+if(AnyDSL_runtime_BUILD_SHARED)
+    set(AnyDSL_runtime_BUILD "SHARED")
+else()
+    set(AnyDSL_runtime_BUILD "STATIC")
+endif()
+
 if(MSVC)
     add_compile_options("/experimental:external" "/external:anglebrackets" "/external:W0")
 else()
@@ -88,9 +97,38 @@ else()
 endif()
 
 if(RUNTIME_JIT)
-    set(RUNTIME_SOURCES_ARTIC_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/runtime_srcs_artic.cpp)
-    set(RUNTIME_JIT_SRC jit.cpp)
-    find_package(Artic REQUIRED)
+    function(add_runtime_jit)
+        cmake_parse_arguments(frontend "" "NAME" "" ${ARGN})
+        string(TOLOWER ${frontend_NAME} frontend)
+        find_package(Python3 COMPONENTS Interpreter REQUIRED)
+        set(RUNTIME_FRONTEND_SRCS
+            ../platforms/${frontend}/intrinsics_rv.impala
+            ../platforms/${frontend}/intrinsics_cpu.impala
+            ../platforms/${frontend}/intrinsics_hls.impala
+            ../platforms/${frontend}/intrinsics_cuda.impala
+            ../platforms/${frontend}/intrinsics_nvvm.impala
+            ../platforms/${frontend}/intrinsics_amdgpu.impala
+            ../platforms/${frontend}/intrinsics_opencl.impala
+            ../platforms/${frontend}/intrinsics_thorin.impala
+            ../platforms/${frontend}/intrinsics.impala
+            ../platforms/${frontend}/runtime.impala)
+
+        set(RUNTIME_JIT_SRC jit.cpp)
+        set(RUNTIME_SOURCES_FRONTEND_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${frontend}/runtime_srcs.inc)
+        add_custom_command(OUTPUT ${RUNTIME_SOURCES_FRONTEND_INC_FILE}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${frontend}
+            COMMAND ${Python3_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_FRONTEND_SRCS} > ${RUNTIME_SOURCES_FRONTEND_INC_FILE}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            DEPENDS extract_runtime_srcs.py ${RUNTIME_FRONTEND_SRCS})
+        add_library(runtime_jit_${frontend} ${AnyDSL_runtime_BUILD} ${RUNTIME_JIT_SRC} ${RUNTIME_SOURCES_FRONTEND_INC_FILE})
+        target_include_directories(runtime_jit_${frontend} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${frontend})
+        set_target_properties(runtime_jit_${frontend} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        set_source_files_properties(${RUNTIME_JIT_SRC} PROPERTIES INCLUDE_DIRECTORIES "${Thorin_INCLUDE_DIRS}")
+        set_source_files_properties(${RUNTIME_SOURCES_FRONTEND_INC_FILE} PROPERTIES GENERATED TRUE)
+    endfunction()
+
+    find_package(Artic)
+    find_package(Impala)
     find_package(Thorin REQUIRED)
     if(NOT LLVM_FOUND)
         message(FATAL_ERROR "RUNTIME_JIT requires runtime to be built with LLVM")
@@ -98,39 +136,22 @@ if(RUNTIME_JIT)
     if(NOT Thorin_HAS_LLVM_SUPPORT)
         message(FATAL_ERROR "RUNTIME_JIT requires Thorin to be built with LLVM")
     endif()
-    list(APPEND CONF_RUNTIME_LIBRARIES ${Thorin_LIBRARIES} ${Artic_LIBRARY})
+    if(NOT (Artic_FOUND OR Impala_FOUND))
+        message(FATAL_ERROR "RUNTIME_JIT requires artic or impala")
+    endif()
 
-    find_package(Python3 COMPONENTS Interpreter REQUIRED)
-    set(RUNTIME_ARTIC_SRCS
-        ../platforms/artic/intrinsics_rv.impala
-        ../platforms/artic/intrinsics_cpu.impala
-        ../platforms/artic/intrinsics_hls.impala
-        ../platforms/artic/intrinsics_cuda.impala
-        ../platforms/artic/intrinsics_nvvm.impala
-        ../platforms/artic/intrinsics_amdgpu.impala
-        ../platforms/artic/intrinsics_opencl.impala
-        ../platforms/artic/intrinsics_thorin.impala
-        ../platforms/artic/intrinsics.impala
-        ../platforms/artic/runtime.impala)
-    add_custom_command(OUTPUT ${RUNTIME_SOURCES_ARTIC_INC_FILE}
-        COMMAND ${Python3_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_ARTIC_SRCS} > ${RUNTIME_SOURCES_ARTIC_INC_FILE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS extract_runtime_srcs.py ${RUNTIME_ARTIC_SRCS})
-    set_source_files_properties(${RUNTIME_SOURCES_ARTIC_INC_FILE} PROPERTIES GENERATED TRUE)
-    set_source_files_properties(${RUNTIME_JIT_SRC} PROPERTIES INCLUDE_DIRECTORIES ${Thorin_INCLUDE_DIRS})
-    add_library(runtime_srcs_artic ${AnyDSL_runtime_BUILD} ${RUNTIME_SOURCES_ARTIC_INC_FILE})
-    set_target_properties(runtime_srcs_artic PROPERTIES CXX_VISIBILITY_PRESET default)
-    list(APPEND CONF_RUNTIME_JIT_LIBRARIES runtime_srcs_artic)
+    if (Artic_FOUND)
+        add_runtime_jit(NAME artic)
+        list(APPEND RUNTIME_LIBRARIES runtime_jit_artic)
+        list(APPEND CONF_RUNTIME_ARTIC_JIT_LIBRARIES ${Thorin_LIBRARIES} ${Artic_LIBRARY})
+    endif()
+    if (Impala_FOUND)
+        add_runtime_jit(NAME impala)
+        list(APPEND RUNTIME_LIBRARIES runtime_jit_impala)
+        list(APPEND CONF_RUNTIME_Impala_JIT_LIBRARIES ${Thorin_LIBRARIES} ${Impala_LIBRARY})
+    endif()
 endif()
-set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT} CACHE INTERNAL "enables anydsl_compile() api")
-
-option(AnyDSL_runtime_BUILD_SHARED "whether to build AnyDSL_runtime as shared or static library" ${BUILD_SHARED_LIBS})
-if(AnyDSL_runtime_BUILD_SHARED)
-    set(AnyDSL_runtime_BUILD "SHARED")
-else()
-    set(AnyDSL_runtime_BUILD "STATIC")
-endif()
-set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT} CACHE INTERNAL "enables anydsl_compile() API")
+set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_LIBRARIES} CACHE INTERNAL "enables anydsl_compile() API")
 
 include_directories(${CMAKE_BINARY_DIR}/include)
 set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
@@ -148,7 +169,6 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
             dummy_platform.h
             log.h
             ${AnyDSL_runtime_CONFIG_FILE}
-            ${RUNTIME_JIT_SRC}
             ${CUDA_PLATFORM}
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
@@ -156,6 +176,7 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
+list(APPEND RUNTIME_LIBRARIES runtime)
 
 if(LLVM_FOUND)
     set(AnyDSL_runtime_LLVM_COMPONENTS irreader support ${LLVM_TARGETS_TO_BUILD})
@@ -166,5 +187,7 @@ if(LLVM_FOUND)
     llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
+set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} PARENT_SCOPE)
 set(CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} PARENT_SCOPE)
-set(CONF_RUNTIME_JIT_LIBRARIES ${CONF_RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)
+set(CONF_RUNTIME_ARTIC_JIT_LIBRARIES ${CONF_RUNTIME_ARTIC_JIT_LIBRARIES} PARENT_SCOPE)
+set(CONF_RUNTIME_IMPALA_JIT_LIBRARIES ${CONF_RUNTIME_IMPALA_JIT_LIBRARIES} PARENT_SCOPE)
