@@ -133,7 +133,7 @@ if(EXISTS ${_basename}.hls)
         STRING(APPEND VPP_target "sw_emu")
     endif()
 
-    if (PROFILER)
+    if(PROFILER)
         string(CONCAT XRT_INI "[Debug]\n"
         "profile=true\n"
         "power_profile=true\n"
@@ -167,12 +167,14 @@ if(EXISTS ${_basename}.hls)
 
         STRING(APPEND VPP_platform "${PLATFORM_NAME}")
         file(WRITE ${kernel_workspace}/config.cfg "[connectivity]\n")
-        #set(arg_num 0)
-        #foreach (arg ${arg_matches})
-        #file(APPEND ${kernel_workspace}/config.cfg "sp=${kernel}_1.${arg}:DDR[${arg_num}]\n")
-            file(APPEND ${kernel_workspace}/config.cfg "")
-            #   MATH(EXPR arg_num "${arg_num}+1")
-            # endforeach()
+        if(GMEM_OPT)
+            set(arg_num 0)
+            foreach(arg ${arg_matches})
+                file(APPEND ${kernel_workspace}/config.cfg "sp=${kernel}_1.${arg}:DDR[${arg_num}]\n")
+                #file(APPEND ${kernel_workspace}/config.cfg "")
+                MATH(EXPR arg_num "${arg_num}+1")
+            endforeach()
+        endif()
         set(EM_CONFIG_FILE "")
 
         if(NOT PROFILER)

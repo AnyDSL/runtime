@@ -204,6 +204,13 @@ function(anydsl_runtime_wrap outfiles)
     list(GET HLS_FLAGS 4 HW_EMULATION)
     list(GET HLS_FLAGS 5 ANYDSL_FPGA)
 
+    string(REPLACE "," ";" ANYDSL_FPGA_LIST ${ANYDSL_FPGA})
+    list(FIND ANYDSL_FPGA_LIST "GMEM_OPT" _index)
+    if(${_index} GREATER -1)
+        set(GMEM_OPT TRUE)
+        message(STATUS "XHLS: Linker configured to use multiple memory banks")
+    endif()
+
     # decide on HLS interface
     if(ANYDSL_FPGA STREQUAL "SOC" OR ANYDSL_FPGA STREQUAL "HPC")
         set(ANYDSL_FPGA ${ANYDSL_FPGA})
@@ -325,7 +332,7 @@ function(anydsl_runtime_wrap outfiles)
             COMMAND ${CMAKE_COMMAND} -E env "ANYDSL_FPGA=${ANYDSL_FPGA}" ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
             COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
-            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DPROFILER=${PROFILER} -DSOC=${SOC} -DHW_EMULATION=${HW_EMULATION} 
+            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DPROFILER=${PROFILER} -DSOC=${SOC} -DGMEM_OPT=${GMEM_OPT} -DHW_EMULATION=${HW_EMULATION}
                                      -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
         # run clang on the .ll file to get the .o
