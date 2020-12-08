@@ -16,7 +16,7 @@
 #include <thorin/util/log.h>
 #include <thorin/world.h>
 
-#include "anydsl_runtime.h"
+#include "anydsl_jit.h"
 #include "log.h"
 #include "runtime.h"
 
