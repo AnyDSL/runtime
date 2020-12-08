@@ -20,7 +20,9 @@ struct WorkItem {
 }
 
 struct Accelerator {
-    exec          : fn(fn(WorkItem) -> ()) -> fn((i32, i32, i32), (i32, i32, i32)) -> (), // fn(grid, block)->()
+    exec          : fn((i32, i32, i32), // grid
+                       (i32, i32, i32), // block
+                       fn(WorkItem) -> ()) -> (),
     sync          : fn() -> (),
     alloc         : fn(i64) -> Buffer,
     alloc_unified : fn(i64) -> Buffer,
