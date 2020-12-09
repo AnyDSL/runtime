@@ -1,6 +1,6 @@
+#include <memory>
 #include <fstream>
 #include <sstream>
-#include <memory>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
@@ -12,25 +12,24 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include <impala/impala.h>
-#include <impala/ast.h>
-#include <thorin/world.h>
-#include <thorin/transform/codegen_prepare.h>
 #include <thorin/be/llvm/llvm.h>
+#include <thorin/util/log.h>
+#include <thorin/world.h>
 
-#include "anydsl_runtime.h"
+#include "anydsl_jit.h"
+#include "log.h"
 #include "runtime.h"
 
-struct MemBuf : public std::streambuf {
-    MemBuf(const char* string, uint32_t size) {
-        auto begin = const_cast<char*>(string);
-        auto end   = const_cast<char*>(string + size);
-        setg(begin, begin, end);
-    }
-};
+bool compile(
+    const std::vector<std::string>& file_names,
+    const std::vector<std::string>& file_data,
+    thorin::World& world,
+    thorin::Log::Level log_level,
+    std::ostream& error_stream);
 
 static const char runtime_srcs[] = {
 #include "runtime_srcs.inc"
+0
 };
 
 struct JIT {
@@ -42,38 +41,26 @@ struct JIT {
     std::vector<Program> programs;
 
     JIT() {
-        impala::init();
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    int32_t compile(const char* program, uint32_t size, uint32_t opt) {
+    int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
-        std::string cached_llvm = runtime().load_cache(std::string(program), ".llvm");
+        std::string program_str = std::string(program_src, size);
+        std::string cached_llvm = runtime().load_cache(program_str, ".llvm");
         std::string module_name = "jit";
         if (cached_llvm.empty()) {
             bool debug = false;
             assert(opt <= 3);
 
-            impala::Items items;
-            MemBuf program_buf(program, size);
-            MemBuf runtime_buf(runtime_srcs, sizeof(runtime_srcs));
-            std::istream program_is(&program_buf);
-            std::istream runtime_is(&runtime_buf);
-            impala::parse(items, runtime_is, "runtime");
-            impala::parse(items, program_is, module_name.c_str());
-
-            auto module = std::make_unique<impala::Module>(module_name.c_str(), std::move(items));
-            impala::num_warnings() = 0;
-            impala::num_errors()   = 0;
-            std::unique_ptr<impala::TypeTable> typetable;
-            impala::check(typetable, module.get(), false);
-            if (impala::num_errors() != 0)
-                return -1;
-
             thorin::World world(module_name);
-            impala::emit(world, module.get());
+            if (!::compile(
+                { "runtime", module_name },
+                { std::string(runtime_srcs), program_str },
+                world, thorin::Log::Error, std::cerr))
+                error("JIT: error while compiling sources");
 
             world.opt();
 
@@ -83,13 +70,13 @@ struct JIT {
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
-            runtime().store_cache(std::string(program), stream.str(), ".llvm");
+            runtime().store_cache(program_str, stream.str(), ".llvm");
 
             auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
                 if (cg) {
                     std::ostringstream stream;
                     cg->emit(stream, opt, debug);
-                    runtime().store_cache(ext + std::string(program), stream.str(), ext);
+                    runtime().store_cache(ext + program_str, stream.str(), ext);
                     runtime().register_file(std::string(module_name) + ext, stream.str());
                 }
             };
@@ -105,7 +92,7 @@ struct JIT {
             llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, *llvm_context);
 
             auto load_backend_src = [&](std::string ext) {
-                std::string cached_src = runtime().load_cache(ext + std::string(program), ext);
+                std::string cached_src = runtime().load_cache(ext + program_str, ext);
                 if (!cached_src.empty())
                     runtime().register_file(module_name + ext, cached_src);
             };

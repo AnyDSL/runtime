@@ -80,12 +80,6 @@ AnyDSL_runtime_API int32_t anydsl_create_task(int32_t, Closure);
 AnyDSL_runtime_API void    anydsl_create_edge(int32_t, int32_t);
 AnyDSL_runtime_API void    anydsl_execute_graph(int32_t, int32_t);
 
-#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
-AnyDSL_runtime_API void  anydsl_link(const char*);
-AnyDSL_runtime_API int32_t anydsl_compile(const char*, uint32_t, uint32_t);
-AnyDSL_runtime_API void *anydsl_lookup_function(int32_t, const char*);
-#endif
-
 #ifdef __cplusplus
 }
 #include "anydsl_runtime.hpp"

@@ -1,0 +1,369 @@
+// no declarations are emitted for "device" functions
+#[import(cc = "device", name = "__syncthreads")] fn cuda_syncthreads() -> ();
+#[import(cc = "device", name = "expf")] fn cuda_expf(f32) -> f32;
+#[import(cc = "device", name = "exp2f")] fn cuda_exp2f(f32) -> f32;
+#[import(cc = "device", name = "logf")] fn cuda_logf(f32) -> f32;
+#[import(cc = "device", name = "log2f")] fn cuda_log2f(f32) -> f32;
+#[import(cc = "device", name = "powf")] fn cuda_powf(f32, f32) -> f32;
+#[import(cc = "device", name = "rsqrtf")] fn cuda_rsqrtf(f32) -> f32;
+#[import(cc = "device", name = "sqrtf")] fn cuda_sqrtf(f32) -> f32;
+#[import(cc = "device", name = "fabsf")] fn cuda_fabsf(f32) -> f32;
+#[import(cc = "device", name = "sinf")] fn cuda_sinf(f32) -> f32;
+#[import(cc = "device", name = "cosf")] fn cuda_cosf(f32) -> f32;
+#[import(cc = "device", name = "tanf")] fn cuda_tanf(f32) -> f32;
+#[import(cc = "device", name = "asinf")] fn cuda_asinf(f32) -> f32;
+#[import(cc = "device", name = "acosf")] fn cuda_acosf(f32) -> f32;
+#[import(cc = "device", name = "atanf")] fn cuda_atanf(f32) -> f32;
+#[import(cc = "device", name = "erff")] fn cuda_erff(f32) -> f32;
+#[import(cc = "device", name = "atan2f")] fn cuda_atan2f(f32, f32) -> f32;
+#[import(cc = "device", name = "copysignf")] fn cuda_copysignf(f32, f32) -> f32;
+#[import(cc = "device", name = "fmaf")] fn cuda_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "fmaxf")] fn cuda_fmaxf(f32, f32) -> f32;
+#[import(cc = "device", name = "fminf")] fn cuda_fminf(f32, f32) -> f32;
+#[import(cc = "device", name = "fmodf")] fn cuda_fmodf(f32, f32) -> f32;
+#[import(cc = "device", name = "floorf")] fn cuda_floorf(f32) -> f32;
+#[import(cc = "device", name = "isinf")] fn cuda_isinff(f32) -> i32;
+#[import(cc = "device", name = "isnan")] fn cuda_isnanf(f32) -> i32;
+#[import(cc = "device", name = "isfinite")] fn cuda_isfinitef(f32) -> i32;
+#[import(cc = "device", name = "exp")] fn cuda_exp(f64) -> f64;
+#[import(cc = "device", name = "exp2")] fn cuda_exp2(f64) -> f64;
+#[import(cc = "device", name = "log")] fn cuda_log(f64) -> f64;
+#[import(cc = "device", name = "log2")] fn cuda_log2(f64) -> f64;
+#[import(cc = "device", name = "pow")] fn cuda_pow(f64, f64) -> f64;
+#[import(cc = "device", name = "rsqrt")] fn cuda_rsqrt(f64) -> f64;
+#[import(cc = "device", name = "sqrt")] fn cuda_sqrt(f64) -> f64;
+#[import(cc = "device", name = "fabs")] fn cuda_fabs(f64) -> f64;
+#[import(cc = "device", name = "sin")] fn cuda_sin(f64) -> f64;
+#[import(cc = "device", name = "cos")] fn cuda_cos(f64) -> f64;
+#[import(cc = "device", name = "tan")] fn cuda_tan(f64) -> f64;
+#[import(cc = "device", name = "asin")] fn cuda_asin(f64) -> f64;
+#[import(cc = "device", name = "acos")] fn cuda_acos(f64) -> f64;
+#[import(cc = "device", name = "atan")] fn cuda_atan(f64) -> f64;
+#[import(cc = "device", name = "erf")] fn cuda_erf(f64) -> f64;
+#[import(cc = "device", name = "atan2")] fn cuda_atan2(f64, f64) -> f64;
+#[import(cc = "device", name = "copysign")] fn cuda_copysign(f64, f64) -> f64;
+#[import(cc = "device", name = "fma")] fn cuda_fma(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "fmax")] fn cuda_fmax(f64, f64) -> f64;
+#[import(cc = "device", name = "fmin")] fn cuda_fmin(f64, f64) -> f64;
+#[import(cc = "device", name = "fmod")] fn cuda_fmod(f64, f64) -> f64;
+#[import(cc = "device", name = "floor")] fn cuda_floor(f64) -> f64;
+#[import(cc = "device", name = "isinf")] fn cuda_isinf(f64) -> i32;
+#[import(cc = "device", name = "isnan")] fn cuda_isnan(f64) -> i32;
+#[import(cc = "device", name = "isfinite")] fn cuda_isfinite(f64) -> i32;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_shared(&mut addrspace(3)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicMin")] fn cuda_atomic_min_global(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicMin")] fn cuda_atomic_min_shared(&mut addrspace(3)i32, i32) -> i32;
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg_f32(&addrspace(1)f32) -> f32;
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg_i32(&addrspace(1)i32) -> i32;
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg_u8(&addrspace(1)u8) -> u8;
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_f32(&addrspace(1)simd[f32 * 4]) -> simd[f32 * 4];
+#[import(cc = "device", name = "__ldg")] fn cuda_ldg4_i32(&addrspace(1)simd[i32 * 4]) -> simd[i32 * 4];
+#[import(cc = "device", name = "min")] fn cuda_min(i32, i32) -> i32;
+#[import(cc = "device", name = "max")] fn cuda_max(i32, i32) -> i32;
+
+// wrappers for threadIdx.x etc. are provided by the CUDA backend
+#[import(cc = "device", name = "threadIdx_x")] fn cuda_threadIdx_x() -> i32;
+#[import(cc = "device", name = "threadIdx_y")] fn cuda_threadIdx_y() -> i32;
+#[import(cc = "device", name = "threadIdx_z")] fn cuda_threadIdx_z() -> i32;
+#[import(cc = "device", name = "blockIdx_x")]  fn cuda_blockIdx_x() -> i32;
+#[import(cc = "device", name = "blockIdx_y")]  fn cuda_blockIdx_y() -> i32;
+#[import(cc = "device", name = "blockIdx_z")]  fn cuda_blockIdx_z() -> i32;
+#[import(cc = "device", name = "blockDim_x")]  fn cuda_blockDim_x() -> i32;
+#[import(cc = "device", name = "blockDim_y")]  fn cuda_blockDim_y() -> i32;
+#[import(cc = "device", name = "blockDim_z")]  fn cuda_blockDim_z() -> i32;
+#[import(cc = "device", name = "gridDim_x")]   fn cuda_gridDim_x() -> i32;
+#[import(cc = "device", name = "gridDim_y")]   fn cuda_gridDim_y() -> i32;
+#[import(cc = "device", name = "gridDim_z")]   fn cuda_gridDim_z() -> i32;
+
+
+#[import(cc = "device", name = "__trap")] fn cuda_trap() -> ();
+
+
+#[import(cc = "device", name = "__clz")]   fn cuda_clz_u32(u32) -> i32;
+#[import(cc = "device", name = "__clzll")] fn cuda_clz_u64(u64) -> i32;
+
+#[import(cc = "device", name = "__ffs")]   fn cuda_ffs_u32(u32) -> i32;
+#[import(cc = "device", name = "__ffsll")] fn cuda_ffs_u64(u64) -> i32;
+
+#[import(cc = "device", name = "__popc")]   fn cuda_popc_u32(u32) -> i32;
+#[import(cc = "device", name = "__popcll")] fn cuda_popc_u64(u64) -> i32;
+
+#[import(cc = "device", name = "__brev")]   fn cuda_brev_u32(u32) -> u32;
+#[import(cc = "device", name = "__brevll")] fn cuda_brev_u64(u64) -> u64;
+
+
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global_u64(&mut addrspace(1)u64, u64) -> u64;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global_f32(&mut addrspace(1)f32, f32) -> f32;
+#[import(cc = "device", name = "atomicAdd")] fn cuda_atomic_add_global_f64(&mut addrspace(1)f64, f64) -> f64;
+
+#[import(cc = "device", name = "atomicSub")] fn cuda_atomic_sub_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicSub")] fn cuda_atomic_sub_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicSub")] fn cuda_atomic_sub_global_u64(&mut addrspace(1)u64, u64) -> u64;
+#[import(cc = "device", name = "atomicSub")] fn cuda_atomic_sub_global_f32(&mut addrspace(1)f32, f32) -> f32;
+#[import(cc = "device", name = "atomicSub")] fn cuda_atomic_sub_global_f64(&mut addrspace(1)f64, f64) -> f64;
+
+#[import(cc = "device", name = "atomicAnd")] fn cuda_atomic_and_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicAnd")] fn cuda_atomic_and_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicAnd")] fn cuda_atomic_and_global_u64(&mut addrspace(1)u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicOr")] fn cuda_atomic_or_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicOr")] fn cuda_atomic_or_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicOr")] fn cuda_atomic_or_global_u64(&mut addrspace(1)u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicXor")] fn cuda_atomic_xor_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicXor")] fn cuda_atomic_xor_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicXor")] fn cuda_atomic_xor_global_u64(&mut addrspace(1)u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicExch")] fn cuda_atomic_exch_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicExch")] fn cuda_atomic_exch_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicExch")] fn cuda_atomic_exch_global_u64(&mut addrspace(1)u64, u64) -> u64;
+#[import(cc = "device", name = "atomicExch")] fn cuda_atomic_exch_global_f32(&mut addrspace(1)f32, f32) -> f32;
+
+#[import(cc = "device", name = "atomicMin")] fn cuda_atomic_min_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicMin")] fn cuda_atomic_min_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicMin")] fn cuda_atomic_min_global_u64(&mut addrspace(1)u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicMax")] fn cuda_atomic_max_global_i32(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomicMax")] fn cuda_atomic_max_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicMax")] fn cuda_atomic_max_global_u64(&mut addrspace(1)u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicCAS")] fn cuda_atomic_cas_global_u16(&mut addrspace(1)u16, u16, u16) -> u16;
+#[import(cc = "device", name = "atomicCAS")] fn cuda_atomic_cas_global_i32(&mut addrspace(1)i32, i32, i32) -> i32;
+#[import(cc = "device", name = "atomicCAS")] fn cuda_atomic_cas_global_u32(&mut addrspace(1)u32, u32, u32) -> u32;
+#[import(cc = "device", name = "atomicCAS")] fn cuda_atomic_cas_global_u64(&mut addrspace(1)u64, u64, u64) -> u64;
+
+#[import(cc = "device", name = "atomicInc")] fn cuda_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "atomicDec")] fn cuda_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
+
+
+#[import(cc = "device", name = "__threadfence")]        fn cuda_threadfence() -> ();
+#[import(cc = "device", name = "__threadfence_block")]  fn cuda_threadfence_block() -> ();
+#[import(cc = "device", name = "__threadfence_system")] fn cuda_threadfence_system() -> ();
+
+
+#[import(cc = "device", name = "__syncthreads")]       fn cuda_block_sync() -> ();
+#[import(cc = "device", name = "__syncthreads_count")] fn cuda_block_sync_count(i32) -> i32;
+#[import(cc = "device", name = "__syncthreads_and")]   fn cuda_block_sync_all(i32) -> i32;
+#[import(cc = "device", name = "__syncthreads_or")]    fn cuda_block_sync_any(i32) -> i32;
+
+#[import(cc = "device", name = "__syncwarp")]    fn cuda_warp_sync(u32) -> ();
+#[import(cc = "device", name = "__all_sync")]    fn cuda_warp_sync_all(u32, i32) -> i32;
+#[import(cc = "device", name = "__any_sync")]    fn cuda_warp_sync_any(u32, i32) -> i32;
+#[import(cc = "device", name = "__ballot_sync")] fn cuda_warp_sync_vote(u32, i32) -> u32;
+
+#[import(cc = "device", name = "__activemask")] fn cuda_warp_activemask() -> u32;
+
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_u32(u32, u32, i32, i32) -> u32;
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_i64(u32, i64, i32, i32) -> i64;
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_u64(u32, u64, i32, i32) -> u64;
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_f32(u32, f32, i32, i32) -> f32;
+#[import(cc = "device", name = "__shfl_sync")] fn cuda_warp_shfl_f64(u32, f64, i32, i32) -> f64;
+
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_i32(u32, i32, u32, i32) -> i32;
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_u32(u32, u32, u32, i32) -> u32;
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_i64(u32, i64, u32, i32) -> i64;
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_u64(u32, u64, u32, i32) -> u64;
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_f32(u32, f32, u32, i32) -> f32;
+#[import(cc = "device", name = "__shfl_up_sync")] fn cuda_warp_shfl_up_f64(u32, f64, u32, i32) -> f64;
+
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_i32(u32, i32, u32, i32) -> i32;
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_u32(u32, u32, u32, i32) -> u32;
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_i64(u32, i64, u32, i32) -> i64;
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_u64(u32, u64, u32, i32) -> u64;
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_f32(u32, f32, u32, i32) -> f32;
+#[import(cc = "device", name = "__shfl_down_sync")] fn cuda_warp_shfl_down_f64(u32, f64, u32, i32) -> f64;
+
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_i32(u32, i32, i32, i32) -> i32;
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_u32(u32, u32, i32, i32) -> u32;
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_i64(u32, i64, i32, i32) -> i64;
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_u64(u32, u64, i32, i32) -> u64;
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_f32(u32, f32, i32, i32) -> f32;
+#[import(cc = "device", name = "__shfl_xor_sync")] fn cuda_warp_shfl_xor_f64(u32, f64, i32, i32) -> f64;
+
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_i32(u32, i32) -> u32;
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_u32(u32, u32) -> u32;
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_i64(u32, i64) -> u32;
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_u64(u32, u64) -> u32;
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_f32(u32, f32) -> u32;
+#[import(cc = "device", name = "__match_any_sync")] fn cuda_warp_match_any_f64(u32, f64) -> u32;
+
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_i32(u32, i32, &mut i32) -> u32;
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_u32(u32, u32, &mut i32) -> u32;
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_i64(u32, i64, &mut i32) -> u32;
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_u64(u32, u64, &mut i32) -> u32;
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_f32(u32, f32, &mut i32) -> u32;
+#[import(cc = "device", name = "__match_all_sync")] fn cuda_warp_match_all_f64(u32, f64, &mut i32) -> u32;
+
+#[import(cc = "device", name = "__nanosleep")] fn cuda_nanosleep(u32) -> ();
+
+fn @cuda_vprintf(fmt: &[u8], args: &[u8]) -> i32 {
+    let mut res: i32;
+    asm(
+        "{\n"
+        ".param.b64 param0;\n"
+        ".param.b64 param1;\n"
+        ".param.b32 retval;\n"
+        "st.param.b64 [param0], %1;\n"
+        "st.param.b64 [param1], %2;\n"
+        "call.uni (retval), vprintf, (param0, param1);\n"
+        "ld.param.b32 %0, [retval];\n"
+        "}" : "=r"(res) : "l"(fmt), "l"(args) : "memory" : "volatile"
+    );
+    res
+}
+
+fn @cuda_laneid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %laneid;" : "=r" (id));
+    id
+}
+
+fn @cuda_warpid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %warpid;" : "=r" (id));
+    id
+}
+
+fn @cuda_nwarpid() -> u32 {
+    let mut n: u32;
+    asm("mov.u32 %0, %nwarpid;" : "=r" (n));
+    n
+}
+
+fn @cuda_smid() -> u32 {
+    let mut id: u32;
+    asm("mov.u32 %0, %smid;" : "=r" (id));
+    id
+}
+
+fn @cuda_nsmid() -> u32 {
+    let mut n: u32;
+    asm("mov.u32 %0, %nsmid;" : "=r" (n));
+    n
+}
+
+fn @cuda_lanemask() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_eq;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_le() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_le;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_lt() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_lt;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_ge() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_ge;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_lanemask_gt() -> u32 {
+    let mut mask: u32;
+    asm("mov.u32 %0, %lanemask_gt;" : "=r" (mask));
+    mask
+}
+
+fn @cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
+fn @cuda_maxmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_max(a, b), c) }
+fn @cuda_minmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_min(a, b), c) }
+fn @cuda_maxmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_max(a, b), c) }
+fn @cuda_madf(a: f32, b: f32, c: f32) -> f32 { cuda_fmaf(a, b, c) }
+fn @cuda_mad(a: f64, b: f64, c: f64) -> f64 { cuda_fma(a, b, c) }
+
+fn @cuda_accelerator(dev: i32) = Accelerator {
+    exec = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = cuda_threadIdx_x,
+            tidy  = cuda_threadIdx_y,
+            tidz  = cuda_threadIdx_z,
+            bidx  = cuda_blockIdx_x,
+            bidy  = cuda_blockIdx_y,
+            bidz  = cuda_blockIdx_z,
+            gidx  = @|| cuda_threadIdx_x() + cuda_blockDim_x() * cuda_blockIdx_x(),
+            gidy  = @|| cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
+            gidz  = @|| cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z(),
+            bdimx = cuda_blockDim_x,
+            bdimy = cuda_blockDim_y,
+            bdimz = cuda_blockDim_z,
+            gdimx = @|| cuda_gridDim_x() * cuda_blockDim_x(),
+            gdimy = @|| cuda_gridDim_y() * cuda_blockDim_y(),
+            gdimz = @|| cuda_gridDim_z() * cuda_blockDim_z(),
+            nblkx = cuda_gridDim_x,
+            nblky = cuda_gridDim_y,
+            nblkz = cuda_gridDim_z
+        };
+        cuda(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_cuda(dev),
+    alloc         = @|size| alloc_cuda(dev, size),
+    alloc_unified = @|size| alloc_cuda_unified(dev, size),
+    barrier       = cuda_syncthreads
+};
+
+static cuda_intrinsics = Intrinsics {
+    expf        = cuda_expf,
+    exp2f       = cuda_exp2f,
+    logf        = cuda_logf,
+    log2f       = cuda_log2f,
+    powf        = cuda_powf,
+    rsqrtf      = cuda_rsqrtf,
+    sqrtf       = cuda_sqrtf,
+    fabsf       = cuda_fabsf,
+    sinf        = cuda_sinf,
+    cosf        = cuda_cosf,
+    tanf        = cuda_tanf,
+    asinf       = cuda_asinf,
+    acosf       = cuda_acosf,
+    atanf       = cuda_atanf,
+    erff        = cuda_erff,
+    atan2f      = cuda_atan2f,
+    copysignf   = cuda_copysignf,
+    fmaf        = cuda_fmaf,
+    fmaxf       = cuda_fmaxf,
+    fminf       = cuda_fminf,
+    fmodf       = cuda_fmodf,
+    floorf      = cuda_floorf,
+    isinff      = cuda_isinff,
+    isnanf      = cuda_isnanf,
+    isfinitef   = cuda_isfinitef,
+    exp         = cuda_exp,
+    exp2        = cuda_exp2,
+    log         = cuda_log,
+    log2        = cuda_log2,
+    pow         = cuda_pow,
+    rsqrt       = cuda_rsqrt,
+    sqrt        = cuda_sqrt,
+    fabs        = cuda_fabs,
+    sin         = cuda_sin,
+    cos         = cuda_cos,
+    tan         = cuda_tan,
+    asin        = cuda_asin,
+    acos        = cuda_acos,
+    atan        = cuda_atan,
+    erf         = cuda_erf,
+    atan2       = cuda_atan2,
+    copysign    = cuda_copysign,
+    fma         = cuda_fma,
+    fmax        = cuda_fmax,
+    fmin        = cuda_fmin,
+    fmod        = cuda_fmod,
+    floor       = cuda_floor,
+    isinf       = cuda_isinf,
+    isnan       = cuda_isnan,
+    isfinite    = cuda_isfinite,
+    min         = cuda_min,
+    max         = cuda_max,
+};

@@ -1,0 +1,13 @@
+#[import(cc = "C")] fn rv_mask() -> bool;
+#[import(cc = "C")] fn rv_any(_: bool) -> bool;
+#[import(cc = "C")] fn rv_all(_: bool) -> bool;
+#[import(cc = "C")] fn rv_ballot(_: bool) -> i32;
+#[import(cc = "C")] fn rv_extract(_: f32, _: i32) -> f32;
+#[import(cc = "C")] fn rv_insert(_: f32, _: i32, _: f32) -> f32;
+#[import(cc = "C")] fn rv_load(_: &f32, _: i32) -> f32;
+#[import(cc = "C")] fn rv_store(_: &mut f32, _: i32, _: f32) -> (); 
+#[import(cc = "C")] fn rv_shuffle(_: f32, _: i32) -> f32;
+#[import(cc = "C")] fn rv_align(_: &i8, _: i32)-> &i8;
+#[import(cc = "C")] fn rv_compact(_: f32, _: bool) -> f32;
+#[import(cc = "C")] fn rv_lane_id() -> i32;
+#[import(cc = "C")] fn rv_num_lanes() -> i32;

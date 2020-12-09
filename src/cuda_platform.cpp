@@ -11,7 +11,7 @@
 #include <sstream>
 #include <thread>
 
-#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
+#ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -399,7 +399,7 @@ std::string get_libdevice_path(CUjit_target) {
 }
 #endif
 
-#ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
+#ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 bool llvm_nvptx_initialized = false;
 static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, int opt) {
     if (!llvm_nvptx_initialized) {
@@ -485,7 +485,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
 }
 #else
 static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, const std::string&, int) {
-    error("Recompile runtime with RUNTIME_JIT enabled for nvptx support.");
+    error("Recompile runtime with LLVM enabled for nvptx support.");
 }
 #endif
 
