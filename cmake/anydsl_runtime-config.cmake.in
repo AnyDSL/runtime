@@ -64,7 +64,7 @@ endif()
 # determine artic binary for toolchain
 find_path(Artic_DIR
     NAMES artic-config.cmake
-    PATHS ${Artic_DIR} $ENV{Artic_DIR} @Artic_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
+    PATHS ${Artic_DIR} $ENV{Artic_DIR} "@Artic_DIR@" "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
     PATH_SUFFIXES share/anydsl/cmake
 )
 find_package(Artic QUIET PATHS ${Artic_DIR})
@@ -73,13 +73,13 @@ if(TARGET artic AND NOT Artic_BIN)
     set(Artic_BIN ${Artic_BIN} CACHE FILEPATH "path to artic executable")
 endif()
 find_program(Artic_BIN artic
-    PATHS ${Artic_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
+    PATHS ${Artic_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
 # determine impala binary for toolchain
 find_path(Impala_DIR
     NAMES impala-config.cmake
-    PATHS ${Impala_DIR} $ENV{Impala_DIR} @Impala_DIR@ "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
+    PATHS ${Impala_DIR} $ENV{Impala_DIR} "@Impala_DIR@" "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
     PATH_SUFFIXES share/anydsl/cmake
 )
 find_package(Impala QUIET PATHS ${Impala_DIR})
@@ -88,7 +88,7 @@ if(TARGET impala AND NOT Impala_BIN)
     set(Impala_BIN ${Impala_BIN} CACHE FILEPATH "path to impala executable")
 endif()
 find_program(Impala_BIN impala
-    PATHS ${Impala_BINARY_DIR} @CMAKE_CURRENT_BINARY_DIR@/bin
+    PATHS ${Impala_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
 find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@" NO_DEFAULT_PATH)
