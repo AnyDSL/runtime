@@ -151,8 +151,11 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 #   [FRONTEND frontend_name]
 #   [ARTIC_FLAGS [args1...]]
 #   [IMPALA_FLAGS [args2...]]
-#   [CLANG_FLAGS [args3...]]
-#   [HLS_FLAGS [args4...]]
+#   [TARGET_TRIPLE [args3...]]
+#   [TARGET_CPU [args4...]]
+#   [TARGET_FEATURES [args5...]]
+#   [CLANG_FLAGS [args6...]]
+#   [HLS_FLAGS [args7...]]
 #   [FILES [files...]]
 # )
 
@@ -185,7 +188,7 @@ foreach(_config ${_release_configs})
 endforeach()
 
 function(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "FRONTEND;INTERFACE;NAME" "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
+    cmake_parse_arguments("PARGS" "" "FRONTEND;INTERFACE;NAME" "ARTIC_FLAGS;IMPALA_FLAGS;TARGET_TRIPLE;TARGET_CPU;TARGET_FEATURES;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -214,6 +217,25 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_bin ${Impala_BIN})
     endif()
 
+    # configure cross-compilation target
+    if(NOT PARGS_TARGET_TRIPLE)
+        set(_frontend_cmd ${_frontend_bin})
+        set(CLANG_TARGET_FLAGS)
+    else()
+        set(TARGET_TRIPLE ${PARGS_TARGET_TRIPLE})
+        set(TARGET_CPU ${PARGS_TARGET_CPU})
+        set(TARGET_FEATURES ${PARGS_TARGET_FEATURES})
+        set(ENV_CMD ${CMAKE_COMMAND} -E env)
+        set(_frontend_cmd ${ENV_CMD} ANYDSL_TARGET_TRIPLE=${TARGET_TRIPLE} ANYDSL_TARGET_CPU=${TARGET_CPU} ANYDSL_TARGET_FEATURES=${TARGET_FEATURES} ${_frontend_bin})
+        if(TARGET_FEATURES)
+            set(CLANG_MATTRS "-mattr=${TARGET_FEATURES}")
+        endif()
+        set(CLANG_TARGET_FLAGS "--target=${TARGET_TRIPLE} ${CLANG_MATTRS}")
+    endif()
+
+    # parse extra clang flags
+    set(_clang_flags ${CLANG_TARGET_FLAGS} ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
+
     list(FIND _frontend_flags "--log-level" FRONTEND_FLAGS_LOG_LEVEL_IDX)
     if(FRONTEND_FLAGS_LOG_LEVEL_IDX EQUAL -1)
         list(APPEND _frontend_flags --log-level $<IF:$<CONFIG:Release>,error,info>)
@@ -224,7 +246,7 @@ function(anydsl_runtime_wrap outfiles)
         message(FATAL_ERROR "Could not find clang binary, it has to be in the PATH")
     endif()
 
-    # get last filename, and absolute filenames
+    # get last filename and absolute filenames
     set(_infiles)
     foreach(_it ${PARGS_FILES})
         get_filename_component(_infile ${_it} ABSOLUTE)
@@ -254,19 +276,16 @@ function(anydsl_runtime_wrap outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala)
 
-    set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
-
     if(NOT MSVC)
         list(APPEND _clang_flags -fPIE)
     endif()
 
     # generate .ll file and patch it
     add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
+        COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
         COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
         COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
-        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P 
-        ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
+        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
 
@@ -274,7 +293,7 @@ function(anydsl_runtime_wrap outfiles)
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
         set(_hfile ${PARGS_INTERFACE}.h)
         add_custom_command(OUTPUT ${_hfile}
-           COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} --emit-c-interface -o ${PARGS_INTERFACE}
+           COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} --emit-c-interface -o ${PARGS_INTERFACE}
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM)
         set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
