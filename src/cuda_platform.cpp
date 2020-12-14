@@ -59,13 +59,6 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 }
 #endif
 
-// factory method
-template<> template<>
-Platform* PlatformFactory<CudaPlatform>::create(Runtime* runtime, const std::string&) {
-    return new CudaPlatform(runtime);
-};
-
-
 extern std::atomic<uint64_t> anydsl_kernel_time;
 
 CudaPlatform::CudaPlatform(Runtime* runtime)

@@ -172,7 +172,6 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
             anydsl_runtime.h
             anydsl_runtime.hpp
             platform.h
-            cpu_platform.cpp
             cpu_platform.h
             dummy_platform.h
             log.h

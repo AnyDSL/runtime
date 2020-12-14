@@ -34,35 +34,27 @@
 #include "runtime.h"
 #include "platform.h"
 #include "dummy_platform.h"
+#include "cpu_platform.h"
 
-
-class CpuPlatform;
-class CudaPlatform;
-class OpenCLPlatform;
-class HSAPlatform;
-
-// default dummy for all platforms
-template<class PLATFORM> template<typename... Args>
-Platform* PlatformFactory<PLATFORM>::create(Runtime* runtime, const std::string& reference, Args...) {
-    return new DummyPlatform(runtime, reference);
-};
-
-// specialization for cpu platform
-template<> template<typename... Args>
-Platform* PlatformFactory<CpuPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
-
-// feature dependent template specialization
-#ifdef AnyDSL_runtime_HAS_CUDA_SUPPORT
-template<> template<typename... Args>
-Platform* PlatformFactory<CudaPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
+#ifndef AnyDSL_runtime_HAS_CUDA_SUPPORT
+struct CudaPlatformName { static const char* name() { return "CUDA"; } };
+using CudaPlatform = DummyPlatform<CudaPlatformName>;
+#else
+#include "cuda_platform.h"
 #endif
-#ifdef AnyDSL_runtime_HAS_OPENCL_SUPPORT
-template<> template<typename... Args>
-Platform* PlatformFactory<OpenCLPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
+
+#ifndef AnyDSL_runtime_HAS_OPENCL_SUPPORT
+struct OpenCLPlatformName { static const char* name() { return "OpenCL"; } };
+using OpenCLPlatform = DummyPlatform<OpenCLPlatformName>;
+#else
+#include "opencl_platform.h"
 #endif
-#ifdef AnyDSL_runtime_HAS_HSA_SUPPORT
-template<> template<typename... Args>
-Platform* PlatformFactory<HSAPlatform>::create(Runtime* runtime, const std::string& reference, Args... args);
+
+#ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
+struct HSAPlatformName { static const char* name() { return "HSA"; } };
+using HSAPlatform = DummyPlatform<HSAPlatformName>;
+#else
+#include "hsa_platform.h"
 #endif
 
 Runtime& runtime() {
@@ -81,10 +73,10 @@ Runtime::Runtime() {
             profile_ = ProfileLevel::Full;
     }
 
-    register_platform<CpuPlatform>("CPU");
-    register_platform<CudaPlatform>("CUDA");
-    register_platform<OpenCLPlatform>("OpenCL");
-    register_platform<HSAPlatform>("HSA");
+    register_platform<CpuPlatform>();
+    register_platform<CudaPlatform>();
+    register_platform<OpenCLPlatform>();
+    register_platform<HSAPlatform>();
 }
 
 #ifdef _WIN32

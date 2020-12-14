@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 enum class ProfileLevel : uint8_t { None = 0, Full };
 
@@ -16,24 +17,16 @@ class Runtime {
 public:
     Runtime();
 
-    ~Runtime() {
-        for (auto p: platforms_) {
-            delete p;
-        }
-    }
-
     /// Registers the given platform into the runtime.
     template <typename T, typename... Args>
-    void register_platform(const std::string& name, Args... args) {
-        PlatformFactory<T> factory;
-        Platform* p = factory.create(this, name, args...);
-        platforms_.push_back(p);
+    void register_platform(Args&&... args) {
+        platforms_.emplace_back(new T(this, std::forward<Args&&>(args)...));
     }
 
     /// Displays available platforms.
     void display_info() {
         info("Available platforms:");
-        for (auto p: platforms_) {
+        for (auto& p: platforms_) {
             info("    * %: % device(s)", p->name(), p->dev_count());
         }
     }
@@ -139,7 +132,7 @@ private:
     }
 
     ProfileLevel profile_;
-    std::vector<Platform*> platforms_;
+    std::vector<std::unique_ptr<Platform>> platforms_;
     std::unordered_map<std::string, std::string> files_;
 };
 
