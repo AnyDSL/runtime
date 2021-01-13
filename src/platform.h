@@ -13,6 +13,11 @@ enum PlatformId : uint32_t {};
 
 enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
 
+void register_cpu_platform(Runtime*);
+void register_cuda_platform(Runtime*);
+void register_opencl_platform(Runtime*);
+void register_hsa_platform(Runtime*);
+
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.
 class Platform {

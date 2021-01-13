@@ -7,11 +7,10 @@
 #include <limits>
 
 /// Dummy platform, implemented
-template <typename Name>
 class DummyPlatform : public Platform {
 public:
-    DummyPlatform(Runtime* runtime)
-        : Platform(runtime), name_(Name::name())
+    DummyPlatform(Runtime* runtime, const std::string& name)
+        : Platform(runtime), name_(name)
     {}
 
 protected:

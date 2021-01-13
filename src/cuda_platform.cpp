@@ -652,3 +652,7 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 
     return mod;
 }
+
+void register_cuda_platform(Runtime* runtime) {
+    runtime->register_platform<CudaPlatform>();
+}

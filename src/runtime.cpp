@@ -37,24 +37,13 @@
 #include "cpu_platform.h"
 
 #ifndef AnyDSL_runtime_HAS_CUDA_SUPPORT
-struct CudaPlatformName { static const char* name() { return "CUDA"; } };
-using CudaPlatform = DummyPlatform<CudaPlatformName>;
-#else
-#include "cuda_platform.h"
+void register_cuda_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("CUDA"); }
 #endif
-
 #ifndef AnyDSL_runtime_HAS_OPENCL_SUPPORT
-struct OpenCLPlatformName { static const char* name() { return "OpenCL"; } };
-using OpenCLPlatform = DummyPlatform<OpenCLPlatformName>;
-#else
-#include "opencl_platform.h"
+void register_opencl_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("OpenCL"); }
 #endif
-
 #ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
-struct HSAPlatformName { static const char* name() { return "HSA"; } };
-using HSAPlatform = DummyPlatform<HSAPlatformName>;
-#else
-#include "hsa_platform.h"
+void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
 #endif
 
 Runtime& runtime() {
@@ -74,9 +63,9 @@ Runtime::Runtime() {
     }
 
     register_platform<CpuPlatform>();
-    register_platform<CudaPlatform>();
-    register_platform<OpenCLPlatform>();
-    register_platform<HSAPlatform>();
+    register_cuda_platform(this);
+    register_opencl_platform(this);
+    register_hsa_platform(this);
 }
 
 #ifdef _WIN32

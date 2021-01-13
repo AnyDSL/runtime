@@ -1,6 +1,5 @@
 #include "opencl_platform.h"
 
-// TODO: get rid of this cyclic dependency
 #include "runtime.h"
 
 #include <algorithm>
@@ -584,4 +583,8 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     opencl_dev.unlock();
 
     return kernel;
+}
+
+void register_opencl_platform(Runtime* runtime) {
+    runtime->register_platform<OpenCLPlatform>();
 }
