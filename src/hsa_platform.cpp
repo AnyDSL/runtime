@@ -722,3 +722,7 @@ std::string HSAPlatform::compile_gcn(DeviceId dev, const std::string& filename, 
     debug("Compiling AMDGPU to GCN using amdgpu for '%' on HSA device %", filename, dev);
     return emit_gcn(program_string, devices_[dev].isa, filename, 3);
 }
+
+void register_hsa_platform(Runtime* runtime) {
+    runtime->register_platform<HSAPlatform>();
+}
