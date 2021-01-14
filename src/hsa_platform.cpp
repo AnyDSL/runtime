@@ -316,39 +316,36 @@ void HSAPlatform::release(DeviceId, void* ptr) {
 
 extern std::atomic<uint64_t> anydsl_kernel_time;
 
-void HSAPlatform::launch_kernel(DeviceId dev,
-                                const char* file, const char* name,
-                                const uint32_t* grid, const uint32_t* block,
-                                void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const KernelArgType*,
-                                uint32_t num_args) {
+void HSAPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
     auto queue = devices_[dev].queue;
     if (!queue)
         error("The selected HSA device '%' cannot execute kernels", dev);
 
-    auto& kernel_info = load_kernel(dev, file, name);
+    auto& kernel_info = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     auto align_up = [&] (unsigned int start, unsigned int align) -> unsigned int {
         return (start + align - 1U) & -align;
     };
 
     // set up arguments
-    if (num_args) {
+    if (launch_params.num_args) {
         if (!kernel_info.kernarg_segment) {
             size_t total_size = 0;
-            for (uint32_t i = 0; i < num_args; i++)
-                total_size = (total_size + aligns[i] - 1) / aligns[i] * aligns[i] + allocs[i];
+            for (uint32_t i = 0; i < launch_params.num_args; i++)
+                total_size = (total_size + launch_params.args.aligns[i] - 1) /
+                    launch_params.args.aligns[i] * launch_params.args.aligns[i] + launch_params.args.alloc_sizes[i];
             kernel_info.kernarg_segment_size = total_size;
             hsa_status_t status = hsa_memory_allocate(devices_[dev].kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
             CHECK_HSA(status, "hsa_memory_allocate()");
         }
         void*  cur   = kernel_info.kernarg_segment;
         size_t space = kernel_info.kernarg_segment_size;
-        for (uint32_t i = 0; i < num_args; i++) {
+        for (uint32_t i = 0; i < launch_params.num_args; i++) {
             // align base address for next kernel argument
-            if (!std::align(aligns[i], allocs[i], cur, space))
+            if (!std::align(launch_params.args.aligns[i], launch_params.args.alloc_sizes[i], cur, space))
                 error("Incorrect kernel argument alignment detected");
-            std::memcpy(cur, args[i], sizes[i]);
-            cur = reinterpret_cast<uint8_t*>(cur) + allocs[i];
+            std::memcpy(cur, launch_params.args.data[i], launch_params.args.sizes[i]);
+            cur = reinterpret_cast<uint8_t*>(cur) + launch_params.args.alloc_sizes[i];
         }
 
         size_t total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
@@ -370,8 +367,10 @@ void HSAPlatform::launch_kernel(DeviceId dev,
         }
 
         total = reinterpret_cast<uint8_t*>(cur) - reinterpret_cast<uint8_t*>(kernel_info.kernarg_segment);
-        if (total != kernel_info.kernarg_segment_size)
-            error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %", name, kernel_info.kernarg_segment_size, total);
+        if (total != kernel_info.kernarg_segment_size) {
+            error("HSA kernarg segment size for kernel '%' differs from argument size: % vs. %",
+                launch_params.kernel_name, kernel_info.kernarg_segment_size, total);
+        }
     }
 
     auto signal = devices_[dev].signal;
@@ -388,17 +387,18 @@ void HSAPlatform::launch_kernel(DeviceId dev,
     hsa_kernel_dispatch_packet_t aql;
     std::memset(&aql, 0, sizeof(aql));
 
-    aql.header = (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_ACQUIRE_FENCE_SCOPE) |
-                 (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_RELEASE_FENCE_SCOPE) |
-                 (HSA_PACKET_TYPE_KERNEL_DISPATCH << HSA_PACKET_HEADER_TYPE) |
-                 (1 << HSA_PACKET_HEADER_BARRIER);
+    aql.header =
+        (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_ACQUIRE_FENCE_SCOPE) |
+        (HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_RELEASE_FENCE_SCOPE) |
+        (HSA_PACKET_TYPE_KERNEL_DISPATCH << HSA_PACKET_HEADER_TYPE) |
+        (1 << HSA_PACKET_HEADER_BARRIER);
     aql.setup = 3 << HSA_KERNEL_DISPATCH_PACKET_SETUP_DIMENSIONS;
-    aql.workgroup_size_x = (uint16_t)block[0];
-    aql.workgroup_size_y = (uint16_t)block[1];
-    aql.workgroup_size_z = (uint16_t)block[2];
-    aql.grid_size_x = grid[0];
-    aql.grid_size_y = grid[1];
-    aql.grid_size_z = grid[2];
+    aql.workgroup_size_x = (uint16_t)launch_params.block[0];
+    aql.workgroup_size_y = (uint16_t)launch_params.block[1];
+    aql.workgroup_size_z = (uint16_t)launch_params.block[2];
+    aql.grid_size_x = launch_params.grid[0];
+    aql.grid_size_y = launch_params.grid[1];
+    aql.grid_size_z = launch_params.grid[2];
     aql.completion_signal    = launch_signal;
     aql.kernel_object        = kernel_info.kernel;
     aql.kernarg_address      = kernel_info.kernarg_segment;

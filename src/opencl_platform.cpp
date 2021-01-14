@@ -327,39 +327,37 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
 
-void OpenCLPlatform::launch_kernel(DeviceId dev,
-                                   const char* file, const char* name,
-                                   const uint32_t* grid, const uint32_t* block,
-                                   void** args, const uint32_t* sizes, const uint32_t*, const uint32_t*, const KernelArgType* types,
-                                   uint32_t num_args) {
-    auto kernel = load_kernel(dev, file, name);
+void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
+    auto kernel = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     // set up arguments
-    std::vector<cl_mem> kernel_structs(num_args);
-    for (uint32_t i = 0; i < num_args; i++) {
-        if (types[i] == KernelArgType::Struct) {
+    std::vector<cl_mem> kernel_structs(launch_params.num_args);
+    for (uint32_t i = 0; i < launch_params.num_args; i++) {
+        if (launch_params.args.types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
-            cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, sizes[i], args[i], &err);
+            cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, launch_params.args.sizes[i], launch_params.args.data[i], &err);
             CHECK_OPENCL(err, "clCreateBuffer()");
             kernel_structs[i] = struct_buf;
             clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
         } else {
             #ifdef CL_VERSION_2_0
-            if (types[i] == KernelArgType::Ptr && devices_[dev].version_major >= 2) {
-                cl_int err = clSetKernelArgSVMPointer(kernel, i, *(void**)args[i]);
+            if (launch_params.args.types[i] == KernelArgType::Ptr && devices_[dev].version_major >= 2) {
+                cl_int err = clSetKernelArgSVMPointer(kernel, i, *(void**)launch_params.args.data[i]);
                 CHECK_OPENCL(err, "clSetKernelArgSVMPointer()");
                 continue;
             }
             #endif
-            cl_int err = clSetKernelArg(kernel, i, types[i] == KernelArgType::Ptr ? sizeof(cl_mem) : sizes[i], args[i]);
+            cl_int err = clSetKernelArg(kernel, i,
+                launch_params.args.types[i] == KernelArgType::Ptr ? sizeof(cl_mem) : launch_params.args.sizes[i],
+                launch_params.args.data[i]);
             CHECK_OPENCL(err, "clSetKernelArg()");
         }
     }
 
-    size_t global_work_size[] = {grid [0], grid [1], grid [2]};
-    size_t local_work_size[]  = {block[0], block[1], block[2]};
+    size_t global_work_size[] = {launch_params.grid [0], launch_params.grid [1], launch_params.grid [2]};
+    size_t local_work_size[]  = {launch_params.block[0], launch_params.block[1], launch_params.block[2]};
 
     // launch the kernel
     cl_event event = 0;
@@ -378,8 +376,8 @@ void OpenCLPlatform::launch_kernel(DeviceId dev,
     }
 
     // release temporary buffers for struct arguments
-    for (uint32_t i = 0; i < num_args; i++) {
-        if (types[i] == KernelArgType::Struct) {
+    for (uint32_t i = 0; i < launch_params.num_args; i++) {
+        if (launch_params.args.types[i] == KernelArgType::Struct) {
             cl_int err = clReleaseMemObject(kernel_structs[i]);
             CHECK_OPENCL(err, "clReleaseMemObject()");
         }

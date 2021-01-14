@@ -79,17 +79,13 @@ public:
     AnyDSL_runtime_API void store_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
     /// Launches a kernel on the platform and device.
-    void launch_kernel(PlatformId plat, DeviceId dev,
-                       const char* file, const char* kernel,
-                       const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const KernelArgType* types,
-                       uint32_t num_args) {
+    void launch_kernel(PlatformId plat, DeviceId dev, const LaunchParams& launch_params) {
         check_device(plat, dev);
-        platforms_[plat]->launch_kernel(dev,
-                                        file, kernel,
-                                        grid, block,
-                                        args, sizes, aligns, allocs, types,
-                                        num_args);
+        assert(launch_params.grid[0] > 0 && launch_params.grid[0] % launch_params.block[0] == 0 &&
+               launch_params.grid[1] > 0 && launch_params.grid[1] % launch_params.block[1] == 0 &&
+               launch_params.grid[2] > 0 && launch_params.grid[2] % launch_params.block[2] == 0 &&
+               "The grid size is not a multiple of the block size");
+        platforms_[plat]->launch_kernel(dev, launch_params);
     }
 
     /// Waits for the completion of all kernels on the given platform and device.

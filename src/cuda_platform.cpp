@@ -200,14 +200,10 @@ void CudaPlatform::release_host(DeviceId dev, void* ptr) {
     cuCtxPopCurrent(NULL);
 }
 
-void CudaPlatform::launch_kernel(DeviceId dev,
-                                 const char* file, const char* kernel,
-                                 const uint32_t* grid, const uint32_t* block,
-                                 void** args, const uint32_t*, const uint32_t*, const uint32_t*, const KernelArgType*,
-                                 uint32_t) {
+void CudaPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
     cuCtxPushCurrent(devices_[dev].ctx);
 
-    auto func = load_kernel(dev, file, kernel);
+    auto func = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     CUevent start, end;
     if (runtime_->profiling_enabled()) {
@@ -216,17 +212,12 @@ void CudaPlatform::launch_kernel(DeviceId dev,
         CHECK_CUDA(cuEventRecord(start, 0), "cuEventRecord()");
     }
 
-    assert(grid[0] > 0 && grid[0] % block[0] == 0 &&
-           grid[1] > 0 && grid[1] % block[1] == 0 &&
-           grid[2] > 0 && grid[2] % block[2] == 0 &&
-           "The grid size is not a multiple of the block size");
-
     CUresult err = cuLaunchKernel(func,
-        grid[0] / block[0],
-        grid[1] / block[1],
-        grid[2] / block[2],
-        block[0], block[1], block[2],
-        0, nullptr, args, nullptr);
+        launch_params.grid[0] / launch_params.block[0],
+        launch_params.grid[1] / launch_params.block[1],
+        launch_params.grid[2] / launch_params.block[2],
+        launch_params.block[0], launch_params.block[1], launch_params.block[2],
+        0, nullptr, launch_params.args.data, nullptr);
     CHECK_CUDA(err, "cuLaunchKernel()");
 
     if (runtime_->profiling_enabled()) {

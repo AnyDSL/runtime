@@ -26,11 +26,7 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override { release(dev, ptr); }
 
-    void launch_kernel(DeviceId dev,
-                       const char* file, const char* kernel,
-                       const uint32_t* grid, const uint32_t* block,
-                       void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const KernelArgType* types,
-                       uint32_t num_args) override;
+    void launch_kernel(DeviceId dev, const LaunchParams& launch_params) override;
     void synchronize(DeviceId dev) override;
 
     void copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);

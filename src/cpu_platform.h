@@ -48,11 +48,7 @@ protected:
         error("Kernels are not supported on the CPU");
     }
 
-    void launch_kernel(DeviceId,
-                       const char*, const char*,
-                       const uint32_t*, const uint32_t*,
-                       void**, const uint32_t*, const uint32_t*, const uint32_t*, const KernelArgType*,
-                       uint32_t) override { no_kernel(); }
+    void launch_kernel(DeviceId, const LaunchParams&) override { no_kernel(); }
     void synchronize(DeviceId) override { no_kernel(); }
 
     void copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {

@@ -241,16 +241,30 @@ void anydsl_copy(int32_t mask_src, const void* src, int64_t offset_src,
                    to_platform(mask_dst), to_device(mask_dst), dst, offset_dst, size);
 }
 
-void anydsl_launch_kernel(int32_t mask,
-                          const char* file, const char* kernel,
-                          const uint32_t* grid, const uint32_t* block,
-                          void** args, const uint32_t* sizes, const uint32_t* aligns, const uint32_t* allocs, const uint8_t* types,
-                          uint32_t num_args) {
-    runtime().launch_kernel(to_platform(mask), to_device(mask),
-                            file, kernel,
-                            grid, block,
-                            args, sizes, aligns, allocs, reinterpret_cast<const KernelArgType*>(types),
-                            num_args);
+void anydsl_launch_kernel(
+    int32_t mask, const char* file_name, const char* kernel_name,
+    const uint32_t* grid, const uint32_t* block,
+    void** arg_data,
+    const uint32_t* arg_sizes,
+    const uint32_t* arg_aligns,
+    const uint32_t* arg_alloc_sizes,
+    const uint8_t* arg_types,
+    uint32_t num_args) {
+    LaunchParams launch_params = {
+        .file_name = file_name,
+        .kernel_name = kernel_name,
+        .grid = grid,
+        .block = block,
+        .args = {
+            .data = arg_data,
+            .sizes = arg_sizes,
+            .aligns = arg_aligns,
+            .alloc_sizes = arg_alloc_sizes,
+            .types = reinterpret_cast<const KernelArgType*>(arg_types),
+        },
+        .num_args = num_args
+    };
+    runtime().launch_kernel(to_platform(mask), to_device(mask), launch_params);
 }
 
 void anydsl_synchronize(int32_t mask) {

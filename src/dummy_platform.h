@@ -21,11 +21,7 @@ protected:
     void release(DeviceId, void*) override { platform_error(); }
     void release_host(DeviceId, void*) override { platform_error(); }
 
-    void launch_kernel(DeviceId,
-                       const char*, const char*,
-                       const uint32_t*, const uint32_t*,
-                       void**, const uint32_t*, const uint32_t*, const uint32_t*, const KernelArgType*,
-                       uint32_t) override { platform_error(); }
+    void launch_kernel(DeviceId, const LaunchParams&) override { platform_error(); }
     void synchronize(DeviceId) override { platform_error(); }
 
     void copy(DeviceId, const void*, int64_t, DeviceId, void*, int64_t, int64_t) override { platform_error(); }
