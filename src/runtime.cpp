@@ -79,7 +79,7 @@ Runtime::Runtime() {
 #endif
 
 #if _XOPEN_SOURCE >= 500 || _POSIX_C_SOURCE >= 200112L || /* Glibc versions <= 2.19: */ _BSD_SOURCE
-std::string get_self_directory() {
+static std::string get_self_directory() {
     char path[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", path, sizeof(path)-1);
     if (len != -1) {
@@ -94,7 +94,7 @@ std::string get_self_directory() {
 }
 #elif defined(__APPLE__)
 #include <mach-o/dyld.h>
-std::string get_self_directory() {
+static std::string get_self_directory() {
     char path[PATH_MAX];
     uint32_t size = (uint32_t)sizeof(path);
     if (_NSGetExecutablePath(path, &size) == 0) {
@@ -111,7 +111,7 @@ std::string get_self_directory() {
 }
 #elif defined(_MSC_VER)
 #include <Windows.h>
-std::string get_self_directory() {
+static std::string get_self_directory() {
     CHAR path[MAX_PATH];
     DWORD nSize = (DWORD)sizeof(path);
     DWORD length = GetModuleFileNameA(NULL, path, nSize);
@@ -127,19 +127,19 @@ std::string get_self_directory() {
     return std::string();
 }
 #else
-std::string get_self_directory() {
+static std::string get_self_directory() {
     return std::string();
 }
 #endif
 
-std::string get_cache_directory() {
+static std::string get_cache_directory() {
     std::string cache_path = get_self_directory();
     if (!cache_path.empty())
         cache_path += PATH_DIR_SEPARATOR;
     return cache_path + "cache";
 }
 
-std::string get_cached_filename(const std::string& str, const std::string& ext) {
+static std::string get_cached_filename(const std::string& str, const std::string& ext) {
     size_t key = std::hash<std::string>{}(str);
     std::stringstream hex_stream;
     hex_stream << std::hex << key;
