@@ -461,15 +461,15 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
             error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", filename);
 
         // load file from disk or cache
-        std::string src_code = runtime().load_file(filename);
+        std::string src_code = runtime_->load_file(filename);
 
         // compile src or load from cache
-        std::string gcn = ext == "gcn" ? src_code : runtime().load_cache(devices_[dev].isa + src_code);
+        std::string gcn = ext == "gcn" ? src_code : runtime_->load_cache(devices_[dev].isa + src_code);
         if (gcn.empty()) {
             if (ext == "amdgpu") {
                 gcn = compile_gcn(dev, filename, src_code);
             }
-            runtime().store_cache(devices_[dev].isa + src_code, gcn);
+            runtime_->store_cache(devices_[dev].isa + src_code, gcn);
         }
 
         hsa_code_object_reader_t reader;
@@ -686,7 +686,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         }
 
         std::string out(outstr.begin(), outstr.end());
-        runtime().store_file(out_filename, out);
+        runtime_->store_file(out_filename, out);
     };
 
     std::string asm_file = filename + ".asm";
@@ -710,7 +710,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     if (!lld::elf::link(lld_args, false, lld_cout, lld_cerr))
         error("Generating gcn using ld");
 
-    return runtime().load_file(gcn_file);
+    return runtime_->load_file(gcn_file);
 }
 #else
 std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, int) const {

@@ -307,11 +307,11 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
         std::string src_path = file;
         if (ext == "nvvm" && !use_nvptx)
             src_path += ".bc";
-        std::string src_code = runtime().load_file(src_path);
+        std::string src_code = runtime_->load_file(src_path);
 
         // compile src or load from cache
         std::string compute_capability_str = std::to_string(devices_[dev].compute_capability);
-        std::string ptx = ext == "ptx" ? src_code : runtime().load_cache(compute_capability_str + src_code);
+        std::string ptx = ext == "ptx" ? src_code : runtime_->load_cache(compute_capability_str + src_code);
         if (ptx.empty()) {
             if (ext == "cu") {
                 ptx = compile_cuda(dev, file, src_code);
@@ -321,7 +321,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
                 else
                     ptx = compile_nvvm(dev, src_path, src_code);
             }
-            runtime().store_cache(compute_capability_str + src_code, ptx);
+            runtime_->store_cache(compute_capability_str + src_code, ptx);
         }
 
         mod = create_module(dev, src_path, ptx);
@@ -497,7 +497,7 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     CHECK_NVVM(err, "nvvmCreateProgram()");
 
     std::string libdevice_filename = get_libdevice_path(devices_[dev].compute_capability);
-    std::string libdevice_string = runtime().load_file(libdevice_filename);
+    std::string libdevice_string = runtime_->load_file(libdevice_filename);
     err = nvvmLazyAddModuleToProgram(program, libdevice_string.c_str(), libdevice_string.length(), libdevice_filename.c_str());
     CHECK_NVVM(err, "nvvmAddModuleToProgram()");
 
@@ -610,7 +610,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())
-        runtime().store_file(filename, program_string);
+        runtime_->store_file(filename, program_string);
 
     debug("Compiling CUDA to PTX using NVCC for '%' on CUDA device %", filename, dev);
     if (auto stream = popen(command.c_str(), "r")) {
@@ -630,7 +630,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
         error("Cannot run NVCC");
     }
 
-    return runtime().load_file(ptx_filename);
+    return runtime_->load_file(ptx_filename);
 }
 #endif
 
