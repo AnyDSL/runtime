@@ -34,14 +34,18 @@
 // CUDA support
 
 #cmakedefine AnyDSL_runtime_CUDA_NVRTC
-#define AnyDSL_runtime_LIBDEVICE_DIR  "@AnyDSL_runtime_LIBDEVICE_DIR@/"
-#define AnyDSL_runtime_NVCC_BIN       "@AnyDSL_runtime_NVCC_BIN@"
-#define AnyDSL_runtime_NVCC_INC       "@AnyDSL_runtime_NVCC_INC@"
+#define AnyDSL_runtime_LIBDEVICE_DIR        "@AnyDSL_runtime_LIBDEVICE_DIR@/"
+#define AnyDSL_runtime_NVCC_BIN             "@AnyDSL_runtime_NVCC_BIN@"
+#define AnyDSL_runtime_NVCC_INC             "@AnyDSL_runtime_NVCC_INC@"
 
+// HSA support
+
+#define AnyDSL_runtime_HSA_BITCODE_PATH     "@AnyDSL_runtime_HSA_BITCODE_PATH@/"
+#define AnyDSL_runtime_HSA_BITCODE_SUFFIX   "@AnyDSL_runtime_HSA_BITCODE_SUFFIX@"
 
 // jit support
 
-#define AnyDSL_runtime_SOURCE_DIR     "@CMAKE_CURRENT_SOURCE_DIR@"
+#define AnyDSL_runtime_SOURCE_DIR           "@CMAKE_CURRENT_SOURCE_DIR@"
 
 
 #endif // ANYDSL_RUNTIME_CONFIG_H

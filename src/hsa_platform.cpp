@@ -561,6 +561,12 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 }
 
 #ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
+#ifndef AnyDSL_runtime_HSA_BITCODE_PATH
+#define AnyDSL_runtime_HSA_BITCODE_PATH "/opt/rocm/amdgcn/bitcode/"
+#endif
+#ifndef AnyDSL_runtime_HSA_BITCODE_SUFFIX
+#define AnyDSL_runtime_HSA_BITCODE_SUFFIX ".bc"
+#endif
 bool llvm_amdgpu_initialized = false;
 std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, int opt) const {
     if (!llvm_amdgpu_initialized) {
@@ -613,9 +619,11 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         error("Expected gfx ISA, got %", cpu);
     std::string isa_version = std::string(&cpu[3]);
     std::string wavefrontsize64 = std::stoi(isa_version) >= 1000 ? "0" : "1";
-    std::string  isa_file = "/opt/rocm/lib/oclc_isa_version_" + isa_version + ".amdgcn.bc";
-    std::string ocml_file = "/opt/rocm/lib/ocml.amdgcn.bc";
-    std::string ockl_file = "/opt/rocm/lib/ockl.amdgcn.bc";
+    std::string bitcode_path(AnyDSL_runtime_HSA_BITCODE_PATH);
+    std::string bitcode_suffix(AnyDSL_runtime_HSA_BITCODE_SUFFIX);
+    std::string  isa_file = bitcode_path + "oclc_isa_version_" + isa_version + bitcode_suffix;
+    std::string ocml_file = bitcode_path + "ocml" + bitcode_suffix;
+    std::string ockl_file = bitcode_path + "ockl" + bitcode_suffix;
     std::string ocml_config = R"(; Module anydsl ocml config
                                 @__oclc_finite_only_opt = addrspace(4) constant i8 0
                                 @__oclc_unsafe_math_opt = addrspace(4) constant i8 0
