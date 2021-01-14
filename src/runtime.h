@@ -136,4 +136,6 @@ private:
     std::unordered_map<std::string, std::string> files_;
 };
 
+AnyDSL_runtime_API Runtime& runtime();
+
 #endif
