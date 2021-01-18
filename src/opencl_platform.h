@@ -45,51 +45,57 @@ protected:
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;
 
     struct DeviceData {
+        OpenCLPlatform* parent;
         cl_platform_id platform;
         cl_device_id dev;
-        cl_command_queue queue;
-        cl_context ctx;
         cl_uint version_major;
         cl_uint version_minor;
         std::string platform_name;
-        bool is_intel_fpga = false;
         std::string device_name;
+        cl_command_queue queue = nullptr;
+        cl_context ctx = nullptr;
         #ifdef CL_VERSION_2_0
         cl_device_svm_capabilities svm_caps;
         #endif
-        std::atomic_int timings_counter{};
-        std::atomic_flag locked = ATOMIC_FLAG_INIT;
+        bool is_intel_fpga = false;
+
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
         std::unordered_map<cl_kernel, cl_command_queue> kernels_queue;
 
-        DeviceData() {}
-        DeviceData(const DeviceData&) = delete;
-        DeviceData(DeviceData&& data)
-            : platform(data.platform)
-            , dev(data.dev)
-            , queue(data.queue)
-            , ctx(data.ctx)
-            , version_major(data.version_major)
-            , version_minor(data.version_minor)
-            , platform_name(data.platform_name)
-            , is_intel_fpga(data.is_intel_fpga)
-            , device_name(data.device_name)
-            #ifdef CL_VERSION_2_0
-            , svm_caps(data.svm_caps)
-            #endif
-            , timings_counter(0)
-            , programs(std::move(data.programs))
-            , kernels(std::move(data.kernels))
-            , kernels_queue(std::move(data.kernels_queue))
+        // Atomics do not have a move constructor. This structure introduces one.
+        struct AtomicData {
+            std::atomic_int timings_counter {};
+            std::atomic_flag lock = ATOMIC_FLAG_INIT;
+            AtomicData() = default;
+            AtomicData(AtomicData&&) {}
+        } atomic_data;
+
+        DeviceData(
+            OpenCLPlatform* parent,
+            cl_platform_id platform,
+            cl_device_id dev,
+            cl_uint version_major,
+            cl_uint version_minor,
+            const std::string& platform_name,
+            const std::string& device_name)
+            : parent(parent)
+            , platform(platform)
+            , dev(dev)
+            , version_major(version_major)
+            , version_minor(version_minor)
+            , platform_name(platform_name)
+            , device_name(device_name)
         {}
+        DeviceData(DeviceData&&) = default;
+        DeviceData(const DeviceData&) = delete;
 
         void lock() {
-            while (locked.test_and_set(std::memory_order_acquire)) ;
+            while (atomic_data.lock.test_and_set(std::memory_order_acquire)) ;
         }
 
         void unlock() {
-            locked.clear(std::memory_order_release);
+            atomic_data.lock.clear(std::memory_order_release);
         }
     };
 

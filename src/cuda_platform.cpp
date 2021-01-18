@@ -59,8 +59,6 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
 }
 #endif
 
-extern std::atomic<uint64_t> anydsl_kernel_time;
-
 CudaPlatform::CudaPlatform(Runtime* runtime)
     : Platform(runtime)
 {
@@ -125,7 +123,7 @@ void CudaPlatform::erase_profiles(bool erase_all) {
             float time;
             if (status == CUDA_SUCCESS) {
                 cuEventElapsedTime(&time, profile->start, profile->end);
-                anydsl_kernel_time.fetch_add(time * 1000);
+                runtime_->kernel_time().fetch_add(time * 1000);
             }
             cuEventDestroy(profile->start);
             cuEventDestroy(profile->end);

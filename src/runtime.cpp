@@ -294,10 +294,8 @@ uint64_t anydsl_get_micro_time() {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-std::atomic<uint64_t> anydsl_kernel_time(0);
-
 uint64_t anydsl_get_kernel_time() {
-    return anydsl_kernel_time;
+    return runtime().kernel_time().load();
 }
 
 int32_t anydsl_isinff(float x)    { return std::isinf(x); }

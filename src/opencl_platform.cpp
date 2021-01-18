@@ -194,13 +194,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             CHECK_OPENCL(err, "clGetDeviceInfo()");
 
             auto dev = devices_.size();
-            devices_.resize(dev + 1);
-            devices_[dev].platform = platform;
-            devices_[dev].dev = device;
-            devices_[dev].version_major = version_major;
-            devices_[dev].version_minor = version_minor;
-            devices_[dev].platform_name = platform_name;
-            devices_[dev].device_name = device_name;
+            devices_.emplace_back(this, platform, device, version_major, version_minor, platform_name, device_name);
+
             #ifdef CL_VERSION_2_0
             devices_[dev].svm_caps = svm_caps;
             #endif
@@ -312,17 +307,15 @@ void OpenCLPlatform::release(DeviceId dev, void* ptr) {
     CHECK_OPENCL(err, "clReleaseMemObject()");
 }
 
-extern std::atomic<uint64_t> anydsl_kernel_time;
-
 void time_kernel_callback(cl_event event, cl_int, void* data) {
-    OpenCLPlatform::DeviceData* dev = reinterpret_cast<OpenCLPlatform::DeviceData*>(data);
+    auto dev = reinterpret_cast<OpenCLPlatform::DeviceData*>(data);
     cl_ulong end, start;
     cl_int err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, 0);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, 0);
     CHECK_OPENCL(err, "clGetEventProfilingInfo()");
     cl_ulong time = (end - start) / 1000;
-    anydsl_kernel_time.fetch_add(time);
-    dev->timings_counter.fetch_sub(1);
+    dev->parent->runtime_->kernel_time().fetch_add(time);
+    dev->atomic_data.timings_counter.fetch_sub(1);
     err = clReleaseEvent(event);
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
@@ -368,7 +361,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
     if (runtime_->profiling_enabled() && event) {
         err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
-        devices_[dev].timings_counter.fetch_add(1);
+        devices_[dev].atomic_data.timings_counter.fetch_add(1);
         CHECK_OPENCL(err, "clSetEventCallback()");
     } else {
         err = clReleaseEvent(event);
@@ -393,7 +386,9 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
         }
     } else {
         cl_int err = clFinish(devices_[dev].queue);
-        while (runtime_->profiling_enabled() && devices_[dev].timings_counter.load() != 0) ;
+        // clFinish does not ensure that the callback has been called.
+        // We must thus add another layer of synchronization when profiling is enabled.
+        while (runtime_->profiling_enabled() && devices_[dev].atomic_data.timings_counter.load() != 0) ;
         CHECK_OPENCL(err, "clFinish()");
     }
 }

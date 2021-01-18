@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <atomic>
 #include <memory>
 
 enum class ProfileLevel : uint8_t { None = 0, Full };
@@ -120,6 +121,7 @@ public:
     }
 
     bool profiling_enabled() { return profile_ == ProfileLevel::Full; }
+    std::atomic<uint64_t>& kernel_time() { return kernel_time_; }
 
 private:
     void check_device(PlatformId plat, DeviceId dev) {
@@ -128,6 +130,7 @@ private:
     }
 
     ProfileLevel profile_;
+    std::atomic<uint64_t> kernel_time_;
     std::vector<std::unique_ptr<Platform>> platforms_;
     std::unordered_map<std::string, std::string> files_;
 };

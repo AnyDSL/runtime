@@ -314,8 +314,6 @@ void HSAPlatform::release(DeviceId, void* ptr) {
     CHECK_HSA(status, "hsa_amd_memory_pool_free()");
 }
 
-extern std::atomic<uint64_t> anydsl_kernel_time;
-
 void HSAPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
     auto queue = devices_[dev].queue;
     if (!queue)
@@ -422,7 +420,7 @@ void HSAPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params)
             hsa_status_t status = hsa_amd_profiling_get_dispatch_time(devices_[dev].agent, launch_signal, &dispatch_times);
             CHECK_HSA(status, "hsa_amd_profiling_get_dispatch_time()");
 
-            anydsl_kernel_time.fetch_add(1000000.0 * double(dispatch_times.end - dispatch_times.start) / double(frequency_));
+            runtime_->kernel_time().fetch_add(1000000.0 * double(dispatch_times.end - dispatch_times.start) / double(frequency_));
             hsa_signal_subtract_relaxed(signal, 1);
 
             status = hsa_signal_destroy(launch_signal);
