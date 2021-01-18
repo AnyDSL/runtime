@@ -9,9 +9,6 @@
 
 #include <cstring>
 
-// TODO: solve dependency to anydsl_aligned_malloc()
-#include "anydsl_runtime.h"
-
 /// CPU platform, allocation is guaranteed to be aligned to page size: 4096 bytes.
 class CpuPlatform : public Platform {
 public:
@@ -21,15 +18,15 @@ public:
 
 protected:
     void* alloc(DeviceId, int64_t size) override {
-        return anydsl_aligned_malloc(size, 32);
+        return Runtime::aligned_malloc(size, 32);
     }
 
     void* alloc_host(DeviceId, int64_t size) override {
-        return anydsl_aligned_malloc(size, PAGE_SIZE);
+        return Runtime::aligned_malloc(size, PAGE_SIZE);
     }
 
     void* alloc_unified(DeviceId, int64_t size) override {
-        return anydsl_aligned_malloc(size, PAGE_SIZE);
+        return Runtime::aligned_malloc(size, PAGE_SIZE);
     }
 
     void* get_device_ptr(DeviceId, void* ptr) override {
@@ -37,7 +34,7 @@ protected:
     }
 
     void release(DeviceId, void* ptr) override {
-        anydsl_aligned_free(ptr);
+        Runtime::aligned_free(ptr);
     }
 
     void release_host(DeviceId dev, void* ptr) override {

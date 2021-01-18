@@ -300,7 +300,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
 
         // compile src or load from cache
         std::string compute_capability_str = std::to_string(devices_[dev].compute_capability);
-        std::string ptx = ext == "ptx" ? src_code : runtime_->load_cache(compute_capability_str + src_code);
+        std::string ptx = ext == "ptx" ? src_code : runtime_->load_from_cache(compute_capability_str + src_code);
         if (ptx.empty()) {
             if (ext == "cu") {
                 ptx = compile_cuda(dev, file, src_code);
@@ -310,7 +310,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
                 else
                     ptx = compile_nvvm(dev, src_path, src_code);
             }
-            runtime_->store_cache(compute_capability_str + src_code, ptx);
+            runtime_->store_to_cache(compute_capability_str + src_code, ptx);
         }
 
         mod = create_module(dev, src_path, ptx);

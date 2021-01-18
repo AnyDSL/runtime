@@ -5,6 +5,10 @@
 
 #include "anydsl_runtime_config.h"
 
+class Runtime;
+
+AnyDSL_runtime_API Runtime& runtime();
+
 #ifdef AnyDSL_runtime_HAS_JIT_SUPPORT
 AnyDSL_runtime_API void anydsl_link(const char*);
 AnyDSL_runtime_API int32_t anydsl_compile(const char*, uint32_t, uint32_t);

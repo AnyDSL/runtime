@@ -462,12 +462,12 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         std::string src_code = runtime_->load_file(filename);
 
         // compile src or load from cache
-        std::string gcn = ext == "gcn" ? src_code : runtime_->load_cache(devices_[dev].isa + src_code);
+        std::string gcn = ext == "gcn" ? src_code : runtime_->load_from_cache(devices_[dev].isa + src_code);
         if (gcn.empty()) {
             if (ext == "amdgpu") {
                 gcn = compile_gcn(dev, filename, src_code);
             }
-            runtime_->store_cache(devices_[dev].isa + src_code, gcn);
+            runtime_->store_to_cache(devices_[dev].isa + src_code, gcn);
         }
 
         hsa_code_object_reader_t reader;
