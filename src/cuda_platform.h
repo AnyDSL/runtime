@@ -78,6 +78,8 @@ protected:
 
     std::vector<DeviceData> devices_;
 
+    bool dump_binaries = false;
+
     struct ProfileData {
         CudaPlatform* platform;
         CUcontext ctx;
