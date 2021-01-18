@@ -47,7 +47,6 @@ struct JIT {
     }
 
     int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
-        std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
         std::string program_str = std::string(program_src, size);
         std::string cached_llvm = runtime->load_cache(program_str, ".llvm");
@@ -67,7 +66,6 @@ struct JIT {
 
             thorin::Backends backends(world, opt, debug);
             llvm_module = std::move(backends.cpu_cg->emit());
-            llvm_context = std::move(backends.cpu_cg->context());
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
@@ -88,9 +86,9 @@ struct JIT {
             if (backends.hls_cg.get())
                 error("JIT compilation of hls not supported!");
         } else {
+            llvm::LLVMContext llvm_context;
             llvm::SMDiagnostic diagnostic_err;
-            llvm_context.reset(new llvm::LLVMContext());
-            llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, *llvm_context);
+            llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, llvm_context);
 
             auto load_backend_src = [&](std::string ext) {
                 std::string cached_src = runtime->load_cache(ext + program_str, ext);
