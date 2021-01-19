@@ -11,7 +11,7 @@ else()
 endif()
 
 set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
-add_library(runtime_base
+add_library(runtime_base STATIC
     ${AnyDSL_runtime_CONFIG_FILE}
     runtime.cpp
     runtime.h
@@ -37,7 +37,7 @@ if(CUDA_FOUND)
     find_library(CUDA_LIBRARY cuda
         HINTS ${CUDA_TOOLKIT_ROOT_DIR}
         PATH_SUFFIXES lib lib64 lib/x64)
-    add_library(runtime_cuda cuda_platform.cpp cuda_platform.h)
+    add_library(runtime_cuda STATIC cuda_platform.cpp cuda_platform.h)
     target_include_directories(runtime_cuda PRIVATE ${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
     target_link_libraries(runtime_cuda PRIVATE runtime_base ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
     list(APPEND RUNTIME_PLATFORMS runtime_cuda)
@@ -59,7 +59,7 @@ set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/N
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
-    add_library(runtime_opencl opencl_platform.cpp opencl_platform.h)
+    add_library(runtime_opencl STATIC opencl_platform.cpp opencl_platform.h)
     target_include_directories(runtime_opencl PRIVATE ${OpenCL_INCLUDE_DIRS})
     target_link_libraries(runtime_opencl PRIVATE runtime_base ${OpenCL_LIBRARIES})
     list(APPEND RUNTIME_PLATFORMS runtime_opencl)
@@ -69,7 +69,7 @@ set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables Op
 # look for HSA
 find_package(HSA)
 if(HSA_FOUND)
-    add_library(runtime_hsa hsa_platform.cpp hsa_platform.h)
+    add_library(runtime_hsa STATIC hsa_platform.cpp hsa_platform.h)
     target_include_directories(runtime_hsa PRIVATE ${HSA_INCLUDE_DIRS})
     target_link_libraries(runtime_hsa PRIVATE runtime_base ${HSA_LIBRARIES})
     list(APPEND RUNTIME_PLATFORMS runtime_hsa)
@@ -178,6 +178,12 @@ add_library(runtime
     anydsl_runtime.h
     anydsl_runtime.hpp)
 
+# If the runtime is built as a shared library, individual
+# dependencies must be built with position independent code.
+if(BUILD_SHARED_LIBS)
+    set_property(TARGET runtime_base ${RUNTIME_PLATFORMS} PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 target_link_libraries(runtime PRIVATE runtime_base ${RUNTIME_PLATFORMS})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
@@ -193,7 +199,7 @@ if(LLVM_FOUND)
     llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
-set(RUNTIME_LIBRARIES runtime_base ${RUNTIME_LIBRARIES} ${RUNTIME_PLATFORMS} PARENT_SCOPE)
+set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} PARENT_SCOPE)
 set(CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} PARENT_SCOPE)
 set(CONF_RUNTIME_ARTIC_JIT_LIBRARIES ${CONF_RUNTIME_ARTIC_JIT_LIBRARIES} PARENT_SCOPE)
 set(CONF_RUNTIME_IMPALA_JIT_LIBRARIES ${CONF_RUNTIME_IMPALA_JIT_LIBRARIES} PARENT_SCOPE)
