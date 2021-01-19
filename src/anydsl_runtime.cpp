@@ -21,16 +21,6 @@
 #include <thread>
 #endif
 
-#ifndef AnyDSL_runtime_HAS_CUDA_SUPPORT
-void register_cuda_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("CUDA"); }
-#endif
-#ifndef AnyDSL_runtime_HAS_OPENCL_SUPPORT
-void register_opencl_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("OpenCL"); }
-#endif
-#ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
-void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
-#endif
-
 struct RuntimeSingleton {
     Runtime runtime;
 
