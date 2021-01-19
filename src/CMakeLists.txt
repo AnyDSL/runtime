@@ -10,6 +10,14 @@ else()
     add_compile_options("-Wall" "-Wextra")
 endif()
 
+# Necessary to specify whether or not to build shared libraries on a per-project basis
+option(AnyDSL_runtime_BUILD_SHARED "Builds a shared library for the runtime (and JIT, if enabled)" ${BUILD_SHARED_LIBS})
+if (AnyDSL_runtime_BUILD_SHARED)
+    set(AnyDSL_runtime_BUILD "SHARED")
+else()
+    set(AnyDSL_runtime_BUILD "STATIC")
+endif()
+
 set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
 add_library(runtime_base STATIC
     ${AnyDSL_runtime_CONFIG_FILE}
@@ -173,6 +181,7 @@ configure_file(anydsl_runtime_config.h.in ${AnyDSL_runtime_CONFIG_FILE} @ONLY)
 set_source_files_properties(${AnyDSL_runtime_CONFIG_FILE} PROPERTIES GENERATED TRUE)
 
 add_library(runtime
+    ${AnyDSL_runtime_BUILD}
     ${AnyDSL_runtime_CONFIG_FILE}
     anydsl_runtime.cpp
     anydsl_runtime.h
@@ -188,7 +197,7 @@ target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 target_link_libraries(runtime PRIVATE runtime_base ${RUNTIME_PLATFORMS})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
-list(APPEND RUNTIME_LIBRARIES runtime)
+list(APPEND RUNTIME_LIBRARIES runtime runtime_base ${RUNTIME_PLATFORMS})
 
 foreach(jit_lib ${AnyDSL_runtime_HAS_JIT_SUPPORT})
     target_link_libraries(${jit_lib} PRIVATE runtime)
