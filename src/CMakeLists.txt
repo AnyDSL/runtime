@@ -189,7 +189,7 @@ add_library(runtime
 
 # If the runtime is built as a shared library, individual
 # dependencies must be built with position independent code.
-if(BUILD_SHARED_LIBS)
+if(AnyDSL_runtime_BUILD_SHARED)
     set_property(TARGET runtime_base ${RUNTIME_PLATFORMS} PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
 
