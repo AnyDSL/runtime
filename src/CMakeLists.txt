@@ -180,10 +180,6 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
 
-if(RUNTIME_JIT)
-    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
-endif()
-
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
@@ -193,10 +189,6 @@ foreach(jit_lib ${AnyDSL_runtime_HAS_JIT_SUPPORT})
     target_link_libraries(${jit_lib} PRIVATE runtime)
 	set_target_properties(${jit_lib} PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 endforeach()
-
-if(LLVM_FOUND)
-    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
-endif()
 
 set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} PARENT_SCOPE)
 set(CONF_RUNTIME_LIBRARIES ${CONF_RUNTIME_LIBRARIES} PARENT_SCOPE)
