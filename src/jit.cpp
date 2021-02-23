@@ -67,8 +67,8 @@ struct JIT {
 
             world.opt();
 
-            thorin::Backends backends(world, opt, debug);
-            llvm_module = std::move(backends.cpu_cg->emit());
+            thorin::Backends backends(world);
+            llvm_module = std::move(backends.cpu_cg->emit(opt, debug));
             llvm_context = std::move(backends.cpu_cg->context());
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
@@ -78,7 +78,7 @@ struct JIT {
             auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
                 if (cg) {
                     std::ostringstream stream;
-                    cg->emit(stream);
+                    cg->emit(stream, opt, debug);
                     runtime->store_cache(ext + program_str, stream.str(), ext);
                     runtime->register_file(std::string(module_name) + ext, stream.str());
                 }
