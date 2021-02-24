@@ -180,10 +180,6 @@ add_library(runtime ${AnyDSL_runtime_BUILD}
             ${OPENCL_PLATFORM}
             ${HSA_PLATFORM})
 
-if(RUNTIME_JIT)
-    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
-endif()
-
 target_link_libraries(runtime PRIVATE ${CONF_RUNTIME_LIBRARIES})
 set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
