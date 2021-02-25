@@ -1,5 +1,6 @@
 #include <random>
 #include <chrono>
+#include <locale>
 
 #include "anydsl_runtime.h"
 // Make sure the definition for runtime() matches
