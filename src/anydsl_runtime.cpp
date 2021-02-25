@@ -107,18 +107,18 @@ void anydsl_launch_kernel(
     const uint8_t* arg_types,
     uint32_t num_args) {
     LaunchParams launch_params = {
-        .file_name = file_name,
-        .kernel_name = kernel_name,
-        .grid = grid,
-        .block = block,
-        .args = {
-            .data = arg_data,
-            .sizes = arg_sizes,
-            .aligns = arg_aligns,
-            .alloc_sizes = arg_alloc_sizes,
-            .types = reinterpret_cast<const KernelArgType*>(arg_types),
+        file_name,
+        kernel_name,
+        grid,
+        block,
+        {
+            arg_data,
+            arg_sizes,
+            arg_aligns,
+            arg_alloc_sizes,
+            reinterpret_cast<const KernelArgType*>(arg_types),
         },
-        .num_args = num_args
+        num_args
     };
     runtime().launch_kernel(to_platform(mask), to_device(mask), launch_params);
 }
