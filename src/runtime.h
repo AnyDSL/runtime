@@ -79,8 +79,8 @@ public:
     std::string load_file(const std::string& filename) const;
     void store_file(const std::string& filename, const std::string& str) const;
 
-    AnyDSL_runtime_API std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
-    AnyDSL_runtime_API void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
+    std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
+    void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
     bool profiling_enabled() { return profile_ == ProfileLevel::Full; }
     std::atomic<uint64_t>& kernel_time() { return kernel_time_; }
