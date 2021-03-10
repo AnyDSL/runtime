@@ -3,36 +3,15 @@
 
 #include "anydsl_runtime_config.h"
 #include "log.h"
+#include "runtime.h"
 
 #include <cstdint>
 #include <string>
-
-class Runtime;
 
 void register_cpu_platform(Runtime*);
 void register_cuda_platform(Runtime*);
 void register_opencl_platform(Runtime*);
 void register_hsa_platform(Runtime*);
-
-enum DeviceId   : uint32_t {};
-enum PlatformId : uint32_t {};
-enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
-
-/// The parameters to a `anydsl_launch_kernel()` call.
-struct LaunchParams {
-    const char* file_name;
-    const char* kernel_name;
-    const uint32_t* grid;
-    const uint32_t* block;
-    struct {
-        void** data;
-        const uint32_t* sizes;
-        const uint32_t* aligns;
-        const uint32_t* alloc_sizes;
-        const KernelArgType* types;
-    } args;
-    uint32_t num_args;
-};
 
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.

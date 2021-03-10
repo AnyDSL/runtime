@@ -52,7 +52,7 @@ struct JIT {
         std::unique_ptr<llvm::Module> llvm_module;
 
         std::string program_str = std::string(program_src, size);
-        std::string cached_llvm = runtime->load_cache(program_str, ".llvm");
+        std::string cached_llvm = runtime->load_from_cache(program_str, ".llvm");
         std::string module_name = "jit";
         if (cached_llvm.empty()) {
             bool debug = false;
@@ -73,13 +73,13 @@ struct JIT {
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
-            runtime->store_cache(program_str, stream.str(), ".llvm");
+            runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
             auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
                 if (cg) {
                     std::ostringstream stream;
                     cg->emit(stream);
-                    runtime->store_cache(ext + program_str, stream.str(), ext);
+                    runtime->store_to_cache(ext + program_str, stream.str(), ext);
                     runtime->register_file(std::string(module_name) + ext, stream.str());
                 }
             };
@@ -95,7 +95,7 @@ struct JIT {
             llvm_module = llvm::parseIR(llvm::MemoryBuffer::getMemBuffer(cached_llvm)->getMemBufferRef(), diagnostic_err, *llvm_context);
 
             auto load_backend_src = [&](std::string ext) {
-                std::string cached_src = runtime->load_cache(ext + program_str, ext);
+                std::string cached_src = runtime->load_from_cache(ext + program_str, ext);
                 if (!cached_src.empty())
                     runtime->register_file(module_name + ext, cached_src);
             };
