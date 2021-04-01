@@ -17,6 +17,9 @@ void register_opencl_platform(Runtime* runtime) { runtime->register_platform<Dum
 #ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
 void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
 #endif
+#ifndef AnyDSL_runtime_HAS_Vulkan_SUPPORT
+void register_vulkan_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("Vulkan"); }
+#endif
 
 Runtime::Runtime(ProfileLevel profile)
     : profile_(profile)

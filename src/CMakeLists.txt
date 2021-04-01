@@ -81,6 +81,15 @@ if(HSA_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${HSA_FOUND} CACHE INTERNAL "enables HSA support")
 
+find_package(Vulkan)
+if(Vulkan_FOUND)
+    add_library(runtime_vulkan STATIC vulkan_platform.cpp vulkan_platform.h)
+    target_include_directories(runtime_vulkan PRIVATE ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(runtime_vulkan PRIVATE runtime_base ${Vulkan_LIBRARIES})
+    list(APPEND RUNTIME_PLATFORMS runtime_vulkan)
+endif()
+set(AnyDSL_runtime_HAS_Vulkan_SUPPORT ${Vulkan_FOUND} CACHE INTERNAL "enables Vulkan support")
+
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
 if(LLVM_FOUND)
