@@ -195,8 +195,8 @@ set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
 set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 foreach(jit_lib ${AnyDSL_runtime_HAS_JIT_SUPPORT})
-    target_link_libraries(${jit_lib} PRIVATE runtime)
-	set_target_properties(${jit_lib} PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
+    target_link_libraries(${jit_lib} PRIVATE runtime runtime_base)
+	set_target_properties(${jit_lib} PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_jit_EXPORTS")
 endforeach()
 
 if(LLVM_FOUND)

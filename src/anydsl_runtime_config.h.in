@@ -13,21 +13,26 @@
 
 
 #if defined(AnyDSL_runtime_BUILD_SHARED)
+#  ifdef _MSC_VER
+#    define __dll_import __declspec(dllimport)
+#    define __dll_export __declspec(dllexport)
+#  else  // _MSC_VER
+#    define __dll_import __attribute__((visibility("default")))
+#    define __dll_export __attribute__((visibility("default")))
+#  endif // _MSC_VER
 #  ifdef AnyDSL_runtime_EXPORTS
-#    ifdef _MSC_VER
-#      define AnyDSL_runtime_API __declspec(dllexport)
-#    else  // _MSC_VER
-#      define AnyDSL_runtime_API __attribute__((visibility("default")))
-#    endif // _MSC_VER
+#    define AnyDSL_runtime_API __dll_export
 #  else  // AnyDSL_runtime_EXPORTS
-#    ifdef _MSC_VER
-#      define AnyDSL_runtime_API __declspec(dllimport)
-#    else  // _MSC_VER
-#      define AnyDSL_runtime_API __attribute__((visibility("default")))
-#    endif // _MSC_VER
+#    define AnyDSL_runtime_API __dll_import
 #  endif // AnyDSL_runtime_EXPORTS
+#  ifdef AnyDSL_runtime_jit_EXPORTS
+#    define AnyDSL_runtime_jit_API __dll_export
+#  else  // AnyDSL_runtime_jit_EXPORTS
+#    define AnyDSL_runtime_jit_API __dll_import
+#  endif // AnyDSL_runtime_jit_EXPORTS
 #else  // AnyDSL_runtime_BUILD_SHARED
 #  define AnyDSL_runtime_API
+#  define AnyDSL_runtime_jit_API
 #endif // AnyDSL_runtime_BUILD_SHARED
 
 
