@@ -12,8 +12,8 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include <thorin/be/llvm/llvm.h>
-#include <thorin/util/log.h>
+#include <thorin/be/codegen.h>
+#include <thorin/be/llvm/cpu.h>
 #include <thorin/world.h>
 
 #include "anydsl_jit.h"
@@ -24,7 +24,7 @@ bool compile(
     const std::vector<std::string>& file_names,
     const std::vector<std::string>& file_data,
     thorin::World& world,
-    thorin::Log::Level log_level,
+    thorin::LogLevel log_level,
     std::ostream& error_stream);
 
 static const char runtime_srcs[] = {
@@ -62,33 +62,31 @@ struct JIT {
             if (!::compile(
                 { "runtime", module_name },
                 { std::string(runtime_srcs), program_str },
-                world, thorin::Log::Error, std::cerr))
+                world, thorin::LogLevel::Error, std::cerr))
                 error("JIT: error while compiling sources");
 
             world.opt();
 
-            thorin::Backends backends(world, opt, debug);
-            llvm_module = std::move(backends.cpu_cg->emit());
-            llvm_context = std::move(backends.cpu_cg->context());
+            thorin::llvm::CPUCodeGen cg(world, opt, debug);
+            auto module_and_context = cg.emit_module();
+            llvm_module  = std::move(module_and_context.first);
+            llvm_context = std::move(module_and_context.second);
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
             runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
-            auto emit_to_string = [&](thorin::CodeGen* cg, std::string ext) {
+            thorin::DeviceBackends backends(world, opt, debug);
+            if (backends.cgs[thorin::DeviceBackends::HLS])
+                error("JIT compilation of hls not supported!");
+            for (auto& cg : backends.cgs) {
                 if (cg) {
                     std::ostringstream stream;
-                    cg->emit(stream);
-                    runtime->store_to_cache(ext + program_str, stream.str(), ext);
-                    runtime->register_file(std::string(module_name) + ext, stream.str());
+                    cg->emit_stream(stream);
+                    runtime->store_to_cache(cg->file_ext() + program_str, stream.str(), cg->file_ext());
+                    runtime->register_file(std::string(module_name) + cg->file_ext(), stream.str());
                 }
-            };
-            emit_to_string(backends.opencl_cg.get(), ".cl");
-            emit_to_string(backends.cuda_cg.get(),   ".cu");
-            emit_to_string(backends.nvvm_cg.get(),   ".nvvm");
-            emit_to_string(backends.amdgpu_cg.get(), ".amdgpu");
-            if (backends.hls_cg.get())
-                error("JIT compilation of hls not supported!");
+            }
         } else {
             llvm::SMDiagnostic diagnostic_err;
             llvm_context = std::make_unique<llvm::LLVMContext>();
