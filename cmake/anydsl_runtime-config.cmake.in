@@ -188,7 +188,11 @@ foreach(_config ${_release_configs})
 endforeach()
 
 function(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "FRONTEND;INTERFACE;NAME" "ARTIC_FLAGS;IMPALA_FLAGS;TARGET_TRIPLE;TARGET_CPU;TARGET_FEATURES;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
+    cmake_parse_arguments(
+        "PARGS"
+        "EMIT_C"
+        "FRONTEND;INTERFACE;NAME"
+        "ARTIC_FLAGS;IMPALA_FLAGS;TARGET_TRIPLE;TARGET_CPU;TARGET_FEATURES;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -262,6 +266,7 @@ function(anydsl_runtime_wrap outfiles)
 
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
     set(_llfile ${_basepath}.ll)
+    set(_cfile ${_basepath}.c)
     set(_objfile ${_basepath}.o)
 
     set(_frontend_platform_files
@@ -280,14 +285,31 @@ function(anydsl_runtime_wrap outfiles)
         list(APPEND _clang_flags -fPIE)
     endif()
 
-    # generate .ll file and patch it
-    add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
-        COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
-        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
-        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+    if(PARGS_EMIT_C)
+        # generate .c file
+        add_custom_command(OUTPUT ${_cfile}
+            COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-c -o ${_basepath}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+        # run clang on the .c file to get the .o
+        add_custom_command(OUTPUT ${_objfile}
+            COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_cfile}
+            DEPENDS ${_cfile} VERBATIM COMMAND_EXPAND_LISTS)
+    else()
+        # generate .ll file and patch it
+        add_custom_command(OUTPUT ${_llfile}
+            COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
+            COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
+            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
+            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+        # run clang on the .ll file to get the .o
+        add_custom_command(OUTPUT ${_objfile}
+            COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+            COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
+            DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
+    endif()
 
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
@@ -298,12 +320,6 @@ function(anydsl_runtime_wrap outfiles)
            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM)
         set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
     endif()
-
-    # run clang on the .ll file to get the .o
-    add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
-        COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
-        DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
     set(${outfiles} ${${outfiles}} ${_objfile} ${_frontend_platform_files} PARENT_SCOPE)
