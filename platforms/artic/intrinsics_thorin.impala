@@ -34,12 +34,3 @@ fn spawn(body: fn() -> ()) = @|| thorin_spawn(body);
 
 fn @pipeline(body: fn (i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);
 fn @parallel(body: fn (i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body);
-
-// intrinsics for flow graphs
-struct FlowGraph { empty: i32 }
-struct FlowTask { empty: i32 }
-#[import(cc = "thorin", name = "anydsl_create_graph")]  fn create_graph() -> FlowGraph;
-#[import(cc = "thorin", name = "anydsl_create_task")]   fn thorin_create_task(_graph: FlowGraph, _body: fn() -> ()) -> FlowTask;
-#[import(cc = "thorin", name = "anydsl_create_edge")]   fn create_edge(_src: FlowTask, _dst: FlowTask) -> ();
-#[import(cc = "thorin", name = "anydsl_execute_graph")] fn execute_flowgraph(_graph: FlowGraph, _task: FlowTask) -> ();
-fn create_task(body: fn() -> ()) = @|graph: FlowGraph| thorin_create_task(graph, body);
