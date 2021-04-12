@@ -2,7 +2,7 @@
 #define ANYDSL_RUNTIME_VULKAN_PLATFORM_H
 
 #include "platform.h"
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 class VulkanPlatform : public Platform {
 public:
@@ -33,11 +33,23 @@ protected:
     void copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst,
                       int64_t size) override;
 
-    size_t dev_count() const override { return devices.size(); }
+    size_t dev_count() const override { return physical_devices.size(); }
     std::string name() const override { return "Vulkan"; }
 
-    vk::Instance instance;
-    std::vector<vk::PhysicalDevice> devices;
+    struct Device {
+        VulkanPlatform& platform;
+        VkPhysicalDevice physical_device;
+        size_t i;
+
+        VkDevice device;
+
+        Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t i);
+        ~Device();
+    };
+
+    VkInstance instance;
+    std::vector<VkPhysicalDevice> physical_devices;
+    std::vector<std::unique_ptr<Device>> usable_devices;
 };
 
 #endif
