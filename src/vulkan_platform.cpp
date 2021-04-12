@@ -1,8 +1,45 @@
 #include "vulkan_platform.h"
 
+const auto khr_validation = "VK_LAYER_KHRONOS_validation";
+
+inline std::vector<VkLayerProperties> query_layers_available() {
+    uint32_t count;
+    vkEnumerateInstanceLayerProperties(&count, nullptr);
+    std::vector<VkLayerProperties> layers(count);
+    vkEnumerateInstanceLayerProperties(&count, layers.data());
+    return layers;
+}
+
+inline std::vector<VkExtensionProperties> query_extensions_available() {
+    uint32_t count;
+    vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+    std::vector<VkExtensionProperties> exts(count);
+    vkEnumerateInstanceExtensionProperties(nullptr, &count, exts.data());
+    return exts;
+}
+
 VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
+    auto available_layers = query_layers_available();
+    auto available_instance_extensions = query_extensions_available();
+
     std::vector<const char*> enabled_layers;
     std::vector<const char*> enabled_instance_extensions;
+
+    bool should_enable_validation = true;
+#ifdef NDEBUG
+    should_enable_validation = false;
+#endif
+    if (should_enable_validation) {
+        for (auto& layer : available_layers) {
+            if (strcmp(khr_validation, layer.layerName) == 0) {
+                enabled_layers.push_back(khr_validation);
+                goto validation_done;
+            }
+        }
+        info("Warning: validation enabled but layers not present");
+    }
+    validation_done:
+
     auto app_info = VkApplicationInfo {
         .pApplicationName = "AnyDSL Runtime"
     };
@@ -42,7 +79,6 @@ VulkanPlatform::~VulkanPlatform() {
 
 VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t i)
  : platform(platform), physical_device(physical_device), i(i) {
-
     /*auto create_info = VkDeviceCreateInfo {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .pNext = nullptr,
