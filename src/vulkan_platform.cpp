@@ -79,13 +79,13 @@ VulkanPlatform::~VulkanPlatform() {
     vkDestroyInstance(instance, nullptr);
 }
 
-VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t i)
- : platform(platform), physical_device(physical_device), i(i) {
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physical_device, &properties);
-    debug("  GPU%:", i);
-    debug("  Device name: %", properties.deviceName);
-    debug("  Vulkan version %.%.%", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
+VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id)
+ : platform(platform), physical_device(physical_device), device_id(device_id) {
+    VkPhysicalDeviceProperties device_properties;
+    vkGetPhysicalDeviceProperties(physical_device, &device_properties);
+    debug("  GPU%:", device_id);
+    debug("  Device name: %", device_properties.deviceName);
+    debug("  Vulkan version %.%.%", VK_VERSION_MAJOR(device_properties.apiVersion), VK_VERSION_MINOR(device_properties.apiVersion), VK_VERSION_PATCH(device_properties.apiVersion));
 
     uint32_t exts_count;
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, nullptr);
@@ -105,12 +105,6 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         bool has_xfer      = (queue_f.queueFlags & 0x00000004) != 0;
         bool has_sparse    = (queue_f.queueFlags & 0x00000008) != 0;
         bool has_protected = (queue_f.queueFlags & 0x00000010) != 0;
-        /*debug("queue %", q);
-        debug("has_gfx %", has_gfx);
-        debug("has_compute %", has_compute);
-        debug("has_xfer %", has_xfer);
-        debug("has_sparse %", has_sparse);
-        debug("has_protected %", has_protected);*/
 
         // TODO perform this intelligently
         if (compute_queue == -1 && has_compute)
@@ -150,27 +144,94 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
 }
 
 VulkanPlatform::Device::~Device() {
-    vkDestroyDevice(device, nullptr);
+    if (device != nullptr)
+        vkDestroyDevice(device, nullptr);
 }
 
-void *VulkanPlatform::alloc(DeviceId dev, int64_t size) {
-    return nullptr;
+uint32_t VulkanPlatform::Device::find_suitable_memory_type(VkMemoryRequirements requirements) {
+    VkPhysicalDeviceMemoryProperties device_memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &device_memory_properties);
+    for (size_t bit = 0; bit < 32; bit++) {
+        auto& memory_type = device_memory_properties.memoryTypes[bit];
+        auto& memory_heap = device_memory_properties.memoryHeaps[memory_type.heapIndex];
+
+        bool is_device_local = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
+
+        if ((requirements.memoryTypeBits & (1 << bit)) != 0) {
+            if (is_device_local)
+                return bit;
+        }
+    }
+    assert(false && "Unable to find a suitable memory type");
 }
 
-void *VulkanPlatform::alloc_host(DeviceId dev, int64_t size) {
-    return nullptr;
+void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
+    auto& device = usable_devices[dev];
+
+    auto buffer_create_info = VkBufferCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = (VkDeviceSize) size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+    VkBuffer buffer;
+    vkCreateBuffer(device->device, &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device->device, buffer, &memory_requirements);
+
+    auto allocation_info = VkMemoryAllocateInfo {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
+        .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements),
+    };
+    VkDeviceMemory memory;
+    vkAllocateMemory(device->device, &allocation_info, nullptr, &memory);
+
+    vkBindBufferMemory(device->device, buffer, memory, 0);
+    size_t id = device->next_resource_id++;
+
+    std::unique_ptr<Buffer> res_buffer = std::make_unique<Buffer>(*device);
+    res_buffer->alloc = memory;
+    res_buffer->id = id;
+    res_buffer->buffer = buffer;
+    device->resources.push_back(std::move(res_buffer));
+
+    return reinterpret_cast<void*>(id);
 }
 
-void *VulkanPlatform::get_device_ptr(DeviceId dev, void *ptr) {
-    return nullptr;
+void* VulkanPlatform::alloc_host(DeviceId dev, int64_t size) {
+    command_unavailable("alloc_host");
+}
+
+void* VulkanPlatform::get_device_ptr(DeviceId dev, void *ptr) {
+    command_unavailable("get_device_ptr");
 }
 
 void VulkanPlatform::release(DeviceId dev, void *ptr) {
+    if (ptr == nullptr)
+        return;
 
+    auto& device = usable_devices[dev];
+    size_t id = reinterpret_cast<size_t>(ptr);
+    size_t i = 0;
+    for (auto& resource : device->resources) {
+        if (resource->id == id) {
+            device->resources.erase(device->resources.begin() + i);
+            return;
+        }
+        i++;
+    }
+    assert(false && "Could not find such a buffer to release");
 }
 
 void VulkanPlatform::release_host(DeviceId dev, void *ptr) {
-
+    command_unavailable("release_host");
 }
 
 void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
@@ -195,4 +256,12 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
 
 void register_vulkan_platform(Runtime* runtime) {
     runtime->register_platform<VulkanPlatform>();
+}
+
+VulkanPlatform::Resource::~Resource() {
+    vkFreeMemory(device.device, alloc, nullptr);
+}
+
+VulkanPlatform::Buffer::~Buffer() {
+    vkDestroyBuffer(device.device, buffer, nullptr);
 }
