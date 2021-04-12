@@ -33,18 +33,41 @@ protected:
     void copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst,
                       int64_t size) override;
 
-    size_t dev_count() const override { return physical_devices.size(); }
+    size_t dev_count() const override { return usable_devices.size(); }
     std::string name() const override { return "Vulkan"; }
+
+    struct Device;
+
+    struct Resource {
+    public:
+        Device& device;
+        size_t id;
+        VkDeviceMemory alloc;
+
+        Resource(Device& device) : device(device) {}
+        virtual ~Resource();
+    };
+
+    struct Buffer : public Resource {
+        VkBuffer buffer;
+
+        Buffer(Device& device) : Resource(device) {}
+        ~Buffer() override;
+    };
 
     struct Device {
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
-        size_t i;
+        size_t device_id;
+        VkDevice device = nullptr;
 
-        VkDevice device;
+        std::vector<std::unique_ptr<Resource>> resources;
+        size_t next_resource_id = 1; // resource id 0 is reserved
 
-        Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t i);
+        Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
+
+        uint32_t find_suitable_memory_type(VkMemoryRequirements requirements);
     };
 
     VkInstance instance;
