@@ -65,12 +65,18 @@ protected:
 
         std::vector<std::unique_ptr<Resource>> resources;
         size_t next_resource_id = 1; // resource id 0 is reserved
+        VkQueue queue;
+        VkCommandPool cmd_pool;
+        std::vector<VkCommandBuffer> spare_cmd_bufs;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
 
+        Resource* find_resource_by_id(size_t id);
         uint32_t find_suitable_memory_type(uint32_t memory_type_bits);
         VkDeviceMemory import_host_memory(void* ptr, size_t size);
+        VkCommandBuffer obtain_command_buffer();
+        void return_command_buffer(VkCommandBuffer cmd_buf);
     };
 
     VkInstance instance;

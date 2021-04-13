@@ -117,7 +117,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_families_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, queue_families.data());
-    int compute_queue = -1;
+    int compute_queue_family = -1;
     int q = 0;
     for (auto& queue_f : queue_families) {
         bool has_gfx       = (queue_f.queueFlags & 0x00000001) != 0;
@@ -127,20 +127,20 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         bool has_protected = (queue_f.queueFlags & 0x00000010) != 0;
 
         // TODO perform this intelligently
-        if (compute_queue == -1 && has_compute)
-            compute_queue = q;
+        if (compute_queue_family == -1 && has_compute)
+            compute_queue_family = q;
         q++;
     }
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    float priority = 1.0f;
-    if (compute_queue != -1) {
+    float one = 1.0f;
+    if (compute_queue_family != -1) {
         queue_create_infos.push_back(VkDeviceQueueCreateInfo {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = (uint32_t) compute_queue,
+            .queueFamilyIndex = (uint32_t) compute_queue_family,
             .queueCount = 1,
-            .pQueuePriorities = &priority
+            .pQueuePriorities = &one
         });
     } else {
         assert(false && "unsuitable device");
@@ -148,7 +148,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
 
     auto enabled_features = VkPhysicalDeviceFeatures {};
 
-    auto create_info = VkDeviceCreateInfo {
+    auto device_create_info = VkDeviceCreateInfo {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -160,10 +160,20 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .ppEnabledExtensionNames = enabled_instance_extensions.data(),
         .pEnabledFeatures = &enabled_features
     };
-    CHECK(vkCreateDevice(physical_device, &create_info, nullptr, &device));
+    CHECK(vkCreateDevice(physical_device, &device_create_info, nullptr, &device));
+    vkGetDeviceQueue(device, compute_queue_family, 0, &queue);
+
+    auto cmd_pool_create_info = VkCommandPoolCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .queueFamilyIndex = (uint32_t) compute_queue_family,
+        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    };
+    CHECK(vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &cmd_pool));
 }
 
 VulkanPlatform::Device::~Device() {
+    vkDestroyCommandPool(device, cmd_pool, nullptr);
     if (device != nullptr)
         vkDestroyDevice(device, nullptr);
 }
@@ -233,6 +243,17 @@ void* VulkanPlatform::get_device_ptr(DeviceId dev, void *ptr) {
     command_unavailable("get_device_ptr");
 }
 
+VulkanPlatform::Resource* VulkanPlatform::Device::find_resource_by_id(size_t id) {
+    size_t i = 0;
+    for (auto& resource : resources) {
+        if (resource->id == id) {
+            return resources[i].get();
+        }
+        i++;
+    }
+    return nullptr;
+}
+
 void VulkanPlatform::release(DeviceId dev, void *ptr) {
     if (ptr == nullptr)
         return;
@@ -297,15 +318,88 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     return imported_memory;
 }
 
+VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
+    if (spare_cmd_bufs.size() > 0) {
+        VkCommandBuffer cmd_buf = spare_cmd_bufs.back();
+        spare_cmd_bufs.pop_back();
+        return cmd_buf;
+    }
+    auto cmd_buf_create_info = VkCommandBufferAllocateInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = cmd_pool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+    VkCommandBuffer cmd_buf;
+    vkAllocateCommandBuffers(device, &cmd_buf_create_info, &cmd_buf);
+    return cmd_buf;
+}
+
+void VulkanPlatform::Device::return_command_buffer(VkCommandBuffer cmd_buf) {
+    vkResetCommandBuffer(cmd_buf, 0);
+    spare_cmd_bufs.push_back(cmd_buf);
+}
+
 void VulkanPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
 
 }
 
 void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
     auto& device = usable_devices[dev_dst];
+    auto dst_buffer_resource = (Buffer*) device->find_resource_by_id((size_t) dst);
+    auto dst_buffer = dst_buffer_resource->buffer;
 
+    // Import host memory and wrap it in a buffer
     size_t host_ptr = (size_t)src + offset_src;
     VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
+    auto tmp_buffer_create_info = VkBufferCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = (VkDeviceSize) size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+    VkBuffer tmp_buffer;
+    vkCreateBuffer(device->device, &tmp_buffer_create_info, nullptr, &tmp_buffer);
+    vkBindBufferMemory(device->device, tmp_buffer, imported_memory, 0);
+
+    VkCommandBuffer cmd_buf = device->obtain_command_buffer();
+    auto begin_command_buffer_info = VkCommandBufferBeginInfo {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = nullptr,
+    };
+    vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info);
+    VkBufferCopy copy_region {
+        .srcOffset = 0,
+        .dstOffset = (VkDeviceSize) offset_dst,
+        .size = (VkDeviceSize) size,
+    };
+    vkCmdCopyBuffer(cmd_buf, tmp_buffer, dst_buffer, 1, &copy_region);
+    vkEndCommandBuffer(cmd_buf);
+    auto submit_info = VkSubmitInfo {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &cmd_buf,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
+    };
+    vkQueueSubmit(device->queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkDeviceWaitIdle(device->device);
+    device->return_command_buffer(cmd_buf);
+
+    // Cleanup
+    vkFreeMemory(device->device, imported_memory, nullptr);
+    vkDestroyBuffer(device->device, tmp_buffer, nullptr);
 }
 
 void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) {
