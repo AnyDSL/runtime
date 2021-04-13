@@ -29,7 +29,9 @@ VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
     auto available_instance_extensions = query_extensions_available();
 
     std::vector<const char*> enabled_layers;
-    std::vector<const char*> enabled_instance_extensions;
+    std::vector<const char*> enabled_instance_extensions {
+        "VK_KHR_external_memory_capabilities"
+    };
 
     bool should_enable_validation = true;
 #ifdef NDEBUG
@@ -47,7 +49,8 @@ VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
     validation_done:
 
     auto app_info = VkApplicationInfo {
-        .pApplicationName = "AnyDSL Runtime"
+        .pApplicationName = "AnyDSL Runtime",
+        .apiVersion = VK_API_VERSION_1_2,
     };
     auto create_info = VkInstanceCreateInfo {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -81,17 +84,34 @@ VulkanPlatform::~VulkanPlatform() {
 
 VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id)
  : platform(platform), physical_device(physical_device), device_id(device_id) {
-    VkPhysicalDeviceProperties device_properties;
-    vkGetPhysicalDeviceProperties(physical_device, &device_properties);
+    auto external_memory_host_properties = VkPhysicalDeviceExternalMemoryHostPropertiesEXT {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
+        .pNext = nullptr,
+        .minImportedHostPointerAlignment = 0xDEADBEEF,
+    };
+    auto device_properties2 = VkPhysicalDeviceProperties2 {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+        .pNext = &external_memory_host_properties,
+    };
+    vkGetPhysicalDeviceProperties2(physical_device, &device_properties2);
+    auto& device_properties = device_properties2.properties;
+
     debug("  GPU%:", device_id);
     debug("  Device name: %", device_properties.deviceName);
     debug("  Vulkan version %.%.%", VK_VERSION_MAJOR(device_properties.apiVersion), VK_VERSION_MINOR(device_properties.apiVersion), VK_VERSION_PATCH(device_properties.apiVersion));
+
+    min_imported_host_ptr_alignment = external_memory_host_properties.minImportedHostPointerAlignment;
+    debug("Min imported host ptr alignment: %", min_imported_host_ptr_alignment);
+    if (min_imported_host_ptr_alignment == 0xDEADBEEF)
+        error("Device does not report minimum host pointer alignment");
 
     uint32_t exts_count;
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, nullptr);
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
-    std::vector<const char*> enabled_instance_extensions;
+    std::vector<const char*> enabled_instance_extensions {
+        "VK_EXT_external_memory_host"
+    };
 
     uint32_t queue_families_count;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, nullptr);
@@ -148,7 +168,7 @@ VulkanPlatform::Device::~Device() {
         vkDestroyDevice(device, nullptr);
 }
 
-uint32_t VulkanPlatform::Device::find_suitable_memory_type(VkMemoryRequirements requirements) {
+uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_bits) {
     VkPhysicalDeviceMemoryProperties device_memory_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &device_memory_properties);
     for (size_t bit = 0; bit < 32; bit++) {
@@ -157,7 +177,7 @@ uint32_t VulkanPlatform::Device::find_suitable_memory_type(VkMemoryRequirements 
 
         bool is_device_local = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
 
-        if ((requirements.memoryTypeBits & (1 << bit)) != 0) {
+        if ((memory_type_bits & (1 << bit)) != 0) {
             if (is_device_local)
                 return bit;
         }
@@ -188,7 +208,7 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
         .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
-        .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements),
+        .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements.memoryTypeBits),
     };
     VkDeviceMemory memory;
     vkAllocateMemory(device->device, &allocation_info, nullptr, &memory);
@@ -242,12 +262,50 @@ void VulkanPlatform::synchronize(DeviceId dev) {
 
 }
 
+VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
+    VkExternalMemoryHandleTypeFlagBits handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+
+    // Align stuff
+    size_t mask = !(min_imported_host_ptr_alignment - 1);
+    size_t host_ptr = (size_t)ptr;
+    size_t aligned_host_ptr = host_ptr & mask;
+
+    size_t end = host_ptr + size;
+    size_t aligned_end = ((end + min_imported_host_ptr_alignment - 1) / min_imported_host_ptr_alignment) * min_imported_host_ptr_alignment;
+    size_t aligned_size = aligned_end - aligned_host_ptr;
+
+    // Find the corresponding device memory type index
+    VkMemoryHostPointerPropertiesEXT host_ptr_properties;
+    vkGetMemoryHostPointerPropertiesEXT(device, handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
+    uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits);
+
+    // Import memory
+    auto import_ptr_info = VkImportMemoryHostPointerInfoEXT {
+            .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
+            .pNext = nullptr,
+            .handleType = handle_type,
+            .pHostPointer = (void*) aligned_host_ptr,
+    };
+    auto allocation_info = VkMemoryAllocateInfo {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = &import_ptr_info,
+            .allocationSize = (VkDeviceSize) aligned_size,
+            .memoryTypeIndex = memory_type
+    };
+    VkDeviceMemory imported_memory;
+    CHECK(vkAllocateMemory(device, &allocation_info, nullptr, &imported_memory));
+    return imported_memory;
+}
+
 void VulkanPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
 
 }
 
 void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
+    auto& device = usable_devices[dev_dst];
 
+    size_t host_ptr = (size_t)src + offset_src;
+    VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
 }
 
 void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) {

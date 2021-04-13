@@ -61,13 +61,16 @@ protected:
         size_t device_id;
         VkDevice device = nullptr;
 
+        size_t min_imported_host_ptr_alignment;
+
         std::vector<std::unique_ptr<Resource>> resources;
         size_t next_resource_id = 1; // resource id 0 is reserved
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
 
-        uint32_t find_suitable_memory_type(VkMemoryRequirements requirements);
+        uint32_t find_suitable_memory_type(uint32_t memory_type_bits);
+        VkDeviceMemory import_host_memory(void* ptr, size_t size);
     };
 
     VkInstance instance;
