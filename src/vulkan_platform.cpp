@@ -101,7 +101,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     debug("  Vulkan version %.%.%", VK_VERSION_MAJOR(device_properties.apiVersion), VK_VERSION_MINOR(device_properties.apiVersion), VK_VERSION_PATCH(device_properties.apiVersion));
 
     min_imported_host_ptr_alignment = external_memory_host_properties.minImportedHostPointerAlignment;
-    debug("Min imported host ptr alignment: %", min_imported_host_ptr_alignment);
+    debug("  Min imported host ptr alignment: %", min_imported_host_ptr_alignment);
     if (min_imported_host_ptr_alignment == 0xDEADBEEF)
         error("Device does not report minimum host pointer alignment");
 
@@ -166,14 +166,15 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     auto cmd_pool_create_info = VkCommandPoolCreateInfo {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
+        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = (uint32_t) compute_queue_family,
-        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
     };
     CHECK(vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &cmd_pool));
 }
 
 VulkanPlatform::Device::~Device() {
     vkDestroyCommandPool(device, cmd_pool, nullptr);
+    kernels.clear();
     if (device != nullptr)
         vkDestroyDevice(device, nullptr);
 }
@@ -275,8 +276,69 @@ void VulkanPlatform::release_host(DeviceId dev, void *ptr) {
     command_unavailable("release_host");
 }
 
-void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
+VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& filename) {
+    auto ki = kernels.find(filename);
+    if (ki == kernels.end()) {
+        auto [i,b] = kernels.emplace(filename, Kernel(*this));
+        Kernel& kernel = i->second;
 
+        std::string bin = platform.runtime_->load_file(filename);
+        auto shader_module_create_info = VkShaderModuleCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .codeSize = bin.size(),
+            .pCode = reinterpret_cast<const uint32_t *>(bin.c_str()),
+        };
+        vkCreateShaderModule(device, &shader_module_create_info, nullptr, &kernel.shader_module);
+
+        auto stage = VkPipelineShaderStageCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+            .module = kernel.shader_module,
+            .pName = "kernel_main",
+            .pSpecializationInfo = nullptr,
+        };
+
+        std::vector<VkPushConstantRange> push_constants {
+            VkPushConstantRange {
+                .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                .offset = 0,
+                .size = 128
+            }
+        };
+        auto layout_create_info = VkPipelineLayoutCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .setLayoutCount = 0,
+            .pSetLayouts = nullptr,
+            .pushConstantRangeCount = (uint32_t) push_constants.size(),
+            .pPushConstantRanges = push_constants.data(),
+        };
+        vkCreatePipelineLayout(device, &layout_create_info, nullptr, &kernel.layout);
+
+        auto compute_pipeline_create_info = VkComputePipelineCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .stage = stage,
+            .layout = kernel.layout,
+            .basePipelineHandle = VK_NULL_HANDLE,
+            .basePipelineIndex = 0,
+        };
+        CHECK(vkCreateComputePipelines(device, nullptr, 1, &compute_pipeline_create_info, nullptr, &kernel.pipeline));
+        return &kernel;
+    }
+
+    return &ki->second;
+}
+
+void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
+    auto& device = usable_devices[dev];
+    auto kernel = device->load_kernel(launch_params.file_name);
 }
 
 void VulkanPlatform::synchronize(DeviceId dev) {
@@ -416,4 +478,10 @@ VulkanPlatform::Resource::~Resource() {
 
 VulkanPlatform::Buffer::~Buffer() {
     vkDestroyBuffer(device.device, buffer, nullptr);
+}
+
+VulkanPlatform::Kernel::~Kernel() {
+    vkDestroyPipeline(device.device, pipeline, nullptr);
+    vkDestroyPipelineLayout(device.device, layout, nullptr);
+    vkDestroyShaderModule(device.device, shader_module, nullptr);
 }
