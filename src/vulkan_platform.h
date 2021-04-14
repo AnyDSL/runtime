@@ -39,7 +39,7 @@ protected:
     struct Device;
 
     struct Resource {
-    public:
+    //public:
         Device& device;
         size_t id;
         VkDeviceMemory alloc;
@@ -55,6 +55,17 @@ protected:
         ~Buffer() override;
     };
 
+    struct Kernel {
+        Device& device;
+
+        VkShaderModule shader_module;
+        VkPipelineLayout layout;
+        VkPipeline pipeline;
+
+        Kernel(Device& device) : device(device) {}
+        ~Kernel();
+    };
+
     struct Device {
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
@@ -68,6 +79,7 @@ protected:
         VkQueue queue;
         VkCommandPool cmd_pool;
         std::vector<VkCommandBuffer> spare_cmd_bufs;
+        std::unordered_map<std::string, Kernel> kernels;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
@@ -77,6 +89,7 @@ protected:
         VkDeviceMemory import_host_memory(void* ptr, size_t size);
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
+        Kernel* load_kernel(const std::string&);
     };
 
     VkInstance instance;
