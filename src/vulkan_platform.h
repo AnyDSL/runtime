@@ -4,6 +4,8 @@
 #include "platform.h"
 #include <vulkan/vulkan.h>
 
+#include <functional>
+
 class VulkanPlatform : public Platform {
 public:
     VulkanPlatform(Runtime* runtime);
@@ -90,6 +92,8 @@ protected:
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
         Kernel* load_kernel(const std::string&);
+
+        void execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn);
     };
 
     VkInstance instance;
