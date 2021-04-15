@@ -180,6 +180,10 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
 VulkanPlatform::Device::~Device() {
     vkDestroyCommandPool(device, cmd_pool, nullptr);
     kernels.clear();
+    if (!resources.empty()) {
+        info("Some vulkan resources were not released. Releasing those automatically...");
+        resources.clear();
+    }
     if (device != nullptr)
         vkDestroyDevice(device, nullptr);
 }
