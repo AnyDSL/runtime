@@ -170,6 +170,11 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .queueFamilyIndex = (uint32_t) compute_queue_family,
     };
     CHECK(vkCreateCommandPool(device, &cmd_pool_create_info, nullptr, &cmd_pool));
+
+    // Load function pointers
+#define f(s) extension_fns.s = (PFN_##s) vkGetDeviceProcAddr(device, #s);
+    DevicesExtensionsFunctions(f)
+#undef f
 }
 
 VulkanPlatform::Device::~Device() {
@@ -365,8 +370,10 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     size_t aligned_size = aligned_end - aligned_host_ptr;
 
     // Find the corresponding device memory type index
-    VkMemoryHostPointerPropertiesEXT host_ptr_properties;
-    vkGetMemoryHostPointerPropertiesEXT(device, handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
+    VkMemoryHostPointerPropertiesEXT host_ptr_properties {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
+    };
+    extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
     uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits);
 
     // Import memory
