@@ -339,10 +339,17 @@ VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& f
 void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
     auto& device = usable_devices[dev];
     auto kernel = device->load_kernel(launch_params.file_name);
+
+    device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
+        vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
+        std::array<char, 128> push_constants {};
+        vkCmdPushConstants(cmd_buf, kernel->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 128, &push_constants);
+        vkCmdDispatch(cmd_buf, launch_params.grid[0], launch_params.grid[1], launch_params.grid[2]);
+    });
 }
 
 void VulkanPlatform::synchronize(DeviceId dev) {
-
+    // TODO: don't wait for idle everywhere
 }
 
 VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
@@ -403,6 +410,33 @@ void VulkanPlatform::Device::return_command_buffer(VkCommandBuffer cmd_buf) {
     spare_cmd_bufs.push_back(cmd_buf);
 }
 
+void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn) {
+    VkCommandBuffer cmd_buf = obtain_command_buffer();
+    auto begin_command_buffer_info = VkCommandBufferBeginInfo {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr,
+    };
+    vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info);
+    fn(cmd_buf);
+    vkEndCommandBuffer(cmd_buf);
+    auto submit_info = VkSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
+            .pWaitDstStageMask = nullptr,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cmd_buf,
+            .signalSemaphoreCount = 0,
+            .pSignalSemaphores = nullptr,
+    };
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkDeviceWaitIdle(device);
+    return_command_buffer(cmd_buf);
+}
+
 void VulkanPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
 
 }
@@ -429,35 +463,14 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
     vkCreateBuffer(device->device, &tmp_buffer_create_info, nullptr, &tmp_buffer);
     vkBindBufferMemory(device->device, tmp_buffer, imported_memory, 0);
 
-    VkCommandBuffer cmd_buf = device->obtain_command_buffer();
-    auto begin_command_buffer_info = VkCommandBufferBeginInfo {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        .pInheritanceInfo = nullptr,
-    };
-    vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info);
-    VkBufferCopy copy_region {
-        .srcOffset = 0,
-        .dstOffset = (VkDeviceSize) offset_dst,
-        .size = (VkDeviceSize) size,
-    };
-    vkCmdCopyBuffer(cmd_buf, tmp_buffer, dst_buffer, 1, &copy_region);
-    vkEndCommandBuffer(cmd_buf);
-    auto submit_info = VkSubmitInfo {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext = nullptr,
-        .waitSemaphoreCount = 0,
-        .pWaitSemaphores = nullptr,
-        .pWaitDstStageMask = nullptr,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &cmd_buf,
-        .signalSemaphoreCount = 0,
-        .pSignalSemaphores = nullptr,
-    };
-    vkQueueSubmit(device->queue, 1, &submit_info, VK_NULL_HANDLE);
-    vkDeviceWaitIdle(device->device);
-    device->return_command_buffer(cmd_buf);
+    device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
+        VkBufferCopy copy_region {
+                .srcOffset = 0,
+                .dstOffset = (VkDeviceSize) offset_dst,
+                .size = (VkDeviceSize) size,
+        };
+        vkCmdCopyBuffer(cmd_buf, tmp_buffer, dst_buffer, 1, &copy_region);
+    });
 
     // Cleanup
     vkFreeMemory(device->device, imported_memory, nullptr);
