@@ -6,6 +6,10 @@
 
 #include <functional>
 
+/// Vulkan requires you to manually load certain function pointers, we use a macro to automate the boilerplate
+#define DevicesExtensionsFunctions(f) \
+    f(vkGetMemoryHostPointerPropertiesEXT) \
+
 class VulkanPlatform : public Platform {
 public:
     VulkanPlatform(Runtime* runtime);
@@ -68,6 +72,12 @@ protected:
         ~Kernel();
     };
 
+    struct ExtensionFns {
+#define f(s) PFN_##s s;
+        DevicesExtensionsFunctions(f)
+#undef f
+    };
+
     struct Device {
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
@@ -82,6 +92,7 @@ protected:
         VkCommandPool cmd_pool;
         std::vector<VkCommandBuffer> spare_cmd_bufs;
         std::unordered_map<std::string, Kernel> kernels;
+        ExtensionFns extension_fns;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
