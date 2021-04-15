@@ -98,7 +98,7 @@ protected:
         ~Device();
 
         Resource* find_resource_by_id(size_t id);
-        uint32_t find_suitable_memory_type(uint32_t memory_type_bits);
+        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, bool prefer_device_local);
         VkDeviceMemory import_host_memory(void* ptr, size_t size);
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
