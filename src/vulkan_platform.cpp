@@ -184,7 +184,7 @@ VulkanPlatform::Device::~Device() {
         vkDestroyDevice(device, nullptr);
 }
 
-uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_bits) {
+uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_bits, bool prefer_device_local) {
     VkPhysicalDeviceMemoryProperties device_memory_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &device_memory_properties);
     for (size_t bit = 0; bit < 32; bit++) {
@@ -194,7 +194,7 @@ uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_
         bool is_device_local = (memory_type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
 
         if ((memory_type_bits & (1 << bit)) != 0) {
-            if (is_device_local)
+            if (!prefer_device_local || is_device_local)
                 return bit;
         }
     }
@@ -224,7 +224,7 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
         .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
-        .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements.memoryTypeBits),
+        .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements.memoryTypeBits, true),
     };
     VkDeviceMemory memory;
     vkAllocateMemory(device->device, &allocation_info, nullptr, &memory);
@@ -361,7 +361,7 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     VkExternalMemoryHandleTypeFlagBits handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
 
     // Align stuff
-    size_t mask = !(min_imported_host_ptr_alignment - 1);
+    size_t mask = ~(min_imported_host_ptr_alignment - 1);
     size_t host_ptr = (size_t)ptr;
     size_t aligned_host_ptr = host_ptr & mask;
 
@@ -374,7 +374,7 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
         .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
     };
     extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
-    uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits);
+    uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits, false);
 
     // Import memory
     auto import_ptr_info = VkImportMemoryHostPointerInfoEXT {
