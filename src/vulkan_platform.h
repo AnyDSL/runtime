@@ -53,6 +53,7 @@ protected:
 
     struct Buffer : public Resource {
         VkBuffer buffer;
+        uint64_t bda = -1;
 
         Buffer(Device& device) : Resource(device) {}
         ~Buffer() override;

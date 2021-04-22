@@ -109,8 +109,9 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, nullptr);
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
-    std::vector<const char*> enabled_instance_extensions {
-        "VK_EXT_external_memory_host"
+    std::vector<const char*> enabled_device_extensions {
+        "VK_EXT_external_memory_host",
+        "VK_EXT_buffer_device_address" // not KHR version !
     };
 
     uint32_t queue_families_count;
@@ -146,19 +147,29 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         assert(false && "unsuitable device");
     }
 
-    auto enabled_features = VkPhysicalDeviceFeatures {};
+    auto bda_features = VkPhysicalDeviceBufferDeviceAddressFeaturesEXT {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT,
+        .pNext = nullptr,
+        .bufferDeviceAddress = true,
+    };
+    auto enabled_features = VkPhysicalDeviceFeatures2 {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &bda_features,
+        .features = {
+        }
+    };
 
     auto device_create_info = VkDeviceCreateInfo {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = nullptr,
+        .pNext = &enabled_features,
         .flags = 0,
         .queueCreateInfoCount = (uint32_t) queue_create_infos.size(),
         .pQueueCreateInfos = queue_create_infos.data(),
         .enabledLayerCount = 0,
         .ppEnabledLayerNames = nullptr,
-        .enabledExtensionCount = (uint32_t) enabled_instance_extensions.size(),
-        .ppEnabledExtensionNames = enabled_instance_extensions.data(),
-        .pEnabledFeatures = &enabled_features
+        .enabledExtensionCount = (uint32_t) enabled_device_extensions.size(),
+        .ppEnabledExtensionNames = enabled_device_extensions.data(),
+        .pEnabledFeatures = nullptr // controlled via VkPhysicalDeviceFeatures2
     };
     CHECK(vkCreateDevice(physical_device, &device_create_info, nullptr, &device));
     vkGetDeviceQueue(device, compute_queue_family, 0, &queue);
@@ -240,6 +251,16 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
     res_buffer->alloc = memory;
     res_buffer->id = id;
     res_buffer->buffer = buffer;
+
+    auto bda_info = VkBufferDeviceAddressInfoEXT {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT,
+        .pNext = nullptr,
+        .buffer = res_buffer->buffer
+    };
+    VkDeviceAddress bda = vkGetBufferDeviceAddressEXT(device->device, &bda_info);
+    assert(bda != 0 && "BDA failed");
+    res_buffer->bda = bda;
+
     device->resources.push_back(std::move(res_buffer));
 
     return reinterpret_cast<void*>(id);
@@ -352,6 +373,22 @@ void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_para
     device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
         vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
         std::array<char, 128> push_constants {};
+        size_t offset = 0;
+        for (uint32_t arg = 0; arg < launch_params.num_args; arg++) {
+            if (launch_params.args.types[arg] == KernelArgType::Val) {
+                assert(launch_params.args.sizes[arg] == 4 && "Preliminary support...");
+                memcpy(push_constants.data() + offset, launch_params.args.data[arg], 4);
+                offset += 4;
+            } else if (launch_params.args.types[arg] == KernelArgType::Ptr) {
+                void* buffer = *(void**)launch_params.args.data[arg];
+                auto dst_buffer_resource = (Buffer*) device->find_resource_by_id((size_t) buffer);
+                uint64_t buffer_bda = dst_buffer_resource->bda;
+                memcpy(push_constants.data() + offset, &buffer_bda, 8);
+                offset += 8;
+            } {
+                assert(false && "no struct support yet");
+            }
+        }
         vkCmdPushConstants(cmd_buf, kernel->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 128, &push_constants);
         vkCmdDispatch(cmd_buf, launch_params.grid[0], launch_params.grid[1], launch_params.grid[2]);
     });
