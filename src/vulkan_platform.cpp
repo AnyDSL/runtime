@@ -111,7 +111,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
     std::vector<const char*> enabled_device_extensions {
         "VK_EXT_external_memory_host",
-        "VK_EXT_buffer_device_address" // not KHR version !
+        "VK_KHR_buffer_device_address"
     };
 
     uint32_t queue_families_count;
@@ -147,8 +147,8 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         assert(false && "unsuitable device");
     }
 
-    auto bda_features = VkPhysicalDeviceBufferDeviceAddressFeaturesEXT {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT,
+    auto bda_features = VkPhysicalDeviceBufferDeviceAddressFeaturesKHR {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
         .pNext = nullptr,
         .bufferDeviceAddress = true,
     };
@@ -156,6 +156,8 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
         .pNext = &bda_features,
         .features = {
+            .shaderInt64 = true,
+            .shaderInt16 = true,
         }
     };
 
@@ -224,7 +226,7 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
         .pNext = nullptr,
         .flags = 0,
         .size = (VkDeviceSize) size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
@@ -235,9 +237,16 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(device->device, buffer, &memory_requirements);
 
+    auto allocate_flags = VkMemoryAllocateFlagsInfo {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+        .pNext = nullptr,
+        .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
+        .deviceMask = 0
+    };
+
     auto allocation_info = VkMemoryAllocateInfo {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
+        .pNext = &allocate_flags,
         .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
         .memoryTypeIndex = device->find_suitable_memory_type(memory_requirements.memoryTypeBits, true),
     };
@@ -252,12 +261,12 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
     res_buffer->id = id;
     res_buffer->buffer = buffer;
 
-    auto bda_info = VkBufferDeviceAddressInfoEXT {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT,
+    auto bda_info = VkBufferDeviceAddressInfoKHR {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR,
         .pNext = nullptr,
         .buffer = res_buffer->buffer
     };
-    VkDeviceAddress bda = vkGetBufferDeviceAddressEXT(device->device, &bda_info);
+    VkDeviceAddress bda = device->extension_fns.vkGetBufferDeviceAddressKHR(device->device, &bda_info);
     assert(bda != 0 && "BDA failed");
     res_buffer->bda = bda;
 
@@ -267,7 +276,7 @@ void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
 }
 
 void* VulkanPlatform::alloc_host(DeviceId dev, int64_t size) {
-    command_unavailable("alloc_host");
+    return malloc(size);
 }
 
 void* VulkanPlatform::get_device_ptr(DeviceId dev, void *ptr) {
@@ -303,7 +312,7 @@ void VulkanPlatform::release(DeviceId dev, void *ptr) {
 }
 
 void VulkanPlatform::release_host(DeviceId dev, void *ptr) {
-    command_unavailable("release_host");
+    free(ptr);
 }
 
 VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& filename) {
@@ -486,7 +495,7 @@ void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(V
 }
 
 void VulkanPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
-
+    command_unavailable("copy");
 }
 
 void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
@@ -526,7 +535,7 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
 }
 
 void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) {
-
+    command_unavailable("copy_to_host");
 }
 
 void register_vulkan_platform(Runtime* runtime) {

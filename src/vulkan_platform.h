@@ -9,6 +9,7 @@
 /// Vulkan requires you to manually load certain function pointers, we use a macro to automate the boilerplate
 #define DevicesExtensionsFunctions(f) \
     f(vkGetMemoryHostPointerPropertiesEXT) \
+    f(vkGetBufferDeviceAddressKHR)
 
 class VulkanPlatform : public Platform {
 public:
