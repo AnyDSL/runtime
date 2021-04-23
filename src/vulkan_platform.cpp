@@ -152,9 +152,15 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .pNext = nullptr,
         .bufferDeviceAddress = true,
     };
+    auto vk11_features = VkPhysicalDeviceVulkan11Features {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+        .pNext = &bda_features,
+        .variablePointersStorageBuffer = true,
+        .variablePointers = true,
+    };
     auto enabled_features = VkPhysicalDeviceFeatures2 {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = &bda_features,
+        .pNext = &vk11_features,
         .features = {
             .shaderInt64 = true,
             .shaderInt16 = true,
@@ -407,9 +413,9 @@ void VulkanPlatform::synchronize(DeviceId dev) {
     // TODO: don't wait for idle everywhere
 }
 
-VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
-    VkExternalMemoryHandleTypeFlagBits handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+VkExternalMemoryHandleTypeFlagBits imported_host_memory_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
 
+VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
     // Align stuff
     size_t mask = ~(min_imported_host_ptr_alignment - 1);
     size_t host_ptr = (size_t)ptr;
@@ -423,21 +429,21 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     VkMemoryHostPointerPropertiesEXT host_ptr_properties {
         .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
     };
-    extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
+    extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, imported_host_memory_handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
     uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits, false);
 
     // Import memory
     auto import_ptr_info = VkImportMemoryHostPointerInfoEXT {
-            .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
-            .pNext = nullptr,
-            .handleType = handle_type,
-            .pHostPointer = (void*) aligned_host_ptr,
+        .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
+        .pNext = nullptr,
+        .handleType = imported_host_memory_handle_type,
+        .pHostPointer = (void*) aligned_host_ptr,
     };
     auto allocation_info = VkMemoryAllocateInfo {
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .pNext = &import_ptr_info,
-            .allocationSize = (VkDeviceSize) aligned_size,
-            .memoryTypeIndex = memory_type
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = &import_ptr_info,
+        .allocationSize = (VkDeviceSize) aligned_size,
+        .memoryTypeIndex = memory_type
     };
     VkDeviceMemory imported_memory;
     CHECK(vkAllocateMemory(device, &allocation_info, nullptr, &imported_memory));
@@ -470,24 +476,24 @@ void VulkanPlatform::Device::return_command_buffer(VkCommandBuffer cmd_buf) {
 void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn) {
     VkCommandBuffer cmd_buf = obtain_command_buffer();
     auto begin_command_buffer_info = VkCommandBufferBeginInfo {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = nullptr,
-            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-            .pInheritanceInfo = nullptr,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = nullptr,
     };
     vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info);
     fn(cmd_buf);
     vkEndCommandBuffer(cmd_buf);
     auto submit_info = VkSubmitInfo {
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 0,
-            .pWaitSemaphores = nullptr,
-            .pWaitDstStageMask = nullptr,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cmd_buf,
-            .signalSemaphoreCount = 0,
-            .pSignalSemaphores = nullptr,
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &cmd_buf,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
     };
     vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     vkDeviceWaitIdle(device);
@@ -506,9 +512,15 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
     // Import host memory and wrap it in a buffer
     size_t host_ptr = (size_t)src + offset_src;
     VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
+    auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .handleTypes = imported_host_memory_handle_type
+    };
+
     auto tmp_buffer_create_info = VkBufferCreateInfo {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
+        .pNext = &external_mem_buffer_create_info,
         .flags = 0,
         .size = (VkDeviceSize) size,
         .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
