@@ -400,7 +400,7 @@ void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_para
                 uint64_t buffer_bda = dst_buffer_resource->bda;
                 memcpy(push_constants.data() + offset, &buffer_bda, 8);
                 offset += 8;
-            } {
+            } else {
                 assert(false && "no struct support yet");
             }
         }
