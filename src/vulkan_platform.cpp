@@ -547,7 +547,45 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
 }
 
 void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) {
-    command_unavailable("copy_to_host");
+    auto& device = usable_devices[dev_src];
+    auto src_buffer_resource = (Buffer*) device->find_resource_by_id((size_t) src);
+    auto src_buffer = src_buffer_resource->buffer;
+
+    // Import host memory and wrap it in a buffer
+    size_t host_ptr = (size_t)dst + offset_dst;
+    VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
+    auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .handleTypes = imported_host_memory_handle_type
+    };
+
+    auto tmp_buffer_create_info = VkBufferCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = &external_mem_buffer_create_info,
+            .flags = 0,
+            .size = (VkDeviceSize) size,
+            .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .queueFamilyIndexCount = 0,
+            .pQueueFamilyIndices = nullptr,
+    };
+    VkBuffer tmp_buffer;
+    vkCreateBuffer(device->device, &tmp_buffer_create_info, nullptr, &tmp_buffer);
+    vkBindBufferMemory(device->device, tmp_buffer, imported_memory, 0);
+
+    device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
+        VkBufferCopy copy_region {
+                .srcOffset = (VkDeviceSize) offset_src,
+                .dstOffset = 0,
+                .size = (VkDeviceSize) size,
+        };
+        vkCmdCopyBuffer(cmd_buf, src_buffer, tmp_buffer, 1, &copy_region);
+    });
+
+    // Cleanup
+    vkFreeMemory(device->device, imported_memory, nullptr);
+    vkDestroyBuffer(device->device, tmp_buffer, nullptr);
 }
 
 void register_vulkan_platform(Runtime* runtime) {
