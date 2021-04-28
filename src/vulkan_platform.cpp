@@ -111,7 +111,8 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
     std::vector<const char*> enabled_device_extensions {
         "VK_EXT_external_memory_host",
-        "VK_KHR_buffer_device_address"
+        "VK_KHR_buffer_device_address",
+        "VK_KHR_shader_non_semantic_info"
     };
 
     uint32_t queue_families_count;
@@ -163,7 +164,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .pNext = &vk11_features,
         .features = {
             .shaderInt64 = true,
-            .shaderInt16 = true,
+            // .shaderInt16 = true,
         }
     };
 
@@ -324,8 +325,8 @@ void VulkanPlatform::release_host(DeviceId dev, void *ptr) {
 VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& filename) {
     auto ki = kernels.find(filename);
     if (ki == kernels.end()) {
-        auto [i,b] = kernels.emplace(filename, Kernel(*this));
-        Kernel& kernel = i->second;
+        auto [i,b] = kernels.emplace(filename, std::make_unique<Kernel>(*this));
+        Kernel* kernel = i->second.get();
 
         std::string bin = platform.runtime_->load_file(filename);
         auto shader_module_create_info = VkShaderModuleCreateInfo {
@@ -335,14 +336,14 @@ VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& f
             .codeSize = bin.size(),
             .pCode = reinterpret_cast<const uint32_t *>(bin.c_str()),
         };
-        vkCreateShaderModule(device, &shader_module_create_info, nullptr, &kernel.shader_module);
+        CHECK(vkCreateShaderModule(device, &shader_module_create_info, nullptr, &kernel->shader_module));
 
         auto stage = VkPipelineShaderStageCreateInfo {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-            .module = kernel.shader_module,
+            .module = kernel->shader_module,
             .pName = "kernel_main",
             .pSpecializationInfo = nullptr,
         };
@@ -363,22 +364,22 @@ VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& f
             .pushConstantRangeCount = (uint32_t) push_constants.size(),
             .pPushConstantRanges = push_constants.data(),
         };
-        vkCreatePipelineLayout(device, &layout_create_info, nullptr, &kernel.layout);
+        CHECK(vkCreatePipelineLayout(device, &layout_create_info, nullptr, &kernel->    layout));
 
         auto compute_pipeline_create_info = VkComputePipelineCreateInfo {
             .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .stage = stage,
-            .layout = kernel.layout,
+            .layout = kernel->layout,
             .basePipelineHandle = VK_NULL_HANDLE,
             .basePipelineIndex = 0,
         };
-        CHECK(vkCreateComputePipelines(device, nullptr, 1, &compute_pipeline_create_info, nullptr, &kernel.pipeline));
-        return &kernel;
+        CHECK(vkCreateComputePipelines(device, nullptr, 1, &compute_pipeline_create_info, nullptr, &kernel->pipeline));
+        return kernel;
     }
 
-    return &ki->second;
+    return ki->second.get();
 }
 
 void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
@@ -429,7 +430,7 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     VkMemoryHostPointerPropertiesEXT host_ptr_properties {
         .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
     };
-    extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, imported_host_memory_handle_type, (void*)aligned_host_ptr, &host_ptr_properties);
+    CHECK(extension_fns.vkGetMemoryHostPointerPropertiesEXT(device, imported_host_memory_handle_type, (void*)aligned_host_ptr, &host_ptr_properties));
     uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits, false);
 
     // Import memory
@@ -464,7 +465,7 @@ VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
         .commandBufferCount = 1
     };
     VkCommandBuffer cmd_buf;
-    vkAllocateCommandBuffers(device, &cmd_buf_create_info, &cmd_buf);
+    CHECK(vkAllocateCommandBuffers(device, &cmd_buf_create_info, &cmd_buf));
     return cmd_buf;
 }
 
@@ -481,9 +482,9 @@ void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(V
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
         .pInheritanceInfo = nullptr,
     };
-    vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info);
+    CHECK(vkBeginCommandBuffer(cmd_buf, &begin_command_buffer_info));
     fn(cmd_buf);
-    vkEndCommandBuffer(cmd_buf);
+    CHECK(vkEndCommandBuffer(cmd_buf));
     auto submit_info = VkSubmitInfo {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
@@ -495,8 +496,8 @@ void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(V
         .signalSemaphoreCount = 0,
         .pSignalSemaphores = nullptr,
     };
-    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-    vkDeviceWaitIdle(device);
+    CHECK(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE));
+    CHECK(vkDeviceWaitIdle(device));
     return_command_buffer(cmd_buf);
 }
 

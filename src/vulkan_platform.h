@@ -90,7 +90,7 @@ protected:
         VkQueue queue;
         VkCommandPool cmd_pool;
         std::vector<VkCommandBuffer> spare_cmd_bufs;
-        std::unordered_map<std::string, Kernel> kernels;
+        std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
         ExtensionFns extension_fns;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
