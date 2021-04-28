@@ -55,6 +55,7 @@ protected:
     struct Buffer : public Resource {
         VkBuffer buffer;
         uint64_t bda = -1;
+        size_t mapped_host_address = 0;
 
         Buffer(Device& device) : Resource(device) {}
         ~Buffer() override;
@@ -78,12 +79,18 @@ protected:
     };
 
     struct Device {
+        enum class AllocHeap {
+            DEVICE_LOCAL,
+            HOST_VISIBLE
+        };
+
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
         size_t device_id;
         VkDevice device = nullptr;
 
         size_t min_imported_host_ptr_alignment;
+        bool can_import_host_memory = false;
 
         std::vector<std::unique_ptr<Resource>> resources;
         size_t next_resource_id = 1; // resource id 0 is reserved
@@ -97,8 +104,11 @@ protected:
         ~Device();
 
         Resource* find_resource_by_id(size_t id);
-        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, bool prefer_device_local);
+        Buffer* find_buffer_by_device_address(uint64_t bda);
+        Buffer* find_buffer_by_host_address(size_t host_address);
+        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, AllocHeap);
         VkDeviceMemory import_host_memory(void* ptr, size_t size);
+        Buffer* alloc_internal(int64_t, AllocHeap);
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
         Kernel* load_kernel(const std::string&);
