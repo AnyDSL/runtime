@@ -176,6 +176,8 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
         .pNext = &vk11_features,
         .features = {
+            .vertexPipelineStoresAndAtomics = true,
+            .fragmentStoresAndAtomics = true,
             .shaderInt64 = true,
             // .shaderInt16 = true,
         }
