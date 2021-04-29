@@ -103,17 +103,22 @@ protected:
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
 
+        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, AllocHeap);
+
+        VkDeviceMemory import_host_memory(void* ptr, size_t size);
+        std::pair<VkBuffer, VkDeviceMemory> import_host_memory_as_buffer(void* ptr, size_t size, VkBufferUsageFlags usage_flags);
+        std::pair<VkBuffer, VkDeviceMemory> allocate_buffer(int64_t, VkBufferUsageFlags usage_flags, AllocHeap);
+
         Resource* find_resource_by_id(size_t id);
+        Buffer* create_buffer_resource(int64_t, VkBufferUsageFlags usage_flags, AllocHeap);
         Buffer* find_buffer_by_device_address(uint64_t bda);
         Buffer* find_buffer_by_host_address(size_t host_address);
-        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, AllocHeap);
-        VkDeviceMemory import_host_memory(void* ptr, size_t size);
-        Buffer* alloc_internal(int64_t, AllocHeap);
+
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
-        Kernel* load_kernel(const std::string&);
-
         void execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn);
+
+        Kernel* load_kernel(const std::string&);
     };
 
     VkInstance instance;
