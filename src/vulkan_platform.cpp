@@ -123,10 +123,10 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         "VK_KHR_shader_non_semantic_info"
     };
 
-    if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
+    if (false && is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
         enabled_device_extensions.push_back("VK_EXT_external_memory_host");
         can_import_host_memory = true;
-    } else assert(false);
+    }
 
     uint32_t queue_families_count;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, nullptr);
@@ -248,16 +248,16 @@ uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_
     assert(false && "Unable to find a suitable memory type");
 }
 
-VulkanPlatform::Buffer* VulkanPlatform::Device::alloc_internal(int64_t size, AllocHeap heap) {
+std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::allocate_buffer(int64_t size, VkBufferUsageFlags usage_flags, AllocHeap heap) {
     auto buffer_create_info = VkBufferCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = (VkDeviceSize) size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .size = (VkDeviceSize) size,
+            .usage = usage_flags,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .queueFamilyIndexCount = 0,
+            .pQueueFamilyIndices = nullptr,
     };
     VkBuffer buffer;
     vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer);
@@ -266,22 +266,28 @@ VulkanPlatform::Buffer* VulkanPlatform::Device::alloc_internal(int64_t size, All
     vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 
     auto allocate_flags = VkMemoryAllocateFlagsInfo {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
-        .pNext = nullptr,
-        .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
-        .deviceMask = 0
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+            .pNext = nullptr,
+            .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
+            .deviceMask = 0
     };
 
     auto allocation_info = VkMemoryAllocateInfo {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = &allocate_flags,
-        .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
-        .memoryTypeIndex = find_suitable_memory_type(memory_requirements.memoryTypeBits, heap),
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = &allocate_flags,
+            .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
+            .memoryTypeIndex = find_suitable_memory_type(memory_requirements.memoryTypeBits, heap),
     };
     VkDeviceMemory memory;
     vkAllocateMemory(device, &allocation_info, nullptr, &memory);
-
     vkBindBufferMemory(device, buffer, memory, 0);
+
+    return std::make_pair(buffer, memory);
+}
+
+VulkanPlatform::Buffer* VulkanPlatform::Device::create_buffer_resource(int64_t size, VkBufferUsageFlags usage_flags, AllocHeap heap) {
+    auto [buffer, memory] = allocate_buffer(size, usage_flags, heap);
+
     size_t id = next_resource_id++;
 
     std::unique_ptr<Buffer> res_buffer = std::make_unique<Buffer>(*this);
@@ -303,9 +309,16 @@ VulkanPlatform::Buffer* VulkanPlatform::Device::alloc_internal(int64_t size, All
     return reinterpret_cast<Buffer*>(resources.back().get());
 }
 
+constexpr VkBufferUsageFlags general_purpose_buffer_flags =
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+    | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR
+    ;
+
 void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
     auto& device = usable_devices[dev];
-    auto resource = device->alloc_internal(size, VulkanPlatform::Device::AllocHeap::DEVICE_LOCAL);
+    auto resource = device->create_buffer_resource(size, general_purpose_buffer_flags, VulkanPlatform::Device::AllocHeap::DEVICE_LOCAL);
     return (void*) ((size_t) resource->bda);
 }
 
@@ -314,7 +327,7 @@ void* VulkanPlatform::alloc_host(DeviceId dev, int64_t size) {
     if (device->can_import_host_memory)
         return malloc(size);
     else {
-        auto id = device->alloc_internal(size, VulkanPlatform::Device::AllocHeap::HOST_VISIBLE);
+        auto id = device->create_buffer_resource(size, general_purpose_buffer_flags, VulkanPlatform::Device::AllocHeap::HOST_VISIBLE);
         // TODO map it
         assert(false);
     }
@@ -516,6 +529,29 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     return imported_memory;
 }
 
+std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::import_host_memory_as_buffer(void* ptr, size_t size, VkBufferUsageFlags usage_flags) {
+    VkDeviceMemory imported_memory = import_host_memory(ptr, size);
+    auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .handleTypes = imported_host_memory_handle_type
+    };
+    auto tmp_buffer_create_info = VkBufferCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = &external_mem_buffer_create_info,
+            .flags = 0,
+            .size = (VkDeviceSize) size,
+            .usage = usage_flags,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .queueFamilyIndexCount = 0,
+            .pQueueFamilyIndices = nullptr,
+    };
+    VkBuffer buffer;
+    vkCreateBuffer(device, &tmp_buffer_create_info, nullptr, &buffer);
+    vkBindBufferMemory(device, buffer, imported_memory, 0);
+    return std::make_pair(buffer, imported_memory);
+}
+
 VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
     if (spare_cmd_bufs.size() > 0) {
         VkCommandBuffer cmd_buf = spare_cmd_bufs.back();
@@ -575,40 +611,33 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
     auto dst_buffer_resource = device->find_buffer_by_device_address((uint64_t) dst);
     auto dst_buffer = dst_buffer_resource->buffer;
 
-    // Import host memory and wrap it in a buffer
-    size_t host_ptr = (size_t)src + offset_src;
-    VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
-    auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .handleTypes = imported_host_memory_handle_type
-    };
-
-    auto tmp_buffer_create_info = VkBufferCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = &external_mem_buffer_create_info,
-        .flags = 0,
-        .size = (VkDeviceSize) size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    };
     VkBuffer tmp_buffer;
-    vkCreateBuffer(device->device, &tmp_buffer_create_info, nullptr, &tmp_buffer);
-    vkBindBufferMemory(device->device, tmp_buffer, imported_memory, 0);
+    VkDeviceMemory memory;
+
+    void* host_ptr = (void*)((size_t)src + offset_src);
+    if (device->can_import_host_memory) {
+        // Import host memory and wrap it in a buffer
+        std::tie(tmp_buffer, memory) = device->import_host_memory_as_buffer(host_ptr, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    } else {
+        std::tie(tmp_buffer, memory) = device->allocate_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Device::AllocHeap::HOST_VISIBLE);
+        void* mapped = nullptr;
+        CHECK(vkMapMemory(device->device, memory, 0, size, 0, &mapped));
+        assert(mapped != nullptr);
+        memcpy(mapped, host_ptr, size);
+        vkUnmapMemory(device->device, memory);
+    }
 
     device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
         VkBufferCopy copy_region {
-                .srcOffset = 0,
-                .dstOffset = (VkDeviceSize) offset_dst,
-                .size = (VkDeviceSize) size,
+            .srcOffset = 0,
+            .dstOffset = (VkDeviceSize) offset_dst,
+            .size = (VkDeviceSize) size,
         };
         vkCmdCopyBuffer(cmd_buf, tmp_buffer, dst_buffer, 1, &copy_region);
     });
 
     // Cleanup
-    vkFreeMemory(device->device, imported_memory, nullptr);
+    vkFreeMemory(device->device, memory, nullptr);
     vkDestroyBuffer(device->device, tmp_buffer, nullptr);
 }
 
@@ -617,40 +646,36 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
     auto src_buffer_resource = device->find_buffer_by_device_address((uint64_t) src);
     auto src_buffer = src_buffer_resource->buffer;
 
-    // Import host memory and wrap it in a buffer
-    size_t host_ptr = (size_t)dst + offset_dst;
-    VkDeviceMemory imported_memory = device->import_host_memory((void*)host_ptr, size);
-    auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
-            .pNext = nullptr,
-            .handleTypes = imported_host_memory_handle_type
-    };
-
-    auto tmp_buffer_create_info = VkBufferCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .pNext = &external_mem_buffer_create_info,
-            .flags = 0,
-            .size = (VkDeviceSize) size,
-            .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
-    };
     VkBuffer tmp_buffer;
-    vkCreateBuffer(device->device, &tmp_buffer_create_info, nullptr, &tmp_buffer);
-    vkBindBufferMemory(device->device, tmp_buffer, imported_memory, 0);
+    VkDeviceMemory memory;
+
+    void* host_ptr = (void*)((size_t)dst + offset_dst);
+    if (device->can_import_host_memory) {
+        // Import host memory and wrap it in a buffer
+        std::tie(tmp_buffer, memory) = device->import_host_memory_as_buffer(host_ptr, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    } else {
+        std::tie(tmp_buffer, memory) = device->allocate_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, Device::AllocHeap::HOST_VISIBLE);
+    }
 
     device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
         VkBufferCopy copy_region {
-                .srcOffset = (VkDeviceSize) offset_src,
-                .dstOffset = 0,
-                .size = (VkDeviceSize) size,
+            .srcOffset = (VkDeviceSize) offset_src,
+            .dstOffset = 0,
+            .size = (VkDeviceSize) size,
         };
         vkCmdCopyBuffer(cmd_buf, src_buffer, tmp_buffer, 1, &copy_region);
     });
 
+    if (!device->can_import_host_memory) {
+        void* mapped = nullptr;
+        CHECK(vkMapMemory(device->device, memory, 0, size, 0, &mapped));
+        assert(mapped != nullptr);
+        memcpy(host_ptr, mapped, size);
+        vkUnmapMemory(device->device, memory);
+    }
+
     // Cleanup
-    vkFreeMemory(device->device, imported_memory, nullptr);
+    vkFreeMemory(device->device, memory, nullptr);
     vkDestroyBuffer(device->device, tmp_buffer, nullptr);
 }
 
