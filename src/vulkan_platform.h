@@ -105,7 +105,7 @@ protected:
 
         uint32_t find_suitable_memory_type(uint32_t memory_type_bits, AllocHeap);
 
-        VkDeviceMemory import_host_memory(void* ptr, size_t size);
+        std::pair<VkDeviceMemory, size_t> import_host_memory(void* ptr, size_t size);
         std::pair<VkBuffer, VkDeviceMemory> import_host_memory_as_buffer(void* ptr, size_t size, VkBufferUsageFlags usage_flags);
         std::pair<VkBuffer, VkDeviceMemory> allocate_buffer(int64_t, VkBufferUsageFlags usage_flags, AllocHeap);
 

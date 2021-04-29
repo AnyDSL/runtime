@@ -123,7 +123,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         "VK_KHR_shader_non_semantic_info"
     };
 
-    if (false && is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
+    if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
         enabled_device_extensions.push_back("VK_EXT_external_memory_host");
         can_import_host_memory = true;
     }
@@ -492,7 +492,7 @@ void VulkanPlatform::synchronize(DeviceId dev) {
 
 VkExternalMemoryHandleTypeFlagBits imported_host_memory_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
 
-VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
+std::pair<VkDeviceMemory, size_t> VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
     assert(can_import_host_memory && "This device does not support importing host memory");
 
     // Align stuff
@@ -503,6 +503,9 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     size_t end = host_ptr + size;
     size_t aligned_end = ((end + min_imported_host_ptr_alignment - 1) / min_imported_host_ptr_alignment) * min_imported_host_ptr_alignment;
     size_t aligned_size = aligned_end - aligned_host_ptr;
+
+    // where the memory we wanted to import will actually start
+    size_t offset = host_ptr - aligned_host_ptr;
 
     // Find the corresponding device memory type index
     VkMemoryHostPointerPropertiesEXT host_ptr_properties {
@@ -526,11 +529,13 @@ VkDeviceMemory VulkanPlatform::Device::import_host_memory(void *ptr, size_t size
     };
     VkDeviceMemory imported_memory;
     CHECK(vkAllocateMemory(device, &allocation_info, nullptr, &imported_memory));
-    return imported_memory;
+    return std::make_pair(imported_memory, offset);
 }
 
 std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::import_host_memory_as_buffer(void* ptr, size_t size, VkBufferUsageFlags usage_flags) {
-    VkDeviceMemory imported_memory = import_host_memory(ptr, size);
+    VkDeviceMemory imported_memory;
+    size_t imported_offset;
+    std::tie(imported_memory, imported_offset) = import_host_memory(ptr, size);
     auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
             .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
             .pNext = nullptr,
@@ -548,7 +553,7 @@ std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::import_host_memory_a
     };
     VkBuffer buffer;
     vkCreateBuffer(device, &tmp_buffer_create_info, nullptr, &buffer);
-    vkBindBufferMemory(device, buffer, imported_memory, 0);
+    vkBindBufferMemory(device, buffer, imported_memory, imported_offset);
     return std::make_pair(buffer, imported_memory);
 }
 
