@@ -123,6 +123,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         "VK_KHR_shader_non_semantic_info"
     };
 
+    // Use this to import host memory as GPU-visible memory, otherwise use a fallback path that copies when uploading/downloading
     if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
         enabled_device_extensions.push_back("VK_EXT_external_memory_host");
         can_import_host_memory = true;
@@ -250,14 +251,14 @@ uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_
 
 std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::allocate_buffer(int64_t size, VkBufferUsageFlags usage_flags, AllocHeap heap) {
     auto buffer_create_info = VkBufferCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .size = (VkDeviceSize) size,
-            .usage = usage_flags,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = (VkDeviceSize) size,
+        .usage = usage_flags,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
     };
     VkBuffer buffer;
     vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer);
@@ -266,17 +267,17 @@ std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::allocate_buffer(int6
     vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 
     auto allocate_flags = VkMemoryAllocateFlagsInfo {
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
-            .pNext = nullptr,
-            .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
-            .deviceMask = 0
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+        .pNext = nullptr,
+        .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
+        .deviceMask = 0
     };
 
     auto allocation_info = VkMemoryAllocateInfo {
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .pNext = &allocate_flags,
-            .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
-            .memoryTypeIndex = find_suitable_memory_type(memory_requirements.memoryTypeBits, heap),
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = &allocate_flags,
+        .allocationSize = (VkDeviceSize) memory_requirements.size, // the driver might want padding !
+        .memoryTypeIndex = find_suitable_memory_type(memory_requirements.memoryTypeBits, heap),
     };
     VkDeviceMemory memory;
     vkAllocateMemory(device, &allocation_info, nullptr, &memory);
@@ -301,7 +302,7 @@ VulkanPlatform::Buffer* VulkanPlatform::Device::create_buffer_resource(int64_t s
         .buffer = res_buffer->buffer
     };
     VkDeviceAddress bda = extension_fns.vkGetBufferDeviceAddressKHR(device, &bda_info);
-    assert(bda != 0 && "BDA failed");
+    assert(bda != 0 && "vkGetBufferDeviceAddress failed");
     res_buffer->bda = bda;
 
     resources.push_back(std::move(res_buffer));
@@ -537,19 +538,19 @@ std::pair<VkBuffer, VkDeviceMemory> VulkanPlatform::Device::import_host_memory_a
     size_t imported_offset;
     std::tie(imported_memory, imported_offset) = import_host_memory(ptr, size);
     auto external_mem_buffer_create_info = VkExternalMemoryBufferCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
-            .pNext = nullptr,
-            .handleTypes = imported_host_memory_handle_type
+        .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .handleTypes = imported_host_memory_handle_type
     };
     auto tmp_buffer_create_info = VkBufferCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .pNext = &external_mem_buffer_create_info,
-            .flags = 0,
-            .size = (VkDeviceSize) size,
-            .usage = usage_flags,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = &external_mem_buffer_create_info,
+        .flags = 0,
+        .size = (VkDeviceSize) size,
+        .usage = usage_flags,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
     };
     VkBuffer buffer;
     vkCreateBuffer(device, &tmp_buffer_create_info, nullptr, &buffer);
