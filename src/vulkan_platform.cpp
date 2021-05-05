@@ -483,7 +483,7 @@ void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_para
             }
         }
         vkCmdPushConstants(cmd_buf, kernel->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 128, &push_constants);
-        vkCmdDispatch(cmd_buf, launch_params.grid[0], launch_params.grid[1], launch_params.grid[2]);
+        vkCmdDispatch(cmd_buf, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2]);
     });
 }
 
