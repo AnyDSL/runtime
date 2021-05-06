@@ -59,13 +59,15 @@
 #[import(cc = "device", name = "atomic_min")]        fn vulkan_atomic_min_global(&mut addrspace(1)i32, i32) -> i32;
 #[import(cc = "device", name = "atomic_min")]        fn vulkan_atomic_min_shared(&mut addrspace(3)i32, i32) -> i32;
 #[import(cc = "device", name = "get_work_dim")]      fn vulkan_get_work_dim() -> u32;
-#[import(cc = "device", name = "get_global_size")]   fn vulkan_get_global_size(u32) -> i32;
+//#[import(cc = "device", name = "get_global_size")]   fn vulkan_get_global_size(u32) -> i32;
+fn @vulkan_get_global_size(dim: u32) -> i32 = vulkan_get_local_size(dim) * vulkan_get_num_groups(dim);
 #[import(cc = "device", name = "get_global_id")]     fn vulkan_get_global_id(u32) -> i32;
 #[import(cc = "device", name = "get_local_size")]    fn vulkan_get_local_size(u32) -> i32;
 #[import(cc = "device", name = "get_local_id")]      fn vulkan_get_local_id(u32) -> i32;
 #[import(cc = "device", name = "get_num_groups")]    fn vulkan_get_num_groups(u32) -> i32;
 #[import(cc = "device", name = "get_group_id")]      fn vulkan_get_group_id(u32) -> i32;
-#[import(cc = "device", name = "get_global_offset")] fn vulkan_get_global_offset(u32) -> i32;
+//#[import(cc = "device", name = "get_global_offset")] fn vulkan_get_global_offset(u32) -> i32;
+fn @vulkan_get_global_offset(dim: u32) -> i32 = vulkan_get_group_id(dim) * vulkan_get_local_size(dim);
 
 #[import(cc = "device", name = "spirv.nonsemantic.printf")] fn shader_printf[T](T) -> ();
 
