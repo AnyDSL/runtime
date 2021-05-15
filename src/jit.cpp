@@ -68,7 +68,7 @@ struct JIT {
             world.opt();
 
             thorin::llvm::CPUCodeGen cg(world, opt, debug);
-            std::tie(llvm_context, llvm_module) = std::move(cg.emit_module());
+            std::tie(llvm_context, llvm_module) = cg.emit_module();
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
