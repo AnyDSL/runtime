@@ -24,7 +24,6 @@ bool compile(
     const std::vector<std::string>& file_names,
     const std::vector<std::string>& file_data,
     thorin::World& world,
-    thorin::LogLevel log_level,
     std::ostream& error_stream);
 
 static const char runtime_srcs[] = {
@@ -59,10 +58,12 @@ struct JIT {
             assert(opt <= 3);
 
             thorin::World world(module_name);
+            world.set(thorin::LogLevel::Warn);
+            world.set(std::make_shared<thorin::Stream>(std::cerr));
             if (!::compile(
                 { "runtime", module_name },
                 { std::string(runtime_srcs), program_str },
-                world, thorin::LogLevel::Error, std::cerr))
+                world, std::cerr))
                 error("JIT: error while compiling sources");
 
             world.opt();
