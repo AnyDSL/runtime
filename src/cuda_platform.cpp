@@ -549,12 +549,13 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     CHECK_NVRTC(err, "nvrtcCreateProgram()");
 
     std::string compute_arch("-arch=compute_" + std::to_string(devices_[dev].compute_capability));
-    int num_options = 4;
+    int num_options = 5;
     const char* options[] = {
         compute_arch.c_str(),
         "-I",
         AnyDSL_runtime_NVCC_INC,
         "-lineinfo",
+        "-std=c++11",
         "-G" };
 
     debug("Compiling CUDA to PTX using NVRTC for '%' on CUDA device %", filename, dev);
