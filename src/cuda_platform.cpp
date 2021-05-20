@@ -596,7 +596,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     compute_capability = compute_capability == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : compute_capability; // compute_21 does not exist for nvcc
     #endif
     std::string ptx_filename = std::string(filename) + ".ptx";
-    std::string command = (AnyDSL_runtime_NVCC_BIN " -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
+    std::string command = (AnyDSL_runtime_NVCC_BIN " -std=c++11 -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())
