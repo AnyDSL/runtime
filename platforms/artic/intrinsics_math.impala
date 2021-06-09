@@ -1,7 +1,13 @@
 mod math_builtins {
 
 #[import(cc = "builtin")] fn fabs[T](T) -> T;
-#[import(cc = "builtin")] fn copysign[T](T) -> T;
+#[import(cc = "builtin")] fn copysign[T](T, T) -> T;
+#[import(cc = "builtin")] fn signbit[T](T) -> bool;
+#[import(cc = "builtin")] fn round[T](T) -> T;
+#[import(cc = "builtin")] fn ceil[T](T) -> T;
+#[import(cc = "builtin")] fn floor[T](T) -> T;
+#[import(cc = "builtin")] fn fmin[T](T, T) -> T;
+#[import(cc = "builtin")] fn fmax[T](T, T) -> T;
 #[import(cc = "builtin")] fn cos[T](T) -> T;
 #[import(cc = "builtin")] fn sin[T](T) -> T;
 #[import(cc = "builtin")] fn tan[T](T) -> T;
