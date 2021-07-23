@@ -353,7 +353,7 @@ fn @amdgpu_accelerator(dev: i32) = Accelerator {
 };
 
 static amdgpu_intrinsics = Intrinsics {
-    expf        = ocml_sinf,
+    expf        = ocml_expf,
     exp2f       = ocml_exp2f,
     logf        = ocml_logf,
     log2f       = ocml_log2f,
