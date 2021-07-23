@@ -31,7 +31,7 @@
 #endif
 
 #define CHECK_HSA(err, name) check_hsa_error(err, name, __FILE__, __LINE__)
-#define CODE_OBJECT_VERSION 2
+#define CODE_OBJECT_VERSION 3
 
 inline void check_hsa_error(hsa_status_t err, const char* name, const char* file, const int line) {
     if (err != HSA_STATUS_SUCCESS) {
@@ -518,10 +518,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         hsa_dev.unlock();
 
         hsa_executable_symbol_t kernel_symbol = { 0 };
-        std::string symbol_name = kernelname;
-        #if CODE_OBJECT_VERSION == 3
-        symbol_name += ".kd";
-        #endif
+        std::string symbol_name = kernelname + ".kd";
         // DEPRECATED: use hsa_executable_get_symbol_by_linker_name if available
         status = hsa_executable_get_symbol_by_name(executable, symbol_name.c_str(), &hsa_dev.agent, &kernel_symbol);
         CHECK_HSA(status, "hsa_executable_get_symbol_by_name()");
@@ -538,8 +535,9 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         status = hsa_executable_symbol_get_info(kernel_symbol, HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE, &kernel_info.private_segment_size);
         CHECK_HSA(status, "hsa_executable_symbol_get_info()");
 
-        #if CODE_OBJECT_VERSION == 2
+        #if CODE_OBJECT_VERSION > 3
         // metadata are not yet extracted from code object version 3
+        // https://github.com/RadeonOpenCompute/ROCR-Runtime/blob/master/src/loader/executable.cpp#L1428
         if (kernel_info.kernarg_segment_size) {
             status = hsa_memory_allocate(hsa_dev.kernarg_region, kernel_info.kernarg_segment_size, &kernel_info.kernarg_segment);
             CHECK_HSA(status, "hsa_memory_allocate()");
@@ -607,9 +605,6 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
     options.NoTrappingFPMath = true;
     std::string attrs = "-trap-handler";
-    #if CODE_OBJECT_VERSION == 2
-    attrs += ",-code-object-v3";
-    #endif
     std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
 
     // link ocml.amdgcn and ocml config
