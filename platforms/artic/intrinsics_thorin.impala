@@ -22,8 +22,8 @@
 #[import(cc = "thorin")] fn sync(_id: i32) -> ();
 #[import(cc = "thorin")] fn vectorize(_vector_length: i32, _body: fn(i32) -> ()) -> ();
 
-#[import(cc = "thorin")] fn sequence(_body: fn() -> ()) -> ();
-fn once(body: fn() -> ()) = if rv_lane_id() == 0 { sequence(body) };
+#[import(cc = "thorin")] fn sequence(_body: fn(i32) -> ()) -> ();
+fn once(body: fn() -> ()) = sequence(@|i| { if i == 0 { body(); }} );
 
 fn spawn(body: fn() -> ()) = @|| thorin_spawn(body);
 
