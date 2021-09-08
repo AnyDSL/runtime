@@ -168,7 +168,7 @@ add_library(runtime
 
 # System threads are required to use either TBB or C++11 threads
 find_package(Threads REQUIRED)
-target_link_libraries(runtime PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(runtime PRIVATE Threads::Threads)
 
 # TBB is optional, C++11 threads are used when it is not available
 find_package(TBB)
