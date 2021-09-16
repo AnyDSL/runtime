@@ -26,6 +26,7 @@ extern "thorin" {
     fn atomic_load[T](addr: &mut T, order: u32, scope: &[u8]) -> T;
     fn atomic_store[T](addr: &mut T, val: T, order: u32, scope: &[u8]) -> ();
     fn cmpxchg[T](addr: &mut T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool); // only for integer data types
+    fn fence(order: u32, scope: &[u8]) -> ();
 
     fn "atomic" atomic_p1[T](binop: u32, addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> T;
     fn "atomic" atomic_p3[T](binop: u32, addr: &mut [3]T, val: T, order: u32, scope: &[u8]) -> T;
