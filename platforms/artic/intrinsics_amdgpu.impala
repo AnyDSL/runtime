@@ -91,9 +91,9 @@
 // syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
 //
 
-fn @amdgcn_atomic_load_global_i32(addr: &mut addrspace(1)i32) = atomic_load_p1[i32](addr, 2, "agent");
-fn @amdgcn_atomic_load_global_u32(addr: &mut addrspace(1)u32) = atomic_load_p1[u32](addr, 2, "agent");
-fn @amdgcn_atomic_load_global_u64(addr: &mut addrspace(1)u64) = atomic_load_p1[u64](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_i32(addr: &addrspace(1)i32) = atomic_load_p1[i32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u32(addr: &addrspace(1)u32) = atomic_load_p1[u32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u64(addr: &addrspace(1)u64) = atomic_load_p1[u64](addr, 2, "agent");
 fn @amdgcn_atomic_store_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_store_p1[i32](addr, val, 2, "agent");
 fn @amdgcn_atomic_store_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_store_p1[u32](addr, val, 2, "agent");
 fn @amdgcn_atomic_store_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_store_p1[u64](addr, val, 2, "agent");
