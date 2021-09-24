@@ -1,7 +1,7 @@
 if(NOT DEFINED INTELFPGAOCL_ROOT_DIR)
   find_path(INTELFPGAOCL_SEARCH_PATH aocl
             PATHS ENV INTELFPGAOCLSDKROOT
-						PATH_SUFFIXES bin)
+            PATH_SUFFIXES bin)
   get_filename_component(INTELFPGAOCL_ROOT_DIR ${INTELFPGAOCL_SEARCH_PATH} DIRECTORY)
 else()
   message(STATUS "Using user defined Intel FPGA OpenCL directory: ${INTELFPGAOCL_ROOT_DIR}")
