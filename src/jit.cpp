@@ -39,8 +39,9 @@ struct JIT {
 
     std::vector<Program> programs;
     Runtime* runtime;
+    std::string module_name;
 
-    JIT(Runtime* runtime) : runtime(runtime) {
+    JIT(Runtime* runtime) : runtime(runtime), module_name("jit") {
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
@@ -52,7 +53,6 @@ struct JIT {
 
         std::string program_str = std::string(program_src, size);
         std::string cached_llvm = runtime->load_from_cache(program_str, ".llvm");
-        std::string module_name = "jit";
         if (cached_llvm.empty()) {
             bool debug = false;
             assert(opt <= 3);
@@ -83,7 +83,7 @@ struct JIT {
                     std::ostringstream stream;
                     cg->emit_stream(stream);
                     runtime->store_to_cache(cg->file_ext() + program_str, stream.str(), cg->file_ext());
-                    runtime->register_file(std::string(module_name) + cg->file_ext(), stream.str());
+                    runtime->register_file(module_name + cg->file_ext(), stream.str());
                 }
             }
         } else {
@@ -128,6 +128,12 @@ struct JIT {
     void link(const char* lib) {
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(lib);
     }
+
+    void set_module_name(const char* name) {
+        // Make it possible to set the name of the internal module name
+        // This is required for cuda environments to keep the symbols
+        module_name = name;
+    }
 };
 
 JIT& jit() {
@@ -145,4 +151,8 @@ int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
 
 void* anydsl_lookup_function(int32_t key, const char* fn_name) {
     return jit().lookup_function(key, fn_name);
+}
+
+void anydsl_jit_set_module_name(const char* m_name) {
+    jit().set_module_name(m_name);
 }
