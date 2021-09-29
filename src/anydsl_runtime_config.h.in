@@ -53,4 +53,9 @@
 #define AnyDSL_runtime_SOURCE_DIR           "@CMAKE_CURRENT_SOURCE_DIR@"
 
 
+// debug output
+
+#cmakedefine AnyDSL_runtime_ENABLE_DEBUG_OUTPUT
+
+
 #endif // ANYDSL_RUNTIME_CONFIG_H

@@ -38,7 +38,7 @@ void info(Args... args) {
 
 template <typename... Args>
 void debug(Args... args) {
-#ifndef NDEBUG
+#ifdef AnyDSL_runtime_ENABLE_DEBUG_OUTPUT
     print(std::cout, args...);
 #else
     unused(args...);
