@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(RUNTIME_JIT "enable jit support in the runtime" OFF)
+option(DEBUG_OUTPUT "enable debug output" OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug or Release" FORCE)
@@ -22,6 +23,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 find_path(Artic_DIR NAMES artic-config.cmake PATHS ${Artic_DIR} $ENV{Artic_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
 find_path(Impala_DIR NAMES impala-config.cmake PATHS ${Impala_DIR} $ENV{Impala_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
+
+set(AnyDSL_runtime_ENABLE_DEBUG_OUTPUT ${DEBUG_OUTPUT})
 
 add_subdirectory(src)
 
