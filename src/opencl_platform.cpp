@@ -2,19 +2,18 @@
 
 #include "runtime.h"
 
+#ifndef _WIN32
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
-
-extern const char* anydsl_xilinx_binary_name;
-
-static inline std::string remove_extension(const std::string& file_name, const std::string& ext) {
-    auto pos = file_name.rfind(ext);
-    return pos != std::string::npos ? file_name.substr(0, pos) : file_name;
-}
 
 static std::string get_opencl_error_code_str(int error) {
     #define CL_ERROR_CODE(CODE) case CODE: return #CODE;
@@ -245,17 +244,36 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
                 devices_[dev].is_intel_fpga = true;
             } else if (platform_name.find("Xilinx") != std::string::npos) {
                 devices_[dev].is_xilinx_fpga = true;
-                auto file_name = remove_extension(anydsl_xilinx_binary_name, ".cl");
-                auto program_string = load_program_file(file_name + ".xclbin");
-                auto program_length = program_string.length();
-                auto program_c_str = program_string.c_str();
-                cl_int err = CL_SUCCESS;
-                cl_int binary_status;
+
+                // bitstream file needs to be loaded at the very beginning
+                std::string filename;
+                const char* env_var = std::getenv("ANYDSL_XRT_BITSTREAM");
+                if (env_var) {
+                    filename = env_var;
+                } else {
+                    #ifndef _WIN32
+                    char buf[PATH_MAX];
+                    ssize_t len;
+                    if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1) {
+                        buf[len] = '\0';
+                        filename = std::string(buf) + ".xclbin";
+                    }
+                    #else
+                    error("Can't find XRT bitstream file, please specify the path to xclbin file using the ANYDSL_XRT_BITSTREAM environment variable");
+                    #endif
+                }
+
+                // find the file extension
+                auto ext_pos = filename.rfind('.');
+                std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
+                if (ext != "xclbin")
+                    error("Incorrect extension for XRT bitstream file '%' (should be '.xclbin')", filename);
+                filename = filename.substr(0, ext_pos);
+
+                std::string program_string = runtime_->load_file(filename + ".xclbin");
+
                 auto& prog_cache = devices_[dev].programs;
-                prog_cache[file_name + ".cl"] = clCreateProgramWithBinary(devices_[dev].ctx, 1, &devices_[dev].dev, &program_length, (const unsigned char**)&program_c_str, &binary_status, &err);
-                CHECK_OPENCL(err, "clCreateProgramWithBinary()");
-                CHECK_OPENCL(binary_status, "Binary status: clCreateProgramWithBinary()");
-                debug("Loading binary '%' for OpenCL device %", file_name + ".xclbin", dev);
+                prog_cache[filename + ".cl"] = load_program_binary(DeviceId(dev), filename + ".xclbin", program_string);
             }
         }
         delete[] devices;
@@ -608,13 +626,14 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 
     cl_int err = CL_SUCCESS;
     cl_program program;
+    std::string canonical = std::filesystem::canonical(filename);
     auto& prog_cache = opencl_dev.programs;
-    auto prog_it = prog_cache.find(filename);
+    auto prog_it = prog_cache.find(canonical);
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
-        program = load_and_compile_kernel(dev, filename);
+        program = load_and_compile_kernel(dev, canonical);
         opencl_dev.lock();
-        prog_cache[filename] = program;
+        prog_cache[canonical] = program;
     } else {
         program = prog_it->second;
     }
