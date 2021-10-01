@@ -8,6 +8,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Support/Host.h>
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
@@ -102,8 +103,13 @@ struct JIT {
             load_backend_src(".amdgpu");
         }
 
+        llvm::TargetOptions options;
+        options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
+
         auto engine = llvm::EngineBuilder(std::move(llvm_module))
             .setEngineKind(llvm::EngineKind::JIT)
+            .setMCPU(llvm::sys::getHostCPUName())
+            .setTargetOptions(options)
             .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
                             opt == 1  ? llvm::CodeGenOpt::Less    :
                             opt == 2  ? llvm::CodeGenOpt::Default :
