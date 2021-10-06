@@ -586,39 +586,6 @@ void OpenCLPlatform::dynamic_profile(DeviceId dev, const std::string& filename) 
         error("Dynamic Profiling is not available for this platform");
 }
 
-cl_program OpenCLPlatform::load_and_compile_kernel(DeviceId dev, const std::string& filename) {
-    auto& opencl_dev = devices_[dev];
-
-    // find the file extension
-    auto ext_pos = filename.rfind('.');
-    std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
-    if (ext != "cl")
-        error("Incorrect extension for kernel file '%' (should be '.cl')", filename);
-
-    // load file from disk or cache
-    std::string src_path = filename;
-    if (opencl_dev.is_intel_fpga)
-        src_path = filename.substr(0, ext_pos) + ".aocx";
-    else if (opencl_dev.is_xilinx_fpga)
-        src_path = filename.substr(0, ext_pos) + ".xclbin";
-    std::string src_code = runtime_->load_file(src_path);
-
-    // compile src or load from cache
-    cl_program program;
-    std::string bin = (opencl_dev.is_intel_fpga || opencl_dev.is_xilinx_fpga) ? src_code
-        : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
-    if (bin.empty()) {
-        program = load_program_source(dev, src_path, src_code);
-        program = compile_program(dev, program, src_path);
-        runtime_->store_to_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code, program_as_string(program));
-    } else {
-        program = load_program_binary(dev, src_path, bin);
-        program = compile_program(dev, program, src_path);
-    }
-
-    return program;
-}
-
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
 
@@ -631,7 +598,31 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     auto prog_it = prog_cache.find(canonical);
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
-        program = load_and_compile_kernel(dev, canonical);
+
+        // find the file extension
+        auto ext_pos = canonical.rfind('.');
+        std::string ext = ext_pos != std::string::npos ? canonical.substr(ext_pos + 1) : "";
+        if (ext != "cl")
+            error("Incorrect extension for kernel file '%' (should be '.cl')", canonical);
+
+        // load file from disk or cache
+        std::string src_path = canonical;
+        if (opencl_dev.is_intel_fpga)
+            src_path = canonical.substr(0, ext_pos) + ".aocx";
+        std::string src_code = runtime_->load_file(src_path);
+
+        // compile src or load from cache
+        std::string bin = opencl_dev.is_intel_fpga ? src_code
+            : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
+        if (bin.empty()) {
+            program = load_program_source(dev, src_path, src_code);
+            program = compile_program(dev, program, src_path);
+            runtime_->store_to_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code, program_as_string(program));
+        } else {
+            program = load_program_binary(dev, src_path, bin);
+            program = compile_program(dev, program, src_path);
+        }
+
         opencl_dev.lock();
         prog_cache[canonical] = program;
     } else {
