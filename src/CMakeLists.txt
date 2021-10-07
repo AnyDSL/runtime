@@ -70,17 +70,9 @@ if(OpenCL_FOUND)
 
     # look for Xilinx-HLS
     find_package(XHLS)
-    if(XHLS_FOUND)
-        target_include_directories(runtime_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
-        target_link_libraries(runtime_opencl PRIVATE ${Xilinx_LIBRARIES})
-    endif()
-
-    # look for Intel FPGA OpenCL
-    find_package(IHLS)
-    if(IHLS_FOUND)
-        target_include_directories(runtime_opencl PRIVATE ${IntelFPGAOpenCL_INCLUDE_DIRS})
-        target_link_libraries(runtime_opencl PRIVATE ${IntelFPGAOpenCL_LIBRARIES})
-    endif()
+    #if(XHLS_FOUND)
+    #    target_include_directories(runtime_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
+    #endif()
 endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 

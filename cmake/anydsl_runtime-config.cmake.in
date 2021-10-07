@@ -335,12 +335,11 @@ function(anydsl_runtime_wrap outfiles)
             COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DPROFILER=${PROFILER} -DSOC=${SOC} -DGMEM_BANKS_OPT=${GMEM_BANKS_OPT} -DHW_EMULATION=${HW_EMULATION}
-                                     -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                                     -P ${AnyDSL_runtime_DIR}/build_xilinx_hls.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
         # run clang on the .ll file to get the .o
         add_custom_command(OUTPUT ${_objfile}
             COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
-            #COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
             DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
     endif()
 
