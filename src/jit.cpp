@@ -87,7 +87,7 @@ struct JIT {
                     std::ostringstream stream;
                     cg->emit_stream(stream);
                     runtime->store_to_cache(cg->file_ext() + program_str, stream.str(), cg->file_ext());
-                    runtime->register_file(std::string(module_name) + cg->file_ext(), stream.str());
+                    runtime->register_file(module_name + cg->file_ext(), stream.str());
                 }
             }
         } else {
