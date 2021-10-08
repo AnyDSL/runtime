@@ -51,9 +51,12 @@ struct JIT {
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
 
+        size_t prog_key = std::hash<std::string>{}(program_src);
+        std::stringstream hex_stream;
+        hex_stream << std::hex << prog_key;
         std::string program_str = std::string(program_src, size);
         std::string cached_llvm = runtime->load_from_cache(program_str, ".llvm");
-        std::string module_name = "jit";
+        std::string module_name = "jit_" + hex_stream.str();
         if (cached_llvm.empty()) {
             bool debug = false;
             assert(opt <= 3);
