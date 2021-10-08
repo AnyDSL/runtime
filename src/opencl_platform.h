@@ -38,6 +38,7 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
+    void dynamic_profile(DeviceId dev, const std::string& filename);
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }
@@ -58,6 +59,7 @@ protected:
         cl_device_svm_capabilities svm_caps;
         #endif
         bool is_intel_fpga = false;
+        bool is_xilinx_fpga = false;
 
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;

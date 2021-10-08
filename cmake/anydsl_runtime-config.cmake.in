@@ -197,6 +197,35 @@ function(anydsl_runtime_wrap outfiles)
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
 
+    list(GET HLS_FLAGS 0 SOC)
+    list(GET HLS_FLAGS 1 SYNTHESIS)
+    list(GET HLS_FLAGS 2 FPGA_PART)
+    list(GET HLS_FLAGS 3 PROFILER)
+    list(GET HLS_FLAGS 4 HW_EMULATION)
+    list(GET HLS_FLAGS 5 ANYDSL_FPGA)
+
+    string(REPLACE "," ";" ANYDSL_FPGA_LIST ${ANYDSL_FPGA})
+    list(FIND ANYDSL_FPGA_LIST "GMEM_OPT" index_gmem_opt)
+    list(FIND ANYDSL_FPGA_LIST "GMEM_BANKS" index_gmem_banks)
+    if(${index_gmem_opt} GREATER -1 AND ${index_gmem_banks} GREATER -1)
+        set(GMEM_BANKS_OPT TRUE)
+    endif()
+
+    # decide on HLS interface
+    if("SOC" IN_LIST ANYDSL_FPGA_LIST)
+        set(ANYDSL_FPGA ${ANYDSL_FPGA})
+    elseif("HPC" IN_LIST ANYDSL_FPGA_LIST)
+        set(ANYDSL_FPGA ${ANYDSL_FPGA})
+    elseif(ANYDSL_FPGA STREQUAL "BENCHMARK")
+        set(ANYDSL_FPGA "None")
+    else()
+        if(SOC)
+            set(ANYDSL_FPGA "SOC")
+        else()
+            set(ANYDSL_FPGA "HPC")
+        endif()
+    endif()
+
     set(_additional_platform_files)
 
     if(NOT PARGS_FRONTEND)
@@ -302,16 +331,15 @@ function(anydsl_runtime_wrap outfiles)
     else()
         # generate .ll file and patch it
         add_custom_command(OUTPUT ${_llfile}
-            COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
+            COMMAND ${CMAKE_COMMAND} -E env "ANYDSL_FPGA=${ANYDSL_FPGA}" ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
             COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
-            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DPROFILER=${PROFILER} -DSOC=${SOC} -DGMEM_BANKS_OPT=${GMEM_BANKS_OPT} -DHW_EMULATION=${HW_EMULATION}
+                                     -P ${AnyDSL_runtime_DIR}/build_xilinx_hls.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
         # run clang on the .ll file to get the .o
         add_custom_command(OUTPUT ${_objfile}
             COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
-            COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
             DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
     endif()
 

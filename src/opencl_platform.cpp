@@ -2,10 +2,16 @@
 
 #include "runtime.h"
 
+#ifndef _WIN32
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -99,6 +105,14 @@ static std::string get_opencl_error_code_str(int error) {
 inline void check_opencl_error(cl_int err, const char* name, const char* file, const int line) {
     if (err != CL_SUCCESS)
         error("OpenCL API function % (%) [file %, line %]: %", name, err, file, line, get_opencl_error_code_str(err));
+}
+
+std::string load_program_file(const std::string& filename) {
+    std::ifstream src_file(filename);
+    if (!src_file.is_open())
+        error("Can't open source file '%'", filename);
+
+    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 }
 
 OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
@@ -200,9 +214,6 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_[dev].svm_caps = svm_caps;
             #endif
 
-            if (platform_name.find("FPGA") != std::string::npos)
-                devices_[dev].is_intel_fpga = true;
-
             // create context
             cl_context_properties ctx_props[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
             devices_[dev].ctx = clCreateContext(ctx_props, 1, &devices_[dev].dev, NULL, NULL, &err);
@@ -228,6 +239,42 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
                 devices_[dev].queue = clCreateCommandQueue(devices_[dev].ctx, devices_[dev].dev, queue_props, &err);
                 CHECK_OPENCL(err, "clCreateCommandQueue()");
             }
+
+            if (platform_name.find("FPGA") != std::string::npos) {
+                devices_[dev].is_intel_fpga = true;
+            } else if (platform_name.find("Xilinx") != std::string::npos) {
+                devices_[dev].is_xilinx_fpga = true;
+
+                // bitstream file needs to be loaded at the very beginning
+                std::string filename;
+                const char* env_var = std::getenv("ANYDSL_XRT_BITSTREAM");
+                if (env_var) {
+                    filename = env_var;
+                } else {
+                    #ifndef _WIN32
+                    char buf[PATH_MAX];
+                    ssize_t len;
+                    if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1) {
+                        buf[len] = '\0';
+                        filename = std::string(buf) + ".xclbin";
+                    }
+                    #else
+                    error("Can't find XRT bitstream file, please specify the path to xclbin file using the ANYDSL_XRT_BITSTREAM environment variable");
+                    #endif
+                }
+
+                // find the file extension
+                auto ext_pos = filename.rfind('.');
+                std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
+                if (ext != "xclbin")
+                    error("Incorrect extension for XRT bitstream file '%' (should be '.xclbin')", filename);
+                filename = filename.substr(0, ext_pos);
+
+                std::string program_string = runtime_->load_file(filename + ".xclbin");
+
+                auto& prog_cache = devices_[dev].programs;
+                prog_cache[filename + ".cl"] = load_program_binary(DeviceId(dev), filename + ".xclbin", program_string);
+            }
         }
         delete[] devices;
     }
@@ -236,7 +283,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
 OpenCLPlatform::~OpenCLPlatform() {
     for (size_t i = 0; i < devices_.size(); i++) {
-        if (devices_[i].is_intel_fpga)
+        if (devices_[i].is_intel_fpga || devices_[i].is_xilinx_fpga)
             continue;
 
         for (auto& map : devices_[i].kernels) {
@@ -321,6 +368,11 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
 }
 
 void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
+    if (devices_[dev].is_intel_fpga && launch_params.num_args == 0) {
+        debug("processing by autorun kernel");
+        return;
+    }
+
     auto kernel = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     // set up arguments
@@ -355,18 +407,28 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     // launch the kernel
     cl_event event = 0;
     auto queue = devices_[dev].queue;
-    if (devices_[dev].is_intel_fpga)
+    if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga)
         queue = devices_[dev].kernels_queue[kernel];
-    cl_int err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
-    CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+
+    if (devices_[dev].is_xilinx_fpga && global_work_size[1] == 1 && global_work_size[2] == 1 && global_work_size[3] == 1) {
+        cl_int err = clEnqueueTask(queue, kernel, 0, NULL, &event);
+        CHECK_OPENCL(err, "clEnqueueTask()");
+    } else {
+        cl_int err = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, &event);
+        CHECK_OPENCL(err, "clEnqueueNDRangeKernel()");
+    }
+
     if (runtime_->profiling_enabled() && event) {
-        err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
+        cl_int err = clSetEventCallback(event, CL_COMPLETE, &time_kernel_callback, &devices_[dev]);
         devices_[dev].atomic_data.timings_counter.fetch_add(1);
         CHECK_OPENCL(err, "clSetEventCallback()");
     } else {
-        err = clReleaseEvent(event);
+        cl_int err = clReleaseEvent(event);
         CHECK_OPENCL(err, "clReleaseEvent()");
     }
+
+    if (runtime_->dynamic_profiling_enabled())
+        dynamic_profile(dev, launch_params.file_name);
 
     // release temporary buffers for struct arguments
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
@@ -378,7 +440,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
 }
 
 void OpenCLPlatform::synchronize(DeviceId dev) {
-    if (devices_[dev].is_intel_fpga) {
+    if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga) {
         auto& queue_map = devices_[dev].kernels_queue;
         for (auto& it : queue_map) {
             cl_int err = clFinish(it.second);
@@ -508,6 +570,22 @@ cl_program OpenCLPlatform::compile_program(DeviceId dev, cl_program program, con
     return program;
 }
 
+void OpenCLPlatform::dynamic_profile(DeviceId dev, const std::string& filename) {
+    auto& opencl_dev = devices_[dev];
+    cl_program program = opencl_dev.programs[filename];
+
+    if(opencl_dev.is_intel_fpga) {
+        typedef cl_int (*clGetProfileDataDevice_fn) (cl_device_id, cl_program, cl_bool, cl_bool, cl_bool, size_t, void *, size_t *, cl_int *);
+
+        clGetProfileDataDevice_fn get_profile_data_ptr = (clGetProfileDataDevice_fn)
+            clGetExtensionFunctionAddressForPlatform(opencl_dev.platform, "clGetProfileDataDeviceIntelFPGA");
+        cl_int profile_status = CL_SUCCESS;
+        profile_status = get_profile_data_ptr(opencl_dev.dev, program, false, true, false, 0, NULL, NULL, NULL);
+        CHECK_OPENCL(profile_status, "clGetProfileDataDeviceIntelFPGA()");
+    } else
+        error("Dynamic Profiling is not available for this platform");
+}
+
 cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& opencl_dev = devices_[dev];
 
@@ -515,21 +593,22 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 
     cl_int err = CL_SUCCESS;
     cl_program program;
+    std::string canonical = std::filesystem::weakly_canonical(filename);
     auto& prog_cache = opencl_dev.programs;
-    auto prog_it = prog_cache.find(filename);
+    auto prog_it = prog_cache.find(canonical);
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
 
         // find the file extension
-        auto ext_pos = filename.rfind('.');
-        std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
+        auto ext_pos = canonical.rfind('.');
+        std::string ext = ext_pos != std::string::npos ? canonical.substr(ext_pos + 1) : "";
         if (ext != "cl")
-            error("Incorrect extension for kernel file '%' (should be '.cl')", filename);
+            error("Incorrect extension for kernel file '%' (should be '.cl')", canonical);
 
         // load file from disk or cache
-        std::string src_path = filename;
+        std::string src_path = canonical;
         if (opencl_dev.is_intel_fpga)
-            src_path = filename.substr(0, ext_pos) + ".aocx";
+            src_path = canonical.substr(0, ext_pos) + ".aocx";
         std::string src_code = runtime_->load_file(src_path);
 
         // compile src or load from cache
@@ -545,7 +624,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         }
 
         opencl_dev.lock();
-        prog_cache[filename] = program;
+        prog_cache[canonical] = program;
     } else {
         program = prog_it->second;
     }
@@ -561,7 +640,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         kernel = clCreateKernel(program, kernelname.c_str(), &err);
         CHECK_OPENCL(err, "clCreateKernel()");
 
-        if (devices_[dev].is_intel_fpga) {
+        if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga) {
             // Intel SDK for FPGA needs a new queue for each kernel
             cl_command_queue kernel_queue = clCreateCommandQueue(opencl_dev.ctx, opencl_dev.dev, CL_QUEUE_PROFILING_ENABLE, &err);
             devices_[dev].kernels_queue[kernel] = kernel_queue;

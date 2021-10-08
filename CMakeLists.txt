@@ -36,3 +36,4 @@ endif()
 
 export(TARGETS ${RUNTIME_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/share/anydsl/cmake/anydsl_runtime-exports.cmake)
 configure_file(cmake/anydsl_runtime-config.cmake.in ${CMAKE_BINARY_DIR}/share/anydsl/cmake/anydsl_runtime-config.cmake @ONLY)
+configure_file(cmake/build_xilinx_hls.cmake.in ${CMAKE_BINARY_DIR}/share/anydsl/cmake/build_xilinx_hls.cmake @ONLY)

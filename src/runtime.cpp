@@ -18,7 +18,7 @@ void register_opencl_platform(Runtime* runtime) { runtime->register_platform<Dum
 void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
 #endif
 
-Runtime::Runtime(ProfileLevel profile)
+Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)
 {}
 

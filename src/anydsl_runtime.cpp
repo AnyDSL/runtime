@@ -1,6 +1,7 @@
 #include <random>
 #include <chrono>
 #include <locale>
+#include <sstream>
 
 #include "anydsl_runtime.h"
 // Make sure the definition for runtime() matches
@@ -34,15 +35,21 @@ struct RuntimeSingleton {
         register_hsa_platform(&runtime);
     }
 
-    static ProfileLevel detect_profile_level() {
-        auto profile = ProfileLevel::None;
+    static std::pair<ProfileLevel, ProfileLevel> detect_profile_level() {
+        auto profile = std::make_pair(ProfileLevel::None, ProfileLevel::None);
         const char* env_var = std::getenv("ANYDSL_PROFILE");
         if (env_var) {
             std::string env_str = env_var;
             for (auto& c: env_str)
                 c = std::toupper(c, std::locale());
-            if (env_str == "FULL")
-                profile = ProfileLevel::Full;
+            std::stringstream profile_levels(env_str);
+            std::string level;
+            while (profile_levels >> level) {
+                if (level == "FULL")
+                    profile.first = ProfileLevel::Full;
+                else if (level == "FPGA_DYNAMIC")
+                    profile.second = ProfileLevel::Fpga_dynamic;
+            }
         }
         return profile;
     }
