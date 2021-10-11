@@ -593,7 +593,9 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 
     cl_int err = CL_SUCCESS;
     cl_program program;
-    std::string canonical = std::filesystem::weakly_canonical(filename);
+    // TODO: std::filesystem has all the neat features to make all most all of
+    //       the following string manipulation obsolete
+    std::string canonical = std::filesystem::weakly_canonical(filename).string();
     auto& prog_cache = opencl_dev.programs;
     auto prog_it = prog_cache.find(canonical);
     if (prog_it == prog_cache.end()) {
