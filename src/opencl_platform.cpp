@@ -410,7 +410,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     if (devices_[dev].is_intel_fpga || devices_[dev].is_xilinx_fpga)
         queue = devices_[dev].kernels_queue[kernel];
 
-    if (devices_[dev].is_xilinx_fpga && global_work_size[1] == 1 && global_work_size[2] == 1 && global_work_size[3] == 1) {
+    if (devices_[dev].is_xilinx_fpga && global_work_size[0] == 1 && global_work_size[1] == 1 && global_work_size[2] == 1) {
         cl_int err = clEnqueueTask(queue, kernel, 0, NULL, &event);
         CHECK_OPENCL(err, "clEnqueueTask()");
     } else {
