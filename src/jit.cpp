@@ -72,14 +72,15 @@ struct JIT {
 
             world.opt();
 
-            thorin::llvm::CPUCodeGen cg(world, opt, debug);
+            std::string host_triple, host_cpu, host_attr, hls_flags;
+            thorin::llvm::CPUCodeGen cg(world, opt, debug, host_triple, host_cpu, host_attr);
             std::tie(llvm_context, llvm_module) = cg.emit_module();
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
             runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
-            thorin::DeviceBackends backends(world, opt, debug);
+            thorin::DeviceBackends backends(world, opt, debug, hls_flags);
             if (backends.cgs[thorin::DeviceBackends::HLS])
                 error("JIT compilation of hls not supported!");
             for (auto& cg : backends.cgs) {
