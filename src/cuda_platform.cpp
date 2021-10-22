@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -272,51 +273,49 @@ void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offse
     cuCtxPopCurrent(NULL);
 }
 
-CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, const std::string& kernelname) {
+CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
     auto& cuda_dev = devices_[dev];
 
     // lock the device when the function cache is accessed
     cuda_dev.lock();
 
     CUmodule mod;
+    auto canonical = std::filesystem::weakly_canonical(filename);
     auto& mod_cache = cuda_dev.modules;
-    auto mod_it = mod_cache.find(file);
+    auto mod_it = mod_cache.find(canonical.string());
     if (mod_it == mod_cache.end()) {
         cuda_dev.unlock();
 
         bool use_nvptx = true;
 
-        // find the file extension
-        auto ext_pos = file.rfind('.');
-        std::string ext = ext_pos != std::string::npos ? file.substr(ext_pos + 1) : "";
-        if (ext != "ptx" && ext != "cu" && ext != "nvvm")
-            error("Incorrect extension for kernel file '%' (should be '.ptx', '.cu', or '.nvvm')", file);
+        if (canonical.extension() != ".ptx" && canonical.extension() != ".cu" && canonical.extension() != ".nvvm")
+            error("Incorrect extension for kernel file '%' (should be '.ptx', '.cu', or '.nvvm')", canonical.string());
 
         // load file from disk or cache
-        std::string src_path = file;
-        if (ext == "nvvm" && !use_nvptx)
-            src_path += ".bc";
-        std::string src_code = runtime_->load_file(src_path);
+        auto src_path = canonical;
+        if (src_path.extension() == ".nvvm" && !use_nvptx)
+            src_path.replace_extension(".nvvm.bc");
+        std::string src_code = runtime_->load_file(src_path.string());
 
         // compile src or load from cache
         std::string compute_capability_str = std::to_string(devices_[dev].compute_capability);
-        std::string ptx = ext == "ptx" ? src_code : runtime_->load_from_cache(compute_capability_str + src_code);
+        std::string ptx = canonical.extension() == ".ptx" ? src_code : runtime_->load_from_cache(compute_capability_str + src_code);
         if (ptx.empty()) {
-            if (ext == "cu") {
-                ptx = compile_cuda(dev, file, src_code);
-            } else if (ext == "nvvm") {
+            if (canonical.extension() == ".cu") {
+                ptx = compile_cuda(dev, src_path.string(), src_code);
+            } else if (canonical.extension() == ".nvvm") {
                 if (use_nvptx)
-                    ptx = compile_nvptx(dev, file, src_code);
+                    ptx = compile_nvptx(dev, src_path.string(), src_code);
                 else
-                    ptx = compile_nvvm(dev, src_path, src_code);
+                    ptx = compile_nvvm(dev, src_path.string(), src_code);
             }
             runtime_->store_to_cache(compute_capability_str + src_code, ptx);
         }
 
-        mod = create_module(dev, src_path, ptx);
+        mod = create_module(dev, src_path.string(), ptx);
 
         cuda_dev.lock();
-        mod_cache[file] = mod;
+        mod_cache[canonical.string()] = mod;
     } else {
         mod = mod_it->second;
     }
@@ -332,7 +331,7 @@ CUfunction CudaPlatform::load_kernel(DeviceId dev, const std::string& file, cons
 
         CUresult err = cuModuleGetFunction(&func, mod, kernelname.c_str());
         if (err != CUDA_SUCCESS)
-            info("Function '%' is not present in '%'", kernelname, file);
+            info("Function '%' is not present in '%'", kernelname, filename);
         CHECK_CUDA(err, "cuModuleGetFunction()");
         int regs, cmem, lmem, smem, threads;
         err = cuFuncGetAttribute(&regs, CU_FUNC_ATTRIBUTE_NUM_REGS, func);
@@ -595,7 +594,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     #if CUDA_VERSION < 9000
     compute_capability = compute_capability == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : compute_capability; // compute_21 does not exist for nvcc
     #endif
-    std::string ptx_filename = std::string(filename) + ".ptx";
+    std::string ptx_filename = filename + ".ptx";
     std::string command = (AnyDSL_runtime_NVCC_BIN " -std=c++11 -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
     command += filename + " -o " + ptx_filename + " 2>&1";
 

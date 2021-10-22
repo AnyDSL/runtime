@@ -263,17 +263,16 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
                     #endif
                 }
 
-                // find the file extension
-                auto ext_pos = filename.rfind('.');
-                std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
-                if (ext != "xclbin")
-                    error("Incorrect extension for XRT bitstream file '%' (should be '.xclbin')", filename);
-                filename = filename.substr(0, ext_pos);
+                auto canonical = std::filesystem::weakly_canonical(filename);
+                if (canonical.extension() != ".xclbin")
+                    error("Incorrect extension for XRT bitstream file '%' (should be '.xclbin')", canonical.string());
 
-                std::string program_string = runtime_->load_file(filename + ".xclbin");
+                std::string program_string = runtime_->load_file(canonical.string());
 
+                auto src_path = canonical;
+                src_path.replace_extension(".cl");
                 auto& prog_cache = devices_[dev].programs;
-                prog_cache[filename + ".cl"] = load_program_binary(DeviceId(dev), filename + ".xclbin", program_string);
+                prog_cache[src_path.string()] = load_program_binary(DeviceId(dev), canonical.string(), program_string);
             }
         }
         delete[] devices;
@@ -593,29 +592,23 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
 
     cl_int err = CL_SUCCESS;
     cl_program program;
-    // TODO: std::filesystem has all the neat features to make all most all of
-    //       the following string manipulation obsolete
-    std::string canonical = std::filesystem::weakly_canonical(filename).string();
+    auto canonical = std::filesystem::weakly_canonical(filename);
     auto& prog_cache = opencl_dev.programs;
-    auto prog_it = prog_cache.find(canonical);
+    auto prog_it = prog_cache.find(canonical.string());
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
 
-        // find the file extension
-        auto ext_pos = canonical.rfind('.');
-        std::string ext = ext_pos != std::string::npos ? canonical.substr(ext_pos + 1) : "";
-        if (ext != "cl")
-            error("Incorrect extension for kernel file '%' (should be '.cl')", canonical);
+        if (canonical.extension() != ".cl")
+            error("Incorrect extension for kernel file '%' (should be '.cl')", canonical.string());
 
         // load file from disk or cache
-        std::string src_path = canonical;
+        auto src_path = canonical;
         if (opencl_dev.is_intel_fpga)
-            src_path = canonical.substr(0, ext_pos) + ".aocx";
-        std::string src_code = runtime_->load_file(src_path);
+            src_path.replace_extension(".aocx");
+        std::string src_code = runtime_->load_file(src_path.string());
 
         // compile src or load from cache
-        std::string bin = opencl_dev.is_intel_fpga ? src_code
-            : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
+        std::string bin = opencl_dev.is_intel_fpga ? src_code : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
         if (bin.empty()) {
             program = load_program_source(dev, src_path, src_code);
             program = compile_program(dev, program, src_path);
@@ -626,7 +619,7 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
         }
 
         opencl_dev.lock();
-        prog_cache[canonical] = program;
+        prog_cache[canonical.string()] = program;
     } else {
         program = prog_it->second;
     }

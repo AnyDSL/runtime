@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <string>
@@ -447,25 +448,23 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
     hsa_dev.lock();
 
     hsa_executable_t executable = { 0 };
+    auto canonical = std::filesystem::weakly_canonical(filename);
     auto& prog_cache = hsa_dev.programs;
-    auto prog_it = prog_cache.find(filename);
+    auto prog_it = prog_cache.find(canonical.string());
     if (prog_it == prog_cache.end()) {
         hsa_dev.unlock();
 
-        // find the file extension
-        auto ext_pos = filename.rfind('.');
-        std::string ext = ext_pos != std::string::npos ? filename.substr(ext_pos + 1) : "";
-        if (ext != "gcn" && ext != "amdgpu")
-            error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", filename);
+        if (canonical.extension() != ".gcn" && canonical.extension() != ".amdgpu")
+            error("Incorrect extension for kernel file '%' (should be '.gcn' or '.amdgpu')", canonical.string());
 
         // load file from disk or cache
-        std::string src_code = runtime_->load_file(filename);
+        std::string src_code = runtime_->load_file(canonical.string());
 
         // compile src or load from cache
-        std::string gcn = ext == "gcn" ? src_code : runtime_->load_from_cache(devices_[dev].isa + src_code);
+        std::string gcn = canonical.extension() == ".gcn" ? src_code : runtime_->load_from_cache(devices_[dev].isa + src_code);
         if (gcn.empty()) {
-            if (ext == "amdgpu") {
-                gcn = compile_gcn(dev, filename, src_code);
+            if (canonical.extension() == ".amdgpu") {
+                gcn = compile_gcn(dev, canonical.string(), src_code);
             }
             runtime_->store_to_cache(devices_[dev].isa + src_code, gcn);
         }
@@ -474,7 +473,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
         status = hsa_code_object_reader_create_from_memory(gcn.data(), gcn.size(), &reader);
         CHECK_HSA(status, "hsa_code_object_reader_create_from_file()");
 
-        debug("Compiling '%' on HSA device %", filename, dev);
+        debug("Compiling '%' on HSA device %", canonical.string(), dev);
 
         status = hsa_executable_create_alt(HSA_PROFILE_FULL /* hsa_dev.profile */, hsa_dev.float_mode, nullptr, &executable);
         CHECK_HSA(status, "hsa_executable_create_alt()");
@@ -505,7 +504,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
             debug("HSA executable validation failed: %", validated);
 
         hsa_dev.lock();
-        prog_cache[filename] = executable;
+        prog_cache[canonical.string()] = executable;
     } else {
         executable = prog_it->second;
     }
