@@ -533,17 +533,6 @@ fn @nvvm_ldg_f32(addr: &addrspace(1)f32) -> f32 = nvvm_ldg_f32_p1(addr, 4);
 fn @nvvm_ldg4_i32(addr: &addrspace(1)simd[i32 * 4]) -> simd[i32 * 4] = nvvm_ldg4_i32_p1(addr, 16);
 fn @nvvm_ldg4_f32(addr: &addrspace(1)simd[f32 * 4]) -> simd[f32 * 4] = nvvm_ldg4_f32_p1(addr, 16);
 
-fn @nvvm_ballot(a: i32) -> i32 {
-    let mut res: i32;
-    asm("{ .reg .pred %p1;"
-        "setp.ne.u32 %p1, $1, 0;"
-        "vote.ballot.b32 $0, %p1; }"
-        : "=r"(res)
-        : "r"(a)
-    );
-    res
-}
-
 fn @nvvm_popcount(i: i32) -> i32 { nvvm_popc_i(i) }
 
 fn @nvvm_accelerator(dev: i32) = Accelerator {
