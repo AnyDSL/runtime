@@ -9,7 +9,6 @@ def patch_llvmir(rttype):
         with open(filename) as f:
             for line in f:
                 if rttype=="nvvm" or rttype=="ll":
-
                     # patch to opaque identity functions
                     m = re.match('^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr\n$', line)
                     if m is not None:
@@ -41,45 +40,12 @@ def patch_cfiles(rttype):
         filename = basename+"."+"cu"
     elif rttype == "opencl":
         filename = basename+"."+"cl"
-    else:
+    elif rttype == "hls":
         filename = basename+"."+"hls"
 
     if os.path.isfile(filename):
         with open(filename) as f:
             for line in f:
-                # patch print_pragma
-                m = re.match('(\s*)print_pragma\("(.*)"\);', line)
-                if m is not None:
-                    space, pragma = m.groups()
-                    result.append('{0}{1}\n'.format(space, pragma))
-                    print("Patching pragma '{0}' in '{1}'".format(pragma, filename))
-                    continue
-
-                # patch channel struct
-                m = re.match('} struct_channel_(.*);', line)
-                if m is not None:
-                    channel_decl_name = m.groups()[0].strip()
-                    typeline = result[len(result)-1]
-                    type_m = re.match('(.*) (.*) *.;', typeline)
-                    channel_decl_type = type_m.groups()[0].strip();
-                    # clean previous channel declaration
-                    if rttype == "opencl":
-                        result[len(result)-3] = ''
-                    result[len(result)-2] = ''
-                    result[len(result)-1] = ''
-                    # channel declaration location
-                    channel_decl_line = len(result) - 1;
-                    continue
-                # a dirty hack: last array_type is registered as channel type
-                m = re.match('\} array_(.*);', line)
-                if m is not None:
-                    result.append(line)
-                    channel_decl_type = 'array_' + m.groups()[0].strip()
-                    # change declaration location
-                    result.append("");
-                    channel_decl_line = len(result) - 1;
-                    continue
-
                 # patch to opaque identity functions
                 m = re.match('^(.*) = (magic_.*_id)\((.*)\);\n$', line)
                 if m is not None:
@@ -89,7 +55,6 @@ def patch_cfiles(rttype):
                     result.append('{0} = {1};\n'.format(lhs, arg))
                 else:
                     result.append(line)
-
 
         # we have the patched thing, write it
         with open(filename, "w") as f:
