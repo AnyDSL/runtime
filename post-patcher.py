@@ -8,7 +8,7 @@ def patch_llvmir(rttype):
     if os.path.isfile(filename):
         with open(filename) as f:
             for line in f:
-                if rttype=="nvvm" or rttype=="ll":
+                if rttype=="amdgpu" or rttype=="nvvm" or rttype=="ll":
                     # patch to opaque identity functions
                     m = re.match('^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr\n$', line)
                     if m is not None:
@@ -90,6 +90,7 @@ def patch_defs(rttype):
     return
 
 patch_llvmir("ll")
+patch_llvmir("amdgpu")
 patch_llvmir("nvvm")
 patch_cfiles("cuda")
 patch_cfiles("opencl")
