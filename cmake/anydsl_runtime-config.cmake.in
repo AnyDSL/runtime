@@ -221,13 +221,6 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_bin ${Impala_BIN})
     endif()
 
-    if(NOT PARGS_HLS_FLAGS)
-        set(HLS_COMMAND)
-    else()
-        string(REPLACE ";" "," HLS_FLAGS "${PARGS_HLS_FLAGS}")
-        set(HLS_COMMAND COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DHLS_FLAGS=${HLS_FLAGS} -P ${AnyDSL_runtime_DIR}/build_xilinx_hls.cmake)
-    endif()
-
     # parse extra clang flags
     set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
 
@@ -253,6 +246,13 @@ function(anydsl_runtime_wrap outfiles)
         get_filename_component(_basename ${_lastfile} NAME_WE)
     else()
         set(_basename ${PARGS_NAME})
+    endif()
+
+    if(NOT PARGS_HLS_FLAGS)
+        set(HLS_COMMAND)
+    else()
+        string(REPLACE ";" "," HLS_FLAGS "${PARGS_HLS_FLAGS}")
+        set(HLS_COMMAND COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DHLS_FLAGS=${HLS_FLAGS} -P ${AnyDSL_runtime_DIR}/build_xilinx_hls.cmake)
     endif()
 
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
