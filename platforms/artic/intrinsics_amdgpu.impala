@@ -146,10 +146,10 @@ fn @amdgcn_atomic_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_
 fn @amdgcn_atomic_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](9, addr, val, 2, "agent");
 fn @amdgcn_atomic_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](9, addr, val, 2, "agent");
 
-fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
 
 fn @amdgcn_threadfence() = fence(7, "agent");
 

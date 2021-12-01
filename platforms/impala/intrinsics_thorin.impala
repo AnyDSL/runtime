@@ -25,7 +25,8 @@ extern "thorin" {
     fn atomic[T](binop: u32, addr: &mut T, val: T, order: u32, scope: &[u8]) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
     fn atomic_load[T](addr: &T, order: u32, scope: &[u8]) -> T;
     fn atomic_store[T](addr: &mut T, val: T, order: u32, scope: &[u8]) -> ();
-    fn cmpxchg[T](addr: &mut T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool); // only for integer data types
+    fn cmpxchg[T](addr: &mut T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool); // only for integer data types
+    fn cmpxchg_weak[T](addr: &mut T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool); // only for integer data types
     fn fence(order: u32, scope: &[u8]) -> ();
 
     fn "atomic" atomic_p1[T](binop: u32, addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> T;
@@ -34,8 +35,10 @@ extern "thorin" {
     fn "atomic_load" atomic_load_p3[T](addr: &[3]T, order: u32, scope: &[u8]) -> T;
     fn "atomic_store" atomic_store_p1[T](addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> ();
     fn "atomic_store" atomic_store_p3[T](addr: &mut [3]T, val: T, order: u32, scope: &[u8]) -> ();
-    fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool);
-    fn "cmpxchg" cmpxchg_p3[T](addr: &mut [3]T, cmp: T, new: T, order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg_weak" cmpxchg_weak_p3[T](addr: &mut [3]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg_weak" cmpxchg_weak_p3[T](addr: &mut [3]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
 
     fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
 }
