@@ -32,8 +32,8 @@ fn spawn(body: fn() -> ()) = @|| thorin_spawn(body);
 #[import(cc = "thorin", name = "atomic_store")] fn atomic_store_p1[T](_addr: &mut addrspace(1)T, _val: T, _order: u32, _scope: &[u8]) -> ();
 #[import(cc = "thorin", name = "atomic_store")] fn atomic_store_p3[T](_addr: &mut addrspace(3)T, _val: T, _order: u32, _scope: &[u8]) -> ();
 #[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
-#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
-#[import(cc = "thorin", name = "cmpxchg_weak")] fn cmpxchg_weak_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg_weak")] fn cmpxchg_weak_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
 #[import(cc = "thorin", name = "cmpxchg_weak")] fn cmpxchg_weak_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
 
 fn @pipeline(body: fn (i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);

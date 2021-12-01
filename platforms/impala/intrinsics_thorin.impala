@@ -36,8 +36,8 @@ extern "thorin" {
     fn "atomic_store" atomic_store_p1[T](addr: &mut [1]T, val: T, order: u32, scope: &[u8]) -> ();
     fn "atomic_store" atomic_store_p3[T](addr: &mut [3]T, val: T, order: u32, scope: &[u8]) -> ();
     fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
-    fn "cmpxchg" cmpxchg_p1[T](addr: &mut [1]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
-    fn "cmpxchg_weak" cmpxchg_weak_p3[T](addr: &mut [3]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg" cmpxchg_p3[T](addr: &mut [3]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
+    fn "cmpxchg_weak" cmpxchg_weak_p1[T](addr: &mut [1]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
     fn "cmpxchg_weak" cmpxchg_weak_p3[T](addr: &mut [3]T, cmp: T, new: T, success_order: u32, failure_order: u32, scope: &[u8]) -> (T, bool);
 
     fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
