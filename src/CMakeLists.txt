@@ -77,14 +77,20 @@ endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 
 # look for HSA
-find_package(HSA)
-if(HSA_FOUND)
+find_package(hsa-runtime64 PATHS /opt/rocm)
+if(hsa-runtime64_FOUND)
     add_library(runtime_hsa STATIC hsa_platform.cpp hsa_platform.h)
-    target_include_directories(runtime_hsa PRIVATE ${HSA_INCLUDE_DIRS})
-    target_link_libraries(runtime_hsa PRIVATE runtime_base ${HSA_LIBRARIES})
+    target_link_libraries(runtime_hsa PRIVATE runtime_base hsa-runtime64::hsa-runtime64)
     list(APPEND RUNTIME_PLATFORMS runtime_hsa)
+
+    find_package(AMDDeviceLibs PATHS /opt/rocm)
+    get_target_property(ocml_LOCATION ocml LOCATION)
+    get_filename_component(AnyDSL_runtime_HSA_BITCODE_PATH ${ocml_LOCATION} DIRECTORY)
+    get_filename_component(AnyDSL_runtime_HSA_BITCODE_SUFFIX ${ocml_LOCATION} EXT)
+    message(STATUS "AMDDeviceLibs: ${AnyDSL_runtime_HSA_BITCODE_PATH}")
+    message(STATUS "AMDDeviceLibs: ${AnyDSL_runtime_HSA_BITCODE_SUFFIX}")
 endif()
-set(AnyDSL_runtime_HAS_HSA_SUPPORT ${HSA_FOUND} CACHE INTERNAL "enables HSA support")
+set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
