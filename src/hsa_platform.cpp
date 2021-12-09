@@ -94,6 +94,9 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_NAME, name);
     CHECK_HSA(status, "hsa_agent_get_info()");
     debug("  (%) Device Name: %", devices_->size(), name);
+    status = hsa_agent_get_info(agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_PRODUCT_NAME, name);
+    CHECK_HSA(status, "hsa_agent_get_info()");
+    debug("      Device Product Name: %", devices_->size(), name);
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_VENDOR_NAME, name);
     CHECK_HSA(status, "hsa_agent_get_info()");
     debug("      Device Vendor: %", name);
