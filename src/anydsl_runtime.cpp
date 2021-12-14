@@ -72,6 +72,10 @@ void anydsl_info(void) {
     runtime().display_info();
 }
 
+const char* anydsl_device_name(int32_t mask) {
+    return runtime().device_name(to_platform(mask), to_device(mask));
+}
+
 void* anydsl_alloc(int32_t mask, int64_t size) {
     return runtime().alloc(to_platform(mask), to_device(mask), size);
 }

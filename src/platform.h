@@ -48,10 +48,12 @@ public:
     /// Copies memory to the host (CPU).
     virtual void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) = 0;
 
-    /// Returns the number of devices in this platform.
-    virtual size_t dev_count() const = 0;
     /// Returns the platform name.
     virtual std::string name() const = 0;
+    /// Returns the number of devices in this platform.
+    virtual size_t dev_count() const = 0;
+    /// Returns the name of the given device.
+    virtual const char* device_name(DeviceId dev) const = 0;
 
 protected:
     [[noreturn]] void platform_error() {

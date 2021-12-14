@@ -31,6 +31,7 @@ protected:
     // Maximum number of devices to prevent assertions in debug mode
     size_t dev_count() const override { return std::numeric_limits<size_t>::max(); }
     std::string name() const override { return name_; }
+    const char* device_name(DeviceId) const override { return "Dummy"; }
 
     std::string name_;
 };

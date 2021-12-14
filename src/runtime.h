@@ -47,7 +47,10 @@ public:
     }
 
     /// Displays available platforms.
-    void display_info();
+    void display_info() const;
+
+    /// Displays name of device.
+    const char* device_name(PlatformId, DeviceId) const;
 
     /// Allocates memory on the given device.
     void* alloc(PlatformId plat, DeviceId dev, int64_t size);

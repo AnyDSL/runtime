@@ -106,6 +106,8 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
         err = cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, devices_[i].dev);
         CHECK_CUDA(err, "cuDeviceGetAttribute()");
 
+        devices_[i].name = name;
+
         devices_[i].compute_capability = (CUjit_target)(major * 10 + minor);
         debug("  (%) %, Compute capability: %.%", i, name, major, minor);
 
@@ -640,6 +642,10 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     CHECK_CUDA(err, "cuModuleLoadDataEx()");
 
     return mod;
+}
+
+const char* CudaPlatform::device_name(DeviceId dev) const {
+    return devices_[dev].name.c_str();
 }
 
 void register_cuda_platform(Runtime* runtime) {

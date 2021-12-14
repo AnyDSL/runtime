@@ -67,6 +67,7 @@ protected:
 
     size_t dev_count() const override { return 1; }
     std::string name() const override { return "CPU"; }
+    const char* device_name(DeviceId dev) const override { return "CPU"; }  // TODO
 };
 
 #endif

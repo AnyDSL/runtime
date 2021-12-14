@@ -90,16 +90,18 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     auto devices_ = static_cast<std::vector<DeviceData>*>(data);
     hsa_status_t status;
 
-    char name[64] = { 0 };
-    status = hsa_agent_get_info(agent, HSA_AGENT_INFO_NAME, name);
+    char agent_name[64] = { 0 };
+    status = hsa_agent_get_info(agent, HSA_AGENT_INFO_NAME, agent_name);
     CHECK_HSA(status, "hsa_agent_get_info()");
-    debug("  (%) Device Name: %", devices_->size(), name);
-    status = hsa_agent_get_info(agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_PRODUCT_NAME, name);
+    debug("  (%) Device Name: %", devices_->size(), agent_name);
+    char product_name[64] = { 0 };
+    status = hsa_agent_get_info(agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_PRODUCT_NAME, product_name);
     CHECK_HSA(status, "hsa_agent_get_info()");
-    debug("      Device Product Name: %", devices_->size(), name);
-    status = hsa_agent_get_info(agent, HSA_AGENT_INFO_VENDOR_NAME, name);
+    debug("      Device Product Name: %", devices_->size(), product_name);
+    char vendor_name[64] = { 0 };
+    status = hsa_agent_get_info(agent, HSA_AGENT_INFO_VENDOR_NAME, vendor_name);
     CHECK_HSA(status, "hsa_agent_get_info()");
-    debug("      Device Vendor: %", name);
+    debug("      Device Vendor: %", vendor_name);
 
     hsa_profile_t profile;
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_PROFILE, &profile);
@@ -115,9 +117,10 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     CHECK_HSA(status, "hsa_agent_get_info()");
     uint32_t name_length;
     status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME_LENGTH, &name_length);
-    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, &name);
-    debug("      Device ISA: %", name);
-    std::string name_string = name;
+    char isa_name[64] = { 0 };
+    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, isa_name);
+    debug("      Device ISA: %", isa_name);
+    std::string name_string = isa_name;
     auto dash_pos = name_string.rfind('-');
     std::string isa_name = dash_pos != std::string::npos ? name_string.substr(dash_pos + 1) : "";
 
@@ -161,6 +164,7 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->amd_kernarg_pool.handle = { 0 };
     device->amd_finegrained_pool.handle = { 0 };
     device->amd_coarsegrained_pool.handle = { 0 };
+    device->name = product_name;
 
     status = hsa_signal_create(0, 0, nullptr, &device->signal);
     CHECK_HSA(status, "hsa_signal_create()");
@@ -724,6 +728,10 @@ std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const 
 std::string HSAPlatform::compile_gcn(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     debug("Compiling AMDGPU to GCN using amdgpu for '%' on HSA device %", filename, dev);
     return emit_gcn(program_string, devices_[dev].isa, filename, 3);
+}
+
+const char* HSAPlatform::device_name(DeviceId dev) const {
+    return devices_[dev].name.c_str();
 }
 
 void register_hsa_platform(Runtime* runtime) {
