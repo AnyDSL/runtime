@@ -49,7 +49,7 @@ public:
     /// Displays available platforms.
     void display_info() const;
 
-    /// Displays name of device.
+    /// Returns name of device.
     const char* device_name(PlatformId, DeviceId) const;
 
     /// Allocates memory on the given device.
