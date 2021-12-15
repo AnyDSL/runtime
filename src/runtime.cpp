@@ -26,6 +26,8 @@ void Runtime::display_info() const {
     info("Available platforms:");
     for (auto& p: platforms_) {
         info("    * %: % device(s)", p->name(), p->dev_count());
+        for (size_t d=0; d<p->dev_count(); ++d)
+            info("      + (%) %", d, p->device_name(DeviceId(d)));
     }
 }
 
