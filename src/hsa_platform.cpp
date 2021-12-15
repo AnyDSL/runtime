@@ -97,7 +97,7 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     char product_name[64] = { 0 };
     status = hsa_agent_get_info(agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_PRODUCT_NAME, product_name);
     CHECK_HSA(status, "hsa_agent_get_info()");
-    debug("      Device Product Name: %", devices_->size(), product_name);
+    debug("      Device Product Name: %", product_name);
     char vendor_name[64] = { 0 };
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_VENDOR_NAME, vendor_name);
     CHECK_HSA(status, "hsa_agent_get_info()");
@@ -120,9 +120,9 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     char isa_name[64] = { 0 };
     status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, isa_name);
     debug("      Device ISA: %", isa_name);
-    std::string name_string = isa_name;
-    auto dash_pos = name_string.rfind('-');
-    std::string isa_name = dash_pos != std::string::npos ? name_string.substr(dash_pos + 1) : "";
+    std::string isa_name_str = isa_name;
+    auto dash_pos = isa_name_str.rfind('-');
+    isa_name_str = dash_pos != std::string::npos ? isa_name_str.substr(dash_pos + 1) : "";
 
     hsa_device_type_t device_type;
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_DEVICE, &device_type);
@@ -156,7 +156,7 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     device->agent = agent;
     device->profile = profile;
     device->float_mode = float_mode;
-    device->isa = isa_name;
+    device->isa = isa_name_str;
     device->queue = queue;
     device->kernarg_region.handle = { 0 };
     device->finegrained_region.handle = { 0 };
