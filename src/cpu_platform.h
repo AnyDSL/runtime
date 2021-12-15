@@ -12,9 +12,7 @@
 /// CPU platform, allocation is guaranteed to be aligned to page size: 4096 bytes.
 class CpuPlatform : public Platform {
 public:
-    CpuPlatform(Runtime* runtime)
-        : Platform(runtime)
-    {}
+    CpuPlatform(Runtime* runtime);
 
 protected:
     void* alloc(DeviceId, int64_t size) override {
@@ -65,9 +63,10 @@ protected:
         copy(src, offset_src, dst, offset_dst, size);
     }
 
+    std::string device_name_;
     size_t dev_count() const override { return 1; }
     std::string name() const override { return "CPU"; }
-    const char* device_name(DeviceId dev) const override { return "CPU"; }  // TODO
+    const char* device_name(DeviceId) const override { return device_name_.c_str(); }
 };
 
 #endif
