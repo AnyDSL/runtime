@@ -28,8 +28,7 @@ protected:
     void copy_from_host(const void*, int64_t, DeviceId, void*, int64_t, int64_t) override { platform_error(); }
     void copy_to_host(DeviceId, const void*, int64_t, void*, int64_t, int64_t) override { platform_error(); }
 
-    // Maximum number of devices to prevent assertions in debug mode
-    size_t dev_count() const override { return std::numeric_limits<size_t>::max(); }
+    size_t dev_count() const override { return 0; }
     std::string name() const override { return name_; }
     const char* device_name(DeviceId) const override { return "Dummy"; }
 
