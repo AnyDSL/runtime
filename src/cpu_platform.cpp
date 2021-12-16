@@ -108,8 +108,8 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
     #if defined(__APPLE__)
     size_t buf_len;
     sysctlbyname("machdep.cpu.brand_string", nullptr, &buf_len, nullptr, 0);
-    char buf[buf_len];
-    sysctlbyname("machdep.cpu.brand_string", &buf, &buf_len, nullptr, 0);
+    std::string buf(buf_len, ' ');
+    sysctlbyname("machdep.cpu.brand_string", (void*)buf.c_str(), &buf_len, nullptr, 0);
     device_name_ = buf;
     #elif defined(_WIN32)
     if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED)))
