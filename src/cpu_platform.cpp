@@ -11,8 +11,6 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #elif defined(_WIN32)
-#include <memory>
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -25,14 +23,13 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
     size_t buf_len;
     sysctlbyname("machdep.cpu.brand_string", nullptr, &buf_len, nullptr, 0);
     device_name_.resize(buf_len, '\0');
-    sysctlbyname("machdep.cpu.brand_string", &device_name_[0], &buf_len, nullptr, 0);
+    sysctlbyname("machdep.cpu.brand_string", device_name_.data(), &buf_len, nullptr, 0);
     #elif defined(_WIN32)
     HKEY key;
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0U, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
         error("failed to open processor information registry key");
 
-    DWORD cpu_name_type;
-    DWORD cpu_name_size;
+    DWORD cpu_name_type, cpu_name_size;
     if (RegQueryValueExW(key, L"ProcessorNameString", nullptr, &cpu_name_type, nullptr, &cpu_name_size) != ERROR_SUCCESS)
         error("failed to query processor name string length");
 
@@ -41,20 +38,20 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
 
     int cpu_name_length = cpu_name_size / sizeof(wchar_t);
 
-    auto buffer = std::unique_ptr<wchar_t[]> { new wchar_t[cpu_name_length] };
-    if (RegQueryValueExW(key, L"ProcessorNameString", nullptr, &cpu_name_type, reinterpret_cast<LPBYTE>(&buffer[0]), &cpu_name_size) != ERROR_SUCCESS)
+    std::wstring buffer(cpu_name_length, '\0');
+    if (RegQueryValueExW(key, L"ProcessorNameString", nullptr, &cpu_name_type, reinterpret_cast<LPBYTE>(buffer.data()), &cpu_name_size) != ERROR_SUCCESS)
         error("failed to query processor name string");
 
     RegCloseKey(key);
 
-    int u8_cpu_name_length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &buffer[0], cpu_name_length, nullptr, 0, nullptr, nullptr);
+    int u8_cpu_name_length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, buffer.data(), cpu_name_length, nullptr, 0, nullptr, nullptr);
 
     if (u8_cpu_name_length <= 0)
         error("failed to compute converted UTF-8 CPU name string length");
 
     device_name_.resize(u8_cpu_name_length, '\0');
 
-    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &buffer[0], cpu_name_length, &device_name_[0], u8_cpu_name_length, nullptr, nullptr) <= 0)
+    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, buffer.data(), cpu_name_length, device_name_.data(), u8_cpu_name_length, nullptr, nullptr) <= 0)
         error("failed to convert CPU name string to UTF-8");
     #else
     std::ifstream cpuinfo("/proc/cpuinfo");
