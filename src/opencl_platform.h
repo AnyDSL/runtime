@@ -42,6 +42,7 @@ protected:
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }
+    const char* device_name(DeviceId dev) const override;
 
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;
 

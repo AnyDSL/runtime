@@ -653,6 +653,10 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     return kernel;
 }
 
+const char* OpenCLPlatform::device_name(DeviceId dev) const {
+    return devices_[dev].device_name.c_str();
+}
+
 void register_opencl_platform(Runtime* runtime) {
     runtime->register_platform<OpenCLPlatform>();
 }

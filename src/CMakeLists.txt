@@ -21,6 +21,7 @@ add_library(runtime_base STATIC
     runtime.cpp
     runtime.h
     platform.h
+    cpu_platform.cpp
     cpu_platform.h
     dummy_platform.h
     log.h)

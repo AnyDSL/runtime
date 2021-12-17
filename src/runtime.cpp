@@ -22,11 +22,18 @@ Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)
 {}
 
-void Runtime::display_info() {
+void Runtime::display_info() const {
     info("Available platforms:");
     for (auto& p: platforms_) {
         info("    * %: % device(s)", p->name(), p->dev_count());
+        for (size_t d=0; d<p->dev_count(); ++d)
+            info("      + (%) %", d, p->device_name(DeviceId(d)));
     }
+}
+
+const char* Runtime::device_name(PlatformId plat, DeviceId dev) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_name(dev);
 }
 
 void* Runtime::alloc(PlatformId plat, DeviceId dev, int64_t size) {

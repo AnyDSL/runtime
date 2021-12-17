@@ -36,6 +36,7 @@ protected:
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
+    const char* device_name(DeviceId dev) const override;
 
     struct KernelInfo {
         uint64_t kernel;
@@ -59,6 +60,7 @@ protected:
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, hsa_executable_t> programs;
         std::unordered_map<uint64_t, KernelMap> kernels;
+        std::string name;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -77,6 +79,7 @@ protected:
             , amd_coarsegrained_pool(data.amd_finegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
+            , name(data.name)
         {}
 
         void lock() {

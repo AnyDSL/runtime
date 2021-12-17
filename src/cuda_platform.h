@@ -46,6 +46,7 @@ protected:
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "CUDA"; }
+    const char* device_name(DeviceId dev) const override;
 
     typedef std::unordered_map<std::string, CUfunction> FunctionMap;
 
@@ -56,6 +57,7 @@ protected:
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
+        std::string name;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -65,6 +67,7 @@ protected:
             , compute_capability(data.compute_capability)
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
+            , name(std::move(name))
         {}
 
         void lock() {
