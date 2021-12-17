@@ -179,10 +179,6 @@ add_library(runtime
     anydsl_runtime.h
     anydsl_runtime.hpp)
 
-if(WIN32)
-    target_link_libraries(runtime PUBLIC ole32.lib oleaut32.lib wbemuuid.lib)
-endif()
-
 # System threads are required to use either TBB or C++11 threads
 find_package(Threads REQUIRED)
 target_link_libraries(runtime PRIVATE Threads::Threads)
