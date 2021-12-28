@@ -182,7 +182,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(runtime PRIVATE Threads::Threads)
 
 # TBB is optional, C++11 threads are used when it is not available
-find_package(TBB)
+find_package(TBB QUIET)
 if(TBB_FOUND)
     target_link_libraries(runtime PRIVATE TBB::tbb)
 endif()
