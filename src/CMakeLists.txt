@@ -184,8 +184,7 @@ target_link_libraries(runtime PRIVATE Threads::Threads)
 # TBB is optional, C++11 threads are used when it is not available
 find_package(TBB)
 if(TBB_FOUND)
-    target_include_directories(runtime PRIVATE ${TBB_INCLUDE_DIRS})
-    target_link_libraries(runtime PRIVATE ${TBB_LIBRARIES})
+    target_link_libraries(runtime PRIVATE TBB::tbb)
 endif()
 set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel using TBB")
 
