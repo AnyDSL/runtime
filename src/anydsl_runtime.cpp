@@ -15,7 +15,6 @@
 
 #ifdef AnyDSL_runtime_HAS_TBB_SUPPORT
 #define NOMINMAX
-#include <tbb/flow_graph.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_arena.h>
 #include <tbb/task_group.h>
@@ -257,14 +256,6 @@ void anydsl_sync_thread(int32_t id) {
         assert(0 && "Trying to synchronize on invalid thread id");
     }
 }
-
-[[noreturn]] void tbb_required() {
-    error("Flow Graph implementation only available in TBB, rebuild runtime with TBB support!");
-}
-int32_t anydsl_create_graph() { tbb_required(); }
-int32_t anydsl_create_task(int32_t, Closure) { tbb_required(); }
-void anydsl_create_edge(int32_t, int32_t) { tbb_required(); }
-void anydsl_execute_graph(int32_t, int32_t) { tbb_required(); }
 #else // TBB version
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     tbb::task_arena limited((num_threads == 0) ? tbb::task_arena::automatic : num_threads);
@@ -330,70 +321,6 @@ void anydsl_sync_thread(int32_t id) {
         task_pool.erase(task);
     } else {
         assert(0 && "Trying to synchronize on invalid task id");
-    }
-}
-
-static std::unordered_map<int32_t, tbb::flow::graph*> graph_pool;
-static std::unordered_map<int32_t, tbb::flow::graph_node*> node_pool;
-static std::vector<int32_t> free_graph_ids;
-static std::vector<int32_t> free_node_ids;
-
-int32_t anydsl_create_graph() {
-    int32_t id;
-    if (free_graph_ids.size()) {
-        id = free_graph_ids.back();
-        free_graph_ids.pop_back();
-    } else {
-        id = int32_t(graph_pool.size());
-    }
-
-    tbb::flow::graph* graph = new tbb::flow::graph();
-    graph_pool[id] = graph;
-    return id;
-}
-
-int32_t anydsl_create_task(int32_t graph_id, Closure closure) {
-    int32_t id;
-    if (free_node_ids.size()) {
-        id = free_node_ids.back();
-        free_node_ids.pop_back();
-    } else {
-        id = int32_t(node_pool.size());
-    }
-
-    auto graph = graph_pool.find(graph_id);
-    if (graph == graph_pool.end())
-        assert(0 && "Trying to find invalid graph id");
-
-    auto node = new tbb::flow::continue_node<tbb::flow::continue_msg>(*graph->second,
-        [=](const tbb::flow::continue_msg &) {
-                closure.fn(closure.payload);
-        });
-    node_pool[id] = node;
-    return id;
-}
-
-void anydsl_create_edge(int32_t task1_id, int32_t task2_id) {
-    auto node1 = node_pool.find(task1_id);
-    auto node2 = node_pool.find(task2_id);
-    if (node1 == node_pool.end() || node2 == node_pool.end())
-        assert(0 && "Trying to find invalid task id");
-
-    tbb::flow::make_edge(
-        (tbb::flow::continue_node<tbb::flow::continue_msg>&)*node1->second,
-        (tbb::flow::continue_node<tbb::flow::continue_msg>&)*node2->second);
-}
-
-void anydsl_execute_graph(int32_t graph_id, int32_t root_id) {
-    auto graph = graph_pool.find(graph_id);
-    if (graph != graph_pool.end()) {
-        auto root = node_pool.find(root_id);
-        if (root == node_pool.end())
-            assert(0 && "Trying to find invalid task id");
-        ((tbb::flow::continue_node<tbb::flow::continue_msg>*)root->second)->try_put(tbb::flow::continue_msg());
-        graph->second->wait_for_all();
-    } else {
-        assert(0 && "Trying to execute invalid graph id");
     }
 }
 #endif
