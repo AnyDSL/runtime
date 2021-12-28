@@ -88,8 +88,6 @@ if(hsa-runtime64_FOUND)
     get_target_property(ocml_LOCATION ocml LOCATION)
     get_filename_component(AnyDSL_runtime_HSA_BITCODE_PATH ${ocml_LOCATION} DIRECTORY)
     get_filename_component(AnyDSL_runtime_HSA_BITCODE_SUFFIX ${ocml_LOCATION} EXT)
-    message(STATUS "AMDDeviceLibs: ${AnyDSL_runtime_HSA_BITCODE_PATH}")
-    message(STATUS "AMDDeviceLibs: ${AnyDSL_runtime_HSA_BITCODE_SUFFIX}")
 endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
