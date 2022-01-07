@@ -16,6 +16,7 @@ extern "C" {
     fn "anydsl_random_val_u64"  random_val_u64() -> u64;
 
     fn "anydsl_get_micro_time"  get_micro_time() -> i64;
+    fn "anydsl_get_nano_time"  get_nano_time() -> i64;
     fn "anydsl_get_kernel_time" get_kernel_time() -> i64;
 
     fn "anydsl_print_i16"    print_i16(i16) -> ();

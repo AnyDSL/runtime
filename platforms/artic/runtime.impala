@@ -14,6 +14,7 @@
 #[import(cc = "C", name = "anydsl_random_val_u64")] fn random_val_u64() -> u64;
 
 #[import(cc = "C", name = "anydsl_get_micro_time")]  fn get_micro_time() -> i64;
+#[import(cc = "C", name = "anydsl_get_nano_time")]  fn get_nano_time() -> i64;
 #[import(cc = "C", name = "anydsl_get_kernel_time")] fn get_kernel_time() -> i64;
 
 #[import(cc = "C", name = "anydsl_print_i16")]    fn print_i16(_: i16) -> ();
