@@ -139,7 +139,12 @@ void anydsl_synchronize(int32_t mask) {
 
 uint64_t anydsl_get_micro_time() {
     using namespace std::chrono;
-    return duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
+    return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+uint64_t anydsl_get_nano_time() {
+    using namespace std::chrono;
+    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 uint64_t anydsl_get_kernel_time() {

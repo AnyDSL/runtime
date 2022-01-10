@@ -44,6 +44,7 @@ AnyDSL_runtime_API float    anydsl_random_val_f32();
 AnyDSL_runtime_API uint64_t anydsl_random_val_u64();
 
 AnyDSL_runtime_API uint64_t anydsl_get_micro_time();
+AnyDSL_runtime_API uint64_t anydsl_get_nano_time();
 AnyDSL_runtime_API uint64_t anydsl_get_kernel_time();
 
 AnyDSL_runtime_API int32_t anydsl_isinff(float);
