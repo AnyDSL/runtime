@@ -276,6 +276,24 @@ fn @cuda_lanemask_gt() -> u32 {
     mask
 }
 
+fn @cuda_globaltimer() -> u64 {
+    let mut timestamp:u64;
+    asm("mov.u64 %0, %globaltimer;" : "=l"(timestamp) ::: "volatile");
+    timestamp
+}
+
+fn @cuda_globaltimer_lo() -> u32 {
+    let mut timestamp:u32;
+    asm("mov.u32 %0, %globaltimer_lo;" : "=r"(timestamp) ::: "volatile");
+    timestamp
+}
+
+fn @cuda_globaltimer_hi() -> u32 {
+    let mut timestamp:u32;
+    asm("mov.u32 %0, %globaltimer_hi;" : "=r"(timestamp) ::: "volatile");
+    timestamp
+}
+
 fn @cuda_minmin(a: i32, b: i32, c: i32) -> i32 { cuda_min(cuda_min(a, b), c) }
 fn @cuda_maxmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_max(a, b), c) }
 fn @cuda_minmax(a: i32, b: i32, c: i32) -> i32 { cuda_max(cuda_min(a, b), c) }
