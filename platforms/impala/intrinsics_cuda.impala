@@ -280,37 +280,37 @@ fn @cuda_lanemask_gt() -> u32 {
 
 fn @cuda_clock() -> u32 {
     let mut cycle_count:u32;
-    asm("mov.u32 %0, %clock;" : "=r"(cycle_count) ::: "volatile");
+    asm("mov.u32 %0, %clock;" : "=r"(cycle_count) : :: "volatile");
     cycle_count
 }
 
 fn @cuda_clock_hi() -> u32 {
     let mut cycle_count:u32;
-    asm("mov.u32 %0, %clock_hi;" : "=r"(cycle_count) ::: "volatile");
+    asm("mov.u32 %0, %clock_hi;" : "=r"(cycle_count) : :: "volatile");
     cycle_count
 }
 
 fn @cuda_clock64() -> u64 {
     let mut cycle_count:u64;
-    asm("mov.u64 %0, %clock64;" : "=l"(cycle_count) ::: "volatile");
+    asm("mov.u64 %0, %clock64;" : "=l"(cycle_count) : :: "volatile");
     cycle_count
 }
 
 fn @cuda_globaltimer() -> u64 {
     let mut timestamp:u64;
-    asm("mov.u64 %0, %globaltimer;" : "=l"(timestamp) ::: "volatile");
+    asm("mov.u64 %0, %globaltimer;" : "=l"(timestamp) : :: "volatile");
     timestamp
 }
 
 fn @cuda_globaltimer_lo() -> u32 {
     let mut timestamp:u32;
-    asm("mov.u32 %0, %globaltimer_lo;" : "=r"(timestamp) ::: "volatile");
+    asm("mov.u32 %0, %globaltimer_lo;" : "=r"(timestamp) : :: "volatile");
     timestamp
 }
 
 fn @cuda_globaltimer_hi() -> u32 {
     let mut timestamp:u32;
-    asm("mov.u32 %0, %globaltimer_hi;" : "=r"(timestamp) ::: "volatile");
+    asm("mov.u32 %0, %globaltimer_hi;" : "=r"(timestamp) : :: "volatile");
     timestamp
 }
 
