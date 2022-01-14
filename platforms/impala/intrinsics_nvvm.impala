@@ -498,6 +498,24 @@ fn @nvvm_nanosleep(t: u32) -> () {
     asm("nanosleep.u32 $0;" : : "r"(t));
 }
 
+fn @nvvm_clock() -> u32 {
+    let mut cycle_count:u32;
+    asm("mov.u32 $0, %clock;" : "=r"(cycle_count) ::: "volatile");
+    cycle_count
+}
+
+fn @nvvm_clock_hi() -> u32 {
+    let mut cycle_count:u32;
+    asm("mov.u32 $0, %clock_hi;" : "=r"(cycle_count) ::: "volatile");
+    cycle_count
+}
+
+fn @nvvm_clock64() -> u64 {
+    let mut cycle_count:u64;
+    asm("mov.u64 $0, %clock64;" : "=l"(cycle_count) ::: "volatile");
+    cycle_count
+}
+
 fn @nvvm_globaltimer() -> u64 {
     let mut timestamp:u64;
     asm("mov.u64 $0, %globaltimer;" : "=l"(timestamp) ::: "volatile");
