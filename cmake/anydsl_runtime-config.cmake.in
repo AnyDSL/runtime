@@ -169,6 +169,7 @@ if(NOT _release_configs)
     set(_release_configs "Release")
 endif()
 list(REMOVE_ITEM _release_configs ${_debug_configs})
+list(REMOVE_DUPLICATES _release_configs)
 
 message(STATUS "AnyDSL debug flags (${_debug_configs}): ${OPT_FLAGS_DEBUG}")
 foreach(_config ${_debug_configs})
