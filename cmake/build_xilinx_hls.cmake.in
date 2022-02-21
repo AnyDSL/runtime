@@ -126,10 +126,8 @@ if(EXISTS ${_basename}.hls)
     set(VPP_compile "-c")
     set(VPP_input "--input_files")
     set(VPP_config "--config")
-    set(VPP_profile "--profile_kernel")
     set(VPP_debug "-g")
     set(SAVE_REPORTS "--save-temps")
-    set(PROFILE_TYPE "data:all:all:all")
 
     string(TOLOWER ${HW_EMULATION} HW_EMULATION)
     if(${SYNTHESIS} STREQUAL "on")
@@ -142,19 +140,31 @@ if(EXISTS ${_basename}.hls)
         string(APPEND VPP_target "sw_emu")
     endif()
 
+    file(WRITE ${kernel_workspace}/config_profile.cfg "[profile]")
     if(PROFILER)
+        # Runime profiling configuration file
         string(CONCAT XRT_INI "[Debug]\n"
-        "profile=true\n"
+        "opencl_summary=true\n"
+        "opencl_trace=true\n"
         "power_profile=true\n"
-        "timeline_trace=true\n"
-        "data_transfer_trace=coarse\n"
-        "stall_trace=all\n")
-
+        "data_transfer_trace=coarse\n")
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini ${XRT_INI})
+
+        # Compile-time profiling configuration file
+        string(CONCAT CONFIG_PROFILE "\n"
+        "data=all:all:all\n"
+        "memory=all\n"
+        "stall=all:all\n"
+        "exec=all:all\n"
+        "aie=all\n"
+        "\n"
+        "[advanced]\n"
+        "param=compiler.deadlockDetection=1\n")
+        file(APPEND ${kernel_workspace}/config_profile.cfg ${CONFIG_PROFILE})
 
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
-                                ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_profile} ${PROFILE_TYPE})
+                                ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_config} ${kernel_workspace}/config_profile.cfg)
     elseif(NOT SOC)
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
@@ -174,20 +184,18 @@ if(EXISTS ${_basename}.hls)
         message(STATUS "Integrating ${kernel} into ${PLATFORM_NAME}")
 
         string(APPEND VPP_platform "${PLATFORM_NAME}")
-        file(WRITE ${kernel_workspace}/config.cfg "[connectivity]\n")
+        file(WRITE ${kernel_workspace}/config_connectivity.cfg "[connectivity]\n")
         if(GMEM_BANKS_OPT)
             set(arg_num 0)
             foreach(arg ${arg_matches})
-                file(APPEND ${kernel_workspace}/config.cfg "sp=${kernel}_1.${arg}:DDR[${arg_num}]\n")
+                file(APPEND ${kernel_workspace}/config_connectivity.cfg "sp=${kernel}_1.${arg}:DDR[${arg_num}]\n")
                 math(EXPR arg_num "${arg_num}+1")
             endforeach()
         endif()
         set(EM_CONFIG_FILE "")
 
         if(NOT PROFILER)
-            unset(VPP_profile)
             unset(VPP_debug)
-            unset(PROFILE_TYPE)
         endif()
 
         if(${SYNTHESIS} STREQUAL "on")
@@ -205,7 +213,7 @@ if(EXISTS ${_basename}.hls)
             set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_out})
             # Vitis compiling (just for software emulation)
             execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
-                                    ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config.cfg)
+                                    ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config_connectivity.cfg)
             set(VPP_out "-o${kernel_workspace}/${kernel}_sw_emu.xclbin")
         endif()
 
@@ -213,7 +221,8 @@ if(EXISTS ${_basename}.hls)
         set(VPP_flags ${VPP_target} ${VPP_opt} ${VPP_platform} ${VPP_out})
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${kernel_workspace}/${kernel}.xo
                                 ${VPP_kernel} ${kernel}
-                                ${VPP_profile} ${PROFILE_TYPE} ${VPP_config} ${kernel_workspace}/config.cfg)
+                                ${VPP_config} ${kernel_workspace}/config_connectivity.cfg
+                                ${VPP_config} ${kernel_workspace}/config_profile.cfg)
 
         # copy generated xclbin to application directory
         file(MAKE_DIRECTORY "${kernel}_xlbin")
