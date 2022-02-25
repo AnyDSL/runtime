@@ -65,6 +65,10 @@ if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
 else()
     find_package(CUDAToolkit QUIET)
     if(CUDAToolkit_FOUND)
+        # this is more robust in case CUDAToolkit_LIBRARY_ROOT is not defined
+        find_path(CUDAToolkit_LIBRARY_ROOT
+            NAMES version.txt version.json
+            HINTS ${CUDAToolkit_LIBRARY_ROOT} ${CUDAToolkit_ROOT} ${CUDAToolkit_BIN_DIR}/../)
         find_library(CUDAToolkit_NVVM_LIBRARY nvvm
             HINTS ${CUDAToolkit_LIBRARY_ROOT}/nvvm
             PATH_SUFFIXES lib lib64 lib/x64)
@@ -77,12 +81,15 @@ else()
             NAMES libdevice.10.bc
             HINTS ${CUDAToolkit_LIBRARY_ROOT} ${CUDAToolkit_LIBRARY_DIR}
             PATH_SUFFIXES cuda/nvvm/libdevice nvvm/libdevice)
+        # using find_*() in favor of set() here
+        # allows to fix issues that may happen on some system configuration
         find_program(AnyDSL_runtime_NVCC_BIN nvcc
             HINTS ${CUDAToolkit_NVCC_EXECUTABLE} ${CUDAToolkit_BIN_DIR}
             PATH_SUFFIXES bin)
+        find_path(AnyDSL_runtime_NVCC_INC NAMES cuda.h nvrtc.h
+            HINTS ${CUDAToolkit_INCLUDE_DIRS} ${CUDAToolkit_LIBRARY_ROOT}
+            PATH_SUFFIXES include)
         set(AnyDSL_runtime_CUDA_NVRTC TRUE)
-        set(AnyDSL_runtime_NVCC_BIN ${CUDAToolkit_NVCC_EXECUTABLE})
-        set(AnyDSL_runtime_NVCC_INC ${CUDAToolkit_INCLUDE_DIRS})
         mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_BIN AnyDSL_runtime_NVCC_INC)
     endif()
     set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDAToolkit_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
