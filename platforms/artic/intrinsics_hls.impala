@@ -92,54 +92,60 @@ struct channel128_f32 { data : [f32 * 128] }
 
 #[import(cc = "device")] fn print_pragma(&[u8]) -> ();
 // u8
-#[import(cc = "device", name = "read_channel")] fn read_channel_u8  (&mut channel_u8) ->  u8;
-#[import(cc = "device", name = "read_channel")] fn read_channel2_u8 (&mut channel_u8) -> [u8 * 2];
-#[import(cc = "device", name = "read_channel")] fn read_channel4_u8 (&mut channel_u8) -> [u8 * 4];
-#[import(cc = "device", name = "read_channel")] fn read_channel8_u8 (&mut channel_u8) -> [u8 * 8];
-#[import(cc = "device", name = "read_channel")] fn read_channel16_u8(&mut channel_u8) -> [u8 * 16];
-#[import(cc = "device", name = "read_channel")] fn read_channel32_u8(&mut channel_u8) -> [u8 * 32];
-#[import(cc = "device", name = "write_channel")] fn write_channel_u8  (&mut channel_u8,  u8      ) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel2_u8 (&mut channel_u8, [u8 * 2 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel4_u8 (&mut channel_u8, [u8 * 4 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel8_u8 (&mut channel_u8, [u8 * 8 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel16_u8(&mut channel_u8, [u8 * 16]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel32_u8(&mut channel_u8, [u8 * 32]) -> ();
-#[import(cc = "device", name = " ")]             fn bitcast_channel_u8(&mut channel_u8) -> [u8 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel1_u8 (&mut channel1_u8)  -> [u8 * 1];
+#[import(cc = "device", name = "read_channel")] fn read_channel2_u8 (&mut channel2_u8)  -> [u8 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_u8 (&mut channel4_u8)  -> [u8 * 4];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_u8 (&mut channel8_u8)  -> [u8 * 8];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_u8(&mut channel16_u8) -> [u8 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_u8(&mut channel32_u8) -> [u8 * 32];
+
+#[import(cc = "device", name = "write_channel")] fn write_channel1_u8 (&mut channel1_u8,  [u8 * 1 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_u8 (&mut channel2_u8,  [u8 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_u8 (&mut channel4_u8,  [u8 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_u8 (&mut channel8_u8,  [u8 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_u8(&mut channel16_u8, [u8 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_u8(&mut channel32_u8, [u8 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_u8(&mut channel1_u8) -> [u8 * 2];
 
 // i32 scalar
 #[import(cc = "device", name = "read_channel")] fn read_channel_i32  (&mut channel_i32) ->  i32;
-#[import(cc = "device", name = "write_channel")] fn write_channel_i32  (&mut channel_i32,  i32      ) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel_i32 (&mut channel_i32,  i32 ) -> ();
 
 // i32 array
-#[import(cc = "device", name = "read_channel")] fn read_channel1_i32 (&mut channel_i32) -> [i32 * 1];
-#[import(cc = "device", name = "read_channel")] fn read_channel2_i32 (&mut channel_i32) -> [i32 * 2];
-#[import(cc = "device", name = "read_channel")] fn read_channel4_i32 (&mut channel_i32) -> [i32 * 4];
-#[import(cc = "device", name = "read_channel")] fn read_channel8_i32 (&mut channel_i32) -> [i32 * 8];
-#[import(cc = "device", name = "read_channel")] fn read_channel16_i32(&mut channel_i32) -> [i32 * 16];
-#[import(cc = "device", name = "read_channel")] fn read_channel32_i32(&mut channel_i32) -> [i32 * 32];
+#[import(cc = "device", name = "read_channel")] fn read_channel1_i32 ( &mut channel1_i32 ) -> [i32 * 1 ];
+#[import(cc = "device", name = "read_channel")] fn read_channel2_i32 ( &mut channel2_i32 ) -> [i32 * 2 ];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_i32 ( &mut channel4_i32 ) -> [i32 * 4 ];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_i32 ( &mut channel8_i32 ) -> [i32 * 8 ];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_i32( &mut channel16_i32) -> [i32 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_i32( &mut channel32_i32) -> [i32 * 32];
 
-#[import(cc = "device", name = "write_channel")] fn write_channel1_i32 (&mut channel_i32, [i32 *  1]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel2_i32 (&mut channel_i32, [i32 * 2 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel4_i32 (&mut channel_i32, [i32 * 4 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel8_i32 (&mut channel_i32, [i32 * 8 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel16_i32(&mut channel_i32, [i32 * 16]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel32_i32(&mut channel_i32, [i32 * 32]) -> ();
-#[import(cc = "device", name = " ")]             fn bitcast_channel_i32(&mut channel_i32) -> [i32 * 2];
+#[import(cc = "device", name = "write_channel")] fn write_channel1_i32 ( &mut channel1_i32,  [i32 * 1 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_i32 ( &mut channel2_i32,  [i32 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_i32 ( &mut channel4_i32,  [i32 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_i32 ( &mut channel8_i32,  [i32 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_i32( &mut channel16_i32, [i32 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_i32( &mut channel32_i32, [i32 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_i32( &mut channel1_i32) -> [i32 * 2];
 
-// f32
-#[import(cc = "device", name = "read_channel")] fn read_channel_f32  (&mut channel_f32) ->  f32;
-#[import(cc = "device", name = "read_channel")] fn read_channel2_f32 (&mut channel_f32) -> [f32 * 2];
-#[import(cc = "device", name = "read_channel")] fn read_channel4_f32 (&mut channel_f32) -> [f32 * 4];
-#[import(cc = "device", name = "read_channel")] fn read_channel8_f32 (&mut channel_f32) -> [f32 * 8];
-#[import(cc = "device", name = "read_channel")] fn read_channel16_f32(&mut channel_f32) -> [f32 * 16];
-#[import(cc = "device", name = "read_channel")] fn read_channel32_f32(&mut channel_f32) -> [f32 * 32];
-#[import(cc = "device", name = "write_channel")] fn write_channel_f32  (&mut channel_f32,  f32      ) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel2_f32 (&mut channel_f32, [f32 * 2 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel4_f32 (&mut channel_f32, [f32 * 4 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel8_f32 (&mut channel_f32, [f32 * 8 ]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel16_f32(&mut channel_f32, [f32 * 16]) -> ();
-#[import(cc = "device", name = "write_channel")] fn write_channel32_f32(&mut channel_f32, [f32 * 32]) -> ();
-#[import(cc = "device", name = " ")]             fn bitcast_channel_f32(&mut channel_f32) -> [f32 * 2];
+// f32 scalar
+#[import(cc = "device", name = "read_channel")] fn read_channel_f32 ( &mut channel_f32 ) -> f32;
+#[import(cc = "device", name = "write_channel")] fn write_channel_f32 (&mut channel_f32,  f32 ) -> ();
+
+// f32 array
+#[import(cc = "device", name = "read_channel")] fn read_channel1_f32 ( &mut channel1_f32 ) -> [f32 * 1];
+#[import(cc = "device", name = "read_channel")] fn read_channel2_f32 ( &mut channel2_f32 ) -> [f32 * 2];
+#[import(cc = "device", name = "read_channel")] fn read_channel4_f32 ( &mut channel4_f32 ) -> [f32 * 4];
+#[import(cc = "device", name = "read_channel")] fn read_channel8_f32 ( &mut channel8_f32 ) -> [f32 * 8];
+#[import(cc = "device", name = "read_channel")] fn read_channel16_f32( &mut channel16_f32) -> [f32 * 16];
+#[import(cc = "device", name = "read_channel")] fn read_channel32_f32( &mut channel32_f32) -> [f32 * 32];
+
+#[import(cc = "device", name = "write_channel")] fn write_channel1_f32 ( &mut channel1_f32,  [f32 * 1 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel2_f32 ( &mut channel2_f32,  [f32 * 2 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel4_f32 ( &mut channel4_f32,  [f32 * 4 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel8_f32 ( &mut channel8_f32,  [f32 * 8 ]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel16_f32( &mut channel16_f32, [f32 * 16]) -> ();
+#[import(cc = "device", name = "write_channel")] fn write_channel32_f32( &mut channel32_f32, [f32 * 32]) -> ();
+#[import(cc = "device", name = " ")]             fn bitcast_channel_f32( &mut channel1_f32) -> [f32 * 2];
 
 fn @hls_accelerator(dev: i32) = Accelerator {
     exec = @|body| |_grid, _block| {
