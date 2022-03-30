@@ -95,6 +95,10 @@ else()
     set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDAToolkit_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 endif()
 
+if(AnyDSL_runtime_HAS_CUDA_SUPPORT)
+    set(AnyDSL_runtime_CUDA_CXX_STANDARD 11 CACHE STRING "C++ version to use for CUDA code")
+endif()
+
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
