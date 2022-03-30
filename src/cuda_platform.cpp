@@ -540,13 +540,9 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     return ptx;
 }
 
-#ifndef AnyDSL_runtime_CUDA_CPP_STANDARD
-#define AnyDSL_runtime_CUDA_CPP_STANDARD 11
-#endif
-
 #define MAKE_NVCC_LANGUAGE_DIALECT_FLAG(version) "-std=c++" #version
 #define MAKE_NVCC_LANGUAGE_DIALECT_FLAG_HELPER(version) MAKE_NVCC_LANGUAGE_DIALECT_FLAG(version)
-#define NVCC_LANGUAGE_DIALECT_FLAG MAKE_NVCC_LANGUAGE_DIALECT_FLAG_HELPER(AnyDSL_runtime_CUDA_CPP_STANDARD)
+#define NVCC_LANGUAGE_DIALECT_FLAG MAKE_NVCC_LANGUAGE_DIALECT_FLAG_HELPER(AnyDSL_runtime_CUDA_CXX_STANDARD)
 
 #ifdef AnyDSL_runtime_CUDA_NVRTC
 #ifndef AnyDSL_runtime_NVCC_INC
