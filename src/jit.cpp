@@ -154,26 +154,7 @@ int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
 }
 
 int32_t anydsl_compile2(const char* program, uint32_t size, uint32_t opt, uint32_t loglevel) {
-    thorin::LogLevel level = thorin::LogLevel::Warn;
-    switch(loglevel) {
-        case 0:
-        level = thorin::LogLevel::Error;
-        break;
-    default:
-    case 1:
-        level = thorin::LogLevel::Warn;
-        break;
-    case 2:
-        level = thorin::LogLevel::Info;
-        break;
-    case 3:
-        level = thorin::LogLevel::Verbose;
-        break;
-    case 4:
-        level = thorin::LogLevel::Debug;
-        break;
-    }
-    return jit().compile(program, size, opt, level);
+    return jit().compile(program, size, opt, loglevel <= 4 ? static_cast<thorin::LogLevel>(loglevel) : thorin::LogLevel::Warn);
 }
 
 void* anydsl_lookup_function(int32_t key, const char* fn_name) {
