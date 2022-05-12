@@ -46,7 +46,7 @@ struct JIT {
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
+    int32_t compile(const char* program_src, uint32_t size, uint32_t opt, thorin::LogLevel logLevel) {
         // The LLVM context and module have to be alive for the duration of this function
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
@@ -62,7 +62,7 @@ struct JIT {
             assert(opt <= 3);
 
             thorin::World world(module_name);
-            world.set(thorin::LogLevel::Warn);
+            world.set(logLevel);
             world.set(std::make_shared<thorin::Stream>(std::cerr));
             if (!::compile(
                 { "runtime", module_name },
@@ -150,7 +150,30 @@ void anydsl_link(const char* lib) {
 }
 
 int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
-    return jit().compile(program, size, opt);
+    return jit().compile(program, size, opt, thorin::LogLevel::Warn);
+}
+
+int32_t anydsl_compile2(const char* program, uint32_t size, uint32_t opt, uint32_t loglevel) {
+    thorin::LogLevel level = thorin::LogLevel::Warn;
+    switch(loglevel) {
+        case 0:
+        level = thorin::LogLevel::Error;
+        break;
+    default:
+    case 1:
+        level = thorin::LogLevel::Warn;
+        break;
+    case 2:
+        level = thorin::LogLevel::Info;
+        break;
+    case 3:
+        level = thorin::LogLevel::Verbose;
+        break;
+    case 4:
+        level = thorin::LogLevel::Debug;
+        break;
+    }
+    return jit().compile(program, size, opt, level);
 }
 
 void* anydsl_lookup_function(int32_t key, const char* fn_name) {
