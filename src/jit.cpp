@@ -40,8 +40,9 @@ struct JIT {
 
     std::vector<Program> programs;
     Runtime* runtime;
+    thorin::LogLevel log_level;
 
-    JIT(Runtime* runtime) : runtime(runtime) {
+    JIT(Runtime* runtime) : runtime(runtime), log_level(thorin::LogLevel::Warn) {
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
@@ -62,7 +63,7 @@ struct JIT {
             assert(opt <= 3);
 
             thorin::World world(module_name);
-            world.set(thorin::LogLevel::Warn);
+            world.set(log_level);
             world.set(std::make_shared<thorin::Stream>(std::cerr));
             if (!::compile(
                 { "runtime", module_name },
@@ -151,6 +152,10 @@ void anydsl_link(const char* lib) {
 
 int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
     return jit().compile(program, size, opt);
+}
+
+void anydsl_set_log_level(uint32_t log_level) {
+    jit().log_level = log_level <= 4 ? static_cast<thorin::LogLevel>(log_level) : thorin::LogLevel::Warn;
 }
 
 void* anydsl_lookup_function(int32_t key, const char* fn_name) {
