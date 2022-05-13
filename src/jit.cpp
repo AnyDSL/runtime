@@ -40,13 +40,14 @@ struct JIT {
 
     std::vector<Program> programs;
     Runtime* runtime;
+    thorin::LogLevel log_level;
 
-    JIT(Runtime* runtime) : runtime(runtime) {
+    JIT(Runtime* runtime) : runtime(runtime), log_level(thorin::LogLevel::Warn) {
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    int32_t compile(const char* program_src, uint32_t size, uint32_t opt, thorin::LogLevel log_level) {
+    int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
         // The LLVM context and module have to be alive for the duration of this function
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
@@ -150,11 +151,11 @@ void anydsl_link(const char* lib) {
 }
 
 int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
-    return jit().compile(program, size, opt, thorin::LogLevel::Warn);
+    return jit().compile(program, size, opt);
 }
 
-int32_t anydsl_compile2(const char* program, uint32_t size, uint32_t opt, uint32_t log_level) {
-    return jit().compile(program, size, opt, log_level <= 4 ? static_cast<thorin::LogLevel>(log_level) : thorin::LogLevel::Warn);
+void anydsl_set_log_level(uint32_t log_level) {
+    jit().log_level = log_level <= 4 ? static_cast<thorin::LogLevel>(log_level) : thorin::LogLevel::Warn;
 }
 
 void* anydsl_lookup_function(int32_t key, const char* fn_name) {
