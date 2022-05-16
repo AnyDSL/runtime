@@ -158,6 +158,13 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics.impala
             ../platforms/${frontend}/runtime.impala)
 
+        # Add artic-only math intrinsics
+        if("${frontend}" STREQUAL "artic")
+            set(RUNTIME_FRONTEND_SRCS
+                ${RUNTIME_FRONTEND_SRCS}
+                ../platforms/${frontend}/intrinsics_math.impala)
+        endif()
+
         set(RUNTIME_JIT_SRC jit.cpp)
         set(RUNTIME_SOURCES_FRONTEND_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${frontend}/runtime_srcs.inc)
         add_custom_command(OUTPUT ${RUNTIME_SOURCES_FRONTEND_INC_FILE}
