@@ -38,6 +38,7 @@
 
 // CUDA support
 
+#cmakedefine AnyDSL_runtime_CUDA_CXX_STANDARD     @AnyDSL_runtime_CUDA_CXX_STANDARD@
 #cmakedefine AnyDSL_runtime_CUDA_NVRTC
 #define AnyDSL_runtime_LIBDEVICE_DIR        "@AnyDSL_runtime_LIBDEVICE_DIR@/"
 #define AnyDSL_runtime_NVCC_BIN             "@AnyDSL_runtime_NVCC_BIN@"

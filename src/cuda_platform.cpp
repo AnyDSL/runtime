@@ -540,6 +540,10 @@ std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename
     return ptx;
 }
 
+#define MAKE_NVCC_LANGUAGE_DIALECT_FLAG(version) "-std=c++" #version
+#define MAKE_NVCC_LANGUAGE_DIALECT_FLAG_HELPER(version) MAKE_NVCC_LANGUAGE_DIALECT_FLAG(version)
+#define NVCC_LANGUAGE_DIALECT_FLAG MAKE_NVCC_LANGUAGE_DIALECT_FLAG_HELPER(AnyDSL_runtime_CUDA_CXX_STANDARD)
+
 #ifdef AnyDSL_runtime_CUDA_NVRTC
 #ifndef AnyDSL_runtime_NVCC_INC
 #define AnyDSL_runtime_NVCC_INC "/usr/local/cuda/include"
@@ -556,7 +560,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
         "-I",
         AnyDSL_runtime_NVCC_INC,
         "-lineinfo",
-        "-std=c++11",
+        NVCC_LANGUAGE_DIALECT_FLAG,
         "-G" };
 
     debug("Compiling CUDA to PTX using NVRTC for '%' on CUDA device %", filename, dev);
@@ -597,7 +601,7 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     compute_capability = compute_capability == CU_TARGET_COMPUTE_21 ? CU_TARGET_COMPUTE_20 : compute_capability; // compute_21 does not exist for nvcc
     #endif
     std::string ptx_filename = filename + ".ptx";
-    std::string command = (AnyDSL_runtime_NVCC_BIN " -std=c++11 -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
+    std::string command = (AnyDSL_runtime_NVCC_BIN " " NVCC_LANGUAGE_DIALECT_FLAG " -O4 -ptx -arch=compute_") + std::to_string(compute_capability) + " ";
     command += filename + " -o " + ptx_filename + " 2>&1";
 
     if (!program_string.empty())

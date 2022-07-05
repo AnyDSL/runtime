@@ -95,6 +95,10 @@ else()
     set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDAToolkit_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 endif()
 
+if(AnyDSL_runtime_HAS_CUDA_SUPPORT)
+    set(AnyDSL_runtime_CUDA_CXX_STANDARD 11 CACHE STRING "C++ version to use for CUDA code")
+endif()
+
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
@@ -153,6 +157,13 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_thorin.impala
             ../platforms/${frontend}/intrinsics.impala
             ../platforms/${frontend}/runtime.impala)
+
+        # Add artic-only math intrinsics
+        if("${frontend}" STREQUAL "artic")
+            set(RUNTIME_FRONTEND_SRCS
+                ${RUNTIME_FRONTEND_SRCS}
+                ../platforms/${frontend}/intrinsics_math.impala)
+        endif()
 
         set(RUNTIME_JIT_SRC jit.cpp)
         set(RUNTIME_SOURCES_FRONTEND_INC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${frontend}/runtime_srcs.inc)
