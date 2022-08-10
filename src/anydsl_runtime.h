@@ -22,6 +22,7 @@ enum {
 AnyDSL_runtime_API void anydsl_info(void);
 
 AnyDSL_runtime_API const char* anydsl_device_name(int32_t);
+AnyDSL_runtime_API bool anydsl_device_check_feature_support(int32_t, const char*);
 
 AnyDSL_runtime_API void* anydsl_alloc(int32_t, int64_t);
 AnyDSL_runtime_API void* anydsl_alloc_host(int32_t, int64_t);

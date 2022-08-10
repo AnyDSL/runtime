@@ -36,6 +36,11 @@ const char* Runtime::device_name(PlatformId plat, DeviceId dev) const {
     return platforms_[plat]->device_name(dev);
 }
 
+bool Runtime::device_check_feature_support(PlatformId plat, DeviceId dev, const char* feature) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_check_feature_support(dev, feature);
+}
+
 void* Runtime::alloc(PlatformId plat, DeviceId dev, int64_t size) {
     check_device(plat, dev);
     return platforms_[plat]->alloc(dev, size);

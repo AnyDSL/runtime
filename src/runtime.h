@@ -51,6 +51,8 @@ public:
 
     /// Returns name of device.
     const char* device_name(PlatformId, DeviceId) const;
+    /// Checks whether feature is supported on device.
+    bool device_check_feature_support(PlatformId, DeviceId, const char*) const;
 
     /// Allocates memory on the given device.
     void* alloc(PlatformId plat, DeviceId dev, int64_t size);

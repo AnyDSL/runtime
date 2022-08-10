@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <thread>
 
@@ -28,6 +29,8 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #endif
+
+using namespace std::literals;
 
 #ifndef LIBDEVICE_DIR
 #define LIBDEVICE_DIR AnyDSL_runtime_LIBDEVICE_DIR
@@ -650,6 +653,12 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 
 const char* CudaPlatform::device_name(DeviceId dev) const {
     return devices_[dev].name.c_str();
+}
+
+bool CudaPlatform::device_check_feature_support(DeviceId dev, const char* feature) const {
+    if (feature == "ITS"sv)
+        return static_cast<int>(devices_[dev].compute_capability) >= 70;
+    return false;
 }
 
 void register_cuda_platform(Runtime* runtime) {

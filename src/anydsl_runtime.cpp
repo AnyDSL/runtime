@@ -78,6 +78,10 @@ const char* anydsl_device_name(int32_t mask) {
     return runtime().device_name(to_platform(mask), to_device(mask));
 }
 
+bool anydsl_device_check_feature_support(int32_t mask, const char* feature) {
+    return runtime().device_check_feature_support(to_platform(mask), to_device(mask), feature);
+}
+
 void* anydsl_alloc(int32_t mask, int64_t size) {
     return runtime().alloc(to_platform(mask), to_device(mask), size);
 }
