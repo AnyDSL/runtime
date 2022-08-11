@@ -11,6 +11,8 @@
 
 cmake_minimum_required(VERSION 3.12)
 
+enable_language(C)
+
 find_path(AnyDSL_runtime_DIR
     NAMES
         anydsl_runtime-config.cmake
