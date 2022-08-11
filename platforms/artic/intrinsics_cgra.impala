@@ -1,0 +1,162 @@
+// no declarations are emitted for "device" functions
+#[import(cc = "C", name = "exp")]      fn cgra_expf(f32) -> f32;
+#[import(cc = "C", name = "exp2")]     fn cgra_exp2f(f32) -> f32;
+#[import(cc = "C", name = "log")]      fn cgra_logf(f32) -> f32;
+#[import(cc = "C", name = "log2")]     fn cgra_log2f(f32) -> f32;
+#[import(cc = "C", name = "pow")]      fn cgra_powf(f32, f32) -> f32;
+#[import(cc = "C", name = "rsqrt")]    fn cgra_rsqrtf(f32) -> f32;
+#[import(cc = "C", name = "sqrt")]     fn cgra_sqrtf(f32) -> f32;
+#[import(cc = "C", name = "fabs")]     fn cgra_fabsf(f32) -> f32;
+#[import(cc = "C", name = "sin")]      fn cgra_sinf(f32) -> f32;
+#[import(cc = "C", name = "cos")]      fn cgra_cosf(f32) -> f32;
+#[import(cc = "C", name = "tan")]      fn cgra_tanf(f32) -> f32;
+#[import(cc = "C", name = "asin")]     fn cgra_asinf(f32) -> f32;
+#[import(cc = "C", name = "acos")]     fn cgra_acosf(f32) -> f32;
+#[import(cc = "C", name = "atan")]     fn cgra_atanf(f32) -> f32;
+#[import(cc = "C", name = "erf")]      fn cgra_erff(f32) -> f32;
+#[import(cc = "C", name = "atan2")]    fn cgra_atan2f(f32, f32) -> f32;
+#[import(cc = "C", name = "fmod")]     fn cgra_fmodf(f32, f32) -> f32;
+#[import(cc = "C", name = "floor")]    fn cgra_floorf(f32) -> f32;
+#[import(cc = "C", name = "isinf")]    fn cgra_isinff(f32) -> i32;
+#[import(cc = "C", name = "isnan")]    fn cgra_isnanf(f32) -> i32;
+#[import(cc = "C", name = "isfinite")] fn cgra_isfinitef(f32) -> i32;
+#[import(cc = "C", name = "fma")]      fn cgra_fmaf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "mad")]      fn cgra_madf(f32, f32, f32) -> f32;
+#[import(cc = "C", name = "copysign")] fn cgra_copysignf(f32, f32) -> f32;
+#[import(cc = "C", name = "exp")]      fn cgra_exp(f64) -> f64;
+#[import(cc = "C", name = "exp2")]     fn cgra_exp2(f64) -> f64;
+#[import(cc = "C", name = "log")]      fn cgra_log(f64) -> f64;
+#[import(cc = "C", name = "log2")]     fn cgra_log2(f64) -> f64;
+#[import(cc = "C", name = "pow")]      fn cgra_pow(f64, f64) -> f64;
+#[import(cc = "C", name = "rsqrt")]    fn cgra_rsqrt(f64) -> f64;
+#[import(cc = "C", name = "sqrt")]     fn cgra_sqrt(f64) -> f64;
+#[import(cc = "C", name = "fabs")]     fn cgra_fabs(f64) -> f64;
+#[import(cc = "C", name = "sin")]      fn cgra_sin(f64) -> f64;
+#[import(cc = "C", name = "cos")]      fn cgra_cos(f64) -> f64;
+#[import(cc = "C", name = "tan")]      fn cgra_tan(f64) -> f64;
+#[import(cc = "C", name = "asin")]     fn cgra_asin(f64) -> f64;
+#[import(cc = "C", name = "acos")]     fn cgra_acos(f64) -> f64;
+#[import(cc = "C", name = "atan")]     fn cgra_atan(f64) -> f64;
+#[import(cc = "C", name = "erf")]      fn cgra_erf(f64) -> f64;
+#[import(cc = "C", name = "atan2")]    fn cgra_atan2(f64, f64) -> f64;
+#[import(cc = "C", name = "fmod")]     fn cgra_fmod(f64, f64) -> f64;
+#[import(cc = "C", name = "floor")]    fn cgra_floor(f64) -> f64;
+#[import(cc = "C", name = "isinf")]    fn cgra_isinf(f64) -> i32;
+#[import(cc = "C", name = "isnan")]    fn cgra_isnan(f64) -> i32;
+#[import(cc = "C", name = "isfinite")] fn cgra_isfinite(f64) -> i32;
+#[import(cc = "C", name = "fma")]      fn cgra_fma(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "mad")]      fn cgra_mad(f64, f64, f64) -> f64;
+#[import(cc = "C", name = "copysign")] fn cgra_copysign(f64, f64) -> f64;
+#[import(cc = "C", name = "fmin")]     fn cgra_fminf(f32, f32) -> f32;
+#[import(cc = "C", name = "fmax")]     fn cgra_fmaxf(f32, f32) -> f32;
+#[import(cc = "C", name = "fmin")]     fn cgra_fmin(f64, f64) -> f64;
+#[import(cc = "C", name = "fmax")]     fn cgra_fmax(f64, f64) -> f64;
+#[import(cc = "C", name = "min")]      fn cgra_min(i32, i32) -> i32;
+#[import(cc = "C", name = "max")]      fn cgra_max(i32, i32) -> i32;
+
+//#[import(cc = "device")] fn print_pragma(&[u8]) -> ();
+
+//// channel scalar types
+//struct channel[T] { data : T }
+//// channel array types
+//struct channel1[T]   { data : [T * 1  ] }
+//struct channel2[T]   { data : [T * 2  ] }
+//struct channel4[T]   { data : [T * 4  ] }
+//struct channel8[T]   { data : [T * 8  ] }
+//struct channel16[T]  { data : [T * 16 ] }
+//struct channel32[T]  { data : [T * 32 ] }
+//struct channel64[T]  { data : [T * 64 ] }
+//struct channel128[T] { data : [T * 128] }
+//
+//// read and write on scalar channels
+//#[import(cc = "device", name = "read_channel")] fn read_channel[T]  (&mut channel[T]) ->  T;
+//#[import(cc = "device", name = "write_channel")] fn write_channel[T] (&mut channel[T],  T ) -> ();
+//
+//// read and write on array channels
+//#[import(cc = "device", name = "read_channel")] fn read_channel1[T] ( &mut channel1[T] ) -> [T * 1 ];
+//#[import(cc = "device", name = "read_channel")] fn read_channel2[T] ( &mut channel2[T] ) -> [T * 2 ];
+//#[import(cc = "device", name = "read_channel")] fn read_channel4[T] ( &mut channel4[T] ) -> [T * 4 ];
+//#[import(cc = "device", name = "read_channel")] fn read_channel8[T] ( &mut channel8[T] ) -> [T * 8 ];
+//#[import(cc = "device", name = "read_channel")] fn read_channel16[T]( &mut channel16[T]) -> [T * 16];
+//#[import(cc = "device", name = "read_channel")] fn read_channel32[T]( &mut channel32[T]) -> [T * 32];
+//
+//#[import(cc = "device", name = "write_channel")] fn write_channel1[T] ( &mut channel1[T],  [T * 1 ]) -> ();
+//#[import(cc = "device", name = "write_channel")] fn write_channel2[T] ( &mut channel2[T],  [T * 2 ]) -> ();
+//#[import(cc = "device", name = "write_channel")] fn write_channel4[T] ( &mut channel4[T],  [T * 4 ]) -> ();
+//#[import(cc = "device", name = "write_channel")] fn write_channel8[T] ( &mut channel8[T],  [T * 8 ]) -> ();
+//#[import(cc = "device", name = "write_channel")] fn write_channel16[T]( &mut channel16[T], [T * 16]) -> ();
+//#[import(cc = "device", name = "write_channel")] fn write_channel32[T]( &mut channel32[T], [T * 32]) -> ();
+//#[import(cc = "device", name = " ")]             fn bitcast_channel[T]( &mut channel1[T]) -> [T * 2];
+
+fn @cgra_accelerator(dev: i32) = Accelerator {
+    exec = @|body| |_grid, _block| {
+        let work_item = WorkItem {
+            tidx  = @|| 0, tidy  = @|| 0, tidz  = @|| 0,
+            bidx  = @|| 0, bidy  = @|| 0, bidz  = @|| 0,
+            gidx  = @|| 0, gidy  = @|| 0, gidz  = @|| 0,
+            bdimx = @|| 1, bdimy = @|| 1, bdimz = @|| 1,
+            gdimx = @|| 1, gdimy = @|| 1, gdimz = @|| 1,
+            nblkx = @|| 1, nblky = @|| 1, nblkz = @|| 1
+        };
+        hls(dev, || @body(work_item));
+    },
+    sync          = @|| synchronize_cgra(dev),
+    alloc         = @|size| alloc_cgra(dev, size),
+    alloc_unified = @|size| alloc_cgra_unified(dev, size),
+    barrier       = @|| ()
+};
+
+static cgra_intrinsics = Intrinsics {
+    expf        = cgra_expf,
+    exp2f       = cgra_exp2f,
+    logf        = cgra_logf,
+    log2f       = cgra_log2f,
+    powf        = cgra_powf,
+    rsqrtf      = cgra_rsqrtf,
+    sqrtf       = cgra_sqrtf,
+    fabsf       = cgra_fabsf,
+    sinf        = cgra_sinf,
+    cosf        = cgra_cosf,
+    tanf        = cgra_tanf,
+    asinf       = cgra_asinf,
+    acosf       = cgra_acosf,
+    atanf       = cgra_atanf,
+    erff        = cgra_erff,
+    atan2f      = cgra_atan2f,
+    copysignf   = cgra_copysignf,
+    fmaf        = cgra_fmaf,
+    fmaxf       = cgra_fmaxf,
+    fminf       = cgra_fminf,
+    fmodf       = cgra_fmodf,
+    floorf      = cgra_floorf,
+    isinff      = cgra_isinff,
+    isnanf      = cgra_isnanf,
+    isfinitef   = cgra_isfinitef,
+    exp         = cgra_exp,
+    exp2        = cgra_exp2,
+    log         = cgra_log,
+    log2        = cgra_log2,
+    pow         = cgra_pow,
+    rsqrt       = cgra_rsqrt,
+    sqrt        = cgra_sqrt,
+    fabs        = cgra_fabs,
+    sin         = cgra_sin,
+    cos         = cgra_cos,
+    tan         = cgra_tan,
+    asin        = cgra_asin,
+    acos        = cgra_acos,
+    atan        = cgra_atan,
+    erf         = cgra_erf,
+    atan2       = cgra_atan2,
+    copysign    = cgra_copysign,
+    fma         = cgra_fma,
+    fmax        = cgra_fmax,
+    fmin        = cgra_fmin,
+    fmod        = cgra_fmod,
+    floor       = cgra_floor,
+    isinf       = cgra_isinf,
+    isnan       = cgra_isnan,
+    isfinite    = cgra_isfinite,
+    min         = cgra_min,
+    max         = cgra_max,
+};

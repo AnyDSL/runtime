@@ -103,8 +103,11 @@ fn @alloc_opencl(dev: i32, size: i64) = alloc(runtime_device(2, dev), size);
 fn @alloc_opencl_unified(dev: i32, size: i64) = alloc_unified(runtime_device(2, dev), size);
 fn @synchronize_opencl(dev: i32) = runtime_synchronize(runtime_device(2, dev));
 fn @alloc_hls(dev: i32, size: i64) -> Buffer { alloc(runtime_device(2, dev), size) }
+fn @alloc_cgra(dev: i32, size: i64) -> Buffer { alloc(runtime_device(2, dev), size) }
 fn @alloc_hls_unified(dev: i32, size: i64) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
+fn @alloc_cgra_unified(dev: i32, size: i64) -> Buffer { alloc_unified(runtime_device(2, dev), size) }
 fn @synchronize_hls(dev: i32) -> () { runtime_synchronize(runtime_device(2, dev)) }
+fn @synchronize_cgra(dev: i32) -> () { runtime_synchronize(runtime_device(2, dev)) }
 fn @alloc_hsa(dev: i32, size: i64) = alloc(runtime_device(3, dev), size);
 fn @alloc_hsa_host(dev: i32, size: i64) = alloc_host(runtime_device(3, dev), size);
 fn @alloc_hsa_unified(dev: i32, size: i64) = alloc_unified(runtime_device(3, dev), size);
