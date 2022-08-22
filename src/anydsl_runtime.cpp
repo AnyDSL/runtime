@@ -20,6 +20,7 @@
 #include <tbb/task_group.h>
 #else
 #include <thread>
+#include <mutex>
 #endif
 
 struct RuntimeSingleton {
@@ -205,6 +206,7 @@ uint64_t anydsl_random_val_u64() {
 #ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
+static std::mutex thread_lock;
 
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     // Get number of available hardware threads
@@ -236,6 +238,8 @@ void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void
 }
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
+    std::lock_guard<std::mutex> lock(thread_lock);
+
     int32_t (*fun_ptr) (void*) = reinterpret_cast<int32_t (*) (void*)>(fun);
 
     int32_t id;
@@ -252,11 +256,18 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto thread = thread_pool.find(id);
+    auto thread = thread_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        thread = thread_pool.find(id);
+    }
     if (thread != thread_pool.end()) {
         thread->second.join();
-        free_ids.push_back(thread->first);
-        thread_pool.erase(thread);
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push_back(thread->first);
+            thread_pool.erase(thread);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid thread id");
     }
