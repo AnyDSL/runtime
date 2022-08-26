@@ -1,6 +1,7 @@
 #include <random>
 #include <chrono>
 #include <locale>
+#include <mutex>
 #include <sstream>
 
 #include "anydsl_runtime.h"
@@ -22,7 +23,6 @@
 #include <tbb/concurrent_queue.h>
 #else
 #include <thread>
-#include <mutex>
 #endif
 
 struct RuntimeSingleton {
@@ -297,8 +297,10 @@ typedef tbb::concurrent_unordered_map<int32_t, tbb::task_group, std::hash<int32_
 typedef std::pair<task_group_map::iterator, bool> task_group_node_ref;
 static task_group_map task_pool;
 static tbb::concurrent_queue<int32_t> free_ids;
+static std::mutex thread_lock;
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
+    std::lock_guard<std::mutex> lock(thread_lock);
     int32_t id = -1;
     if (!free_ids.try_pop(id)) {
         id = int32_t(task_pool.size());
@@ -317,10 +319,17 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto task = task_pool.find(id);
+    auto task = task_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        task = task_pool.find(id);
+    }
     if (task != task_pool.end()) {
         task->second.wait();
-        free_ids.push(task->first);
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push(task->first);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid task id");
     }
