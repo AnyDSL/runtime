@@ -1,0 +1,240 @@
+extern "device" {
+    // no declarations are emitted for "device" functions
+    fn "exp"        cgra_expf(f32) -> f32;
+    fn "exp2"       cgra_exp2f(f32) -> f32;
+    fn "log"        cgra_logf(f32) -> f32;
+    fn "log2"       cgra_log2f(f32) -> f32;
+    fn "pow"        cgra_powf(f32, f32) -> f32;
+    fn "rsqrt"      cgra_rsqrtf(f32) -> f32;
+    fn "sqrt"       cgra_sqrtf(f32) -> f32;
+    fn "fabs"       cgra_fabsf(f32) -> f32;
+    fn "sin"        cgra_sinf(f32) -> f32;
+    fn "cos"        cgra_cosf(f32) -> f32;
+    fn "tan"        cgra_tanf(f32) -> f32;
+    fn "asin"       cgra_asinf(f32) -> f32;
+    fn "acos"       cgra_acosf(f32) -> f32;
+    fn "atan"       cgra_atanf(f32) -> f32;
+    fn "erf"        cgra_erff(f32) -> f32;
+    fn "atan2"      cgra_atan2f(f32, f32) -> f32;
+    fn "fmod"       cgra_fmodf(f32, f32) -> f32;
+    fn "floor"      cgra_floorf(f32) -> f32;
+    fn "isinf"      cgra_isinff(f32) -> i32;
+    fn "isnan"      cgra_isnanf(f32) -> i32;
+    fn "isfinite"   cgra_isfinitef(f32) -> i32;
+    fn "fma"        cgra_fmaf(f32, f32, f32) -> f32;
+    fn "mad"        cgra_madf(f32, f32, f32) -> f32;
+    fn "copysign"   cgra_copysignf(f32, f32) -> f32;
+    fn "exp"        cgra_exp(f64) -> f64;
+    fn "exp2"       cgra_exp2(f64) -> f64;
+    fn "log"        cgra_log(f64) -> f64;
+    fn "log2"       cgra_log2(f64) -> f64;
+    fn "pow"        cgra_pow(f64, f64) -> f64;
+    fn "rsqrt"      cgra_rsqrt(f64) -> f64;
+    fn "sqrt"       cgra_sqrt(f64) -> f64;
+    fn "fabs"       cgra_fabs(f64) -> f64;
+    fn "sin"        cgra_sin(f64) -> f64;
+    fn "cos"        cgra_cos(f64) -> f64;
+    fn "tan"        cgra_tan(f64) -> f64;
+    fn "asin"       cgra_asin(f64) -> f64;
+    fn "acos"       cgra_acos(f64) -> f64;
+    fn "atan"       cgra_atan(f64) -> f64;
+    fn "erf"        cgra_erf(f64) -> f64;
+    fn "atan2"      cgra_atan2(f64, f64) -> f64;
+    fn "fmod"       cgra_fmod(f64, f64) -> f64;
+    fn "floor"      cgra_floor(f64) -> f64;
+    fn "isinf"      cgra_isinf(f64) -> i32;
+    fn "isnan"      cgra_isnan(f64) -> i32;
+    fn "isfinite"   cgra_isfinite(f64) -> i32;
+    fn "fma"        cgra_fma(f64, f64, f64) -> f64;
+    fn "mad"        cgra_mad(f64, f64, f64) -> f64;
+    fn "copysign"   cgra_copysign(f64, f64) -> f64;
+    fn "fmin"       cgra_fminf(f32, f32) -> f32;
+    fn "fmax"       cgra_fmaxf(f32, f32) -> f32;
+    fn "fmin"       cgra_fmin(f64, f64) -> f64;
+    fn "fmax"       cgra_fmax(f64, f64) -> f64;
+    fn "min"        cgra_min(i32, i32) -> i32;
+    fn "max"        cgra_max(i32, i32) -> i32;
+}
+
+//// channel scalar types
+//struct channel_u8  { data : u8  };
+//struct channel_i32 { data : i32 };
+//struct channel_f32 { data : f32 };
+//
+//// channel array types
+//struct channel1_u8   { data : [u8 * 1  ] };
+//struct channel2_u8   { data : [u8 * 2  ] };
+//struct channel4_u8   { data : [u8 * 4  ] };
+//struct channel8_u8   { data : [u8 * 8  ] };
+//struct channel16_u8  { data : [u8 * 16 ] };
+//struct channel32_u8  { data : [u8 * 32 ] };
+//struct channel64_u8  { data : [u8 * 64 ] };
+//struct channel128_u8 { data : [u8 * 128] };
+//
+//struct channel1_i32   { data : [i32 * 1  ] };
+//struct channel2_i32   { data : [i32 * 2  ] };
+//struct channel4_i32   { data : [i32 * 4  ] };
+//struct channel8_i32   { data : [i32 * 8  ] };
+//struct channel16_i32  { data : [i32 * 16 ] };
+//struct channel32_i32  { data : [i32 * 32 ] };
+//struct channel64_i32  { data : [i32 * 64 ] };
+//struct channel128_i32 { data : [i32 * 128] };
+//
+//struct channel1_f32   { data : [f32 * 1  ] };
+//struct channel2_f32   { data : [f32 * 2  ] };
+//struct channel4_f32   { data : [f32 * 4  ] };
+//struct channel8_f32   { data : [f32 * 8  ] };
+//struct channel16_f32  { data : [f32 * 16 ] };
+//struct channel32_f32  { data : [f32 * 32 ] };
+//struct channel64_f32  { data : [f32 * 64 ] };
+//struct channel128_f32 { data : [f32 * 128] };
+//
+//extern "device" {
+//    fn print_pragma(&[u8]) -> ();
+//    // u8 scalar
+//    fn "read_channel"  read_channel_u8  ( &mut channel_u8    ) -> u8 ;
+//    fn "write_channel" write_channel_u8 ( &mut channel_u8, u8) -> ();
+//
+//    // u8 array
+//    fn "read_channel"  read_channel1_u8  ( &mut channel1_u8  ) -> [u8 * 1  ];
+//    fn "read_channel"  read_channel2_u8  ( &mut channel2_u8  ) -> [u8 * 2  ];
+//    fn "read_channel"  read_channel4_u8  ( &mut channel4_u8  ) -> [u8 * 4  ];
+//    fn "read_channel"  read_channel8_u8  ( &mut channel8_u8  ) -> [u8 * 8  ];
+//    fn "read_channel"  read_channel16_u8 ( &mut channel16_u8 ) -> [u8 * 16 ];
+//    fn "read_channel"  read_channel32_u8 ( &mut channel32_u8 ) -> [u8 * 32 ];
+//    fn "read_channel"  read_channel64_u8 ( &mut channel64_u8 ) -> [u8 * 64 ];
+//    fn "read_channel"  read_channel128_u8( &mut channel128_u8) -> [u8 * 128];
+//
+//    fn "write_channel" write_channel1_u8  ( &mut channel1_u8,   [u8 * 1  ] ) -> ();
+//    fn "write_channel" write_channel2_u8  ( &mut channel2_u8,   [u8 * 2  ] ) -> ();
+//    fn "write_channel" write_channel4_u8  ( &mut channel4_u8,   [u8 * 4  ] ) -> ();
+//    fn "write_channel" write_channel8_u8  ( &mut channel8_u8,   [u8 * 8  ] ) -> ();
+//    fn "write_channel" write_channel16_u8 ( &mut channel16_u8,  [u8 * 16 ] ) -> ();
+//    fn "write_channel" write_channel32_u8 ( &mut channel32_u8,  [u8 * 32 ] ) -> ();
+//    fn "write_channel" write_channel64_u8 ( &mut channel64_u8,  [u8 * 64 ] ) -> ();
+//    fn "write_channel" write_channel128_u8( &mut channel128_u8, [u8 * 128] ) -> ();
+//    fn " "             bitcast_channel_u8 ( &mut channel1_u8) -> [u8 * 2 ];
+//
+//    // i32 scalar
+//    fn "read_channel"  read_channel_i32  ( &mut channel_i32      ) -> i32;
+//    fn "write_channel" write_channel_i32 ( &mut channel_i32, i32 ) -> ();
+//
+//    // i32 array
+//    fn "read_channel"  read_channel1_i32  ( &mut channel1_i32  ) -> [i32 * 1  ];
+//    fn "read_channel"  read_channel2_i32  ( &mut channel2_i32  ) -> [i32 * 2  ];
+//    fn "read_channel"  read_channel4_i32  ( &mut channel4_i32  ) -> [i32 * 4  ];
+//    fn "read_channel"  read_channel8_i32  ( &mut channel8_i32  ) -> [i32 * 8  ];
+//    fn "read_channel"  read_channel16_i32 ( &mut channel16_i32 ) -> [i32 * 16 ];
+//    fn "read_channel"  read_channel32_i32 ( &mut channel32_i32 ) -> [i32 * 32 ];
+//    fn "read_channel"  read_channel64_i32 ( &mut channel64_i32 ) -> [i32 * 64 ];
+//    fn "read_channel"  read_channel128_i32( &mut channel128_i32) -> [i32 * 128];
+//
+//    fn "write_channel" write_channel1_i32  ( &mut channel1_i32,   [i32 * 1  ] )-> ();
+//    fn "write_channel" write_channel2_i32  ( &mut channel2_i32,   [i32 * 2  ] ) -> ();
+//    fn "write_channel" write_channel4_i32  ( &mut channel4_i32,   [i32 * 4  ] ) -> ();
+//    fn "write_channel" write_channel8_i32  ( &mut channel8_i32,   [i32 * 8  ] ) -> ();
+//    fn "write_channel" write_channel16_i32 ( &mut channel16_i32,  [i32 * 16 ] ) -> ();
+//    fn "write_channel" write_channel32_i32 ( &mut channel32_i32,  [i32 * 32 ] ) -> ();
+//    fn "write_channel" write_channel64_i32 ( &mut channel64_i32,  [i32 * 64 ] ) -> ();
+//    fn "write_channel" write_channel128_i32( &mut channel128_i32, [i32 * 128])  -> ();
+//    fn " "             bitcast_channel_i32 ( &mut channel1_i32) -> [i32 * 2 ];
+//
+//    // f32 scalar
+//    fn "read_channel"  read_channel_f32  ( &mut channel_f32      ) -> f32;
+//    fn "write_channel" write_channel_f32 ( &mut channel_f32, f32 ) -> ();
+//
+//    // f32 array
+//    fn "read_channel"  read_channel1_f32  ( &mut channel1_f32  ) -> [f32 * 1  ];
+//    fn "read_channel"  read_channel2_f32  ( &mut channel2_f32  ) -> [f32 * 2  ];
+//    fn "read_channel"  read_channel4_f32  ( &mut channel4_f32  ) -> [f32 * 4  ];
+//    fn "read_channel"  read_channel8_f32  ( &mut channel8_f32  ) -> [f32 * 8  ];
+//    fn "read_channel"  read_channel16_f32 ( &mut channel16_f32 ) -> [f32 * 16 ];
+//    fn "read_channel"  read_channel32_f32 ( &mut channel32_f32 ) -> [f32 * 32 ];
+//    fn "read_channel"  read_channel64_f32 ( &mut channel64_f32 ) -> [f32 * 64 ];
+//    fn "read_channel"  read_channel128_f32( &mut channel128_f32) -> [f32 * 128];
+//
+//    fn "write_channel" write_channel1_f32  ( &mut channel1_f32,   [f32 * 1  ]) -> ();
+//    fn "write_channel" write_channel2_f32  ( &mut channel2_f32,   [f32 * 2  ]) -> ();
+//    fn "write_channel" write_channel4_f32  ( &mut channel4_f32,   [f32 * 4  ]) -> ();
+//    fn "write_channel" write_channel8_f32  ( &mut channel8_f32,   [f32 * 8  ]) -> ();
+//    fn "write_channel" write_channel16_f32 ( &mut channel16_f32,  [f32 * 16 ]) -> ();
+//    fn "write_channel" write_channel32_f32 ( &mut channel32_f32,  [f32 * 32 ]) -> ();
+//    fn "write_channel" write_channel64_f32 ( &mut channel64_f32,  [f32 * 64 ]) -> ();
+//    fn "write_channel" write_channel128_f32( &mut channel128_f32, [f32 * 128]) -> ();
+//    fn " "             bitcast_channel_f32 ( &mut channel1_f32) -> [f32 * 2  ];
+//}
+
+fn @cgra_accelerator(dev: i32) -> Accelerator {
+    Accelerator {
+        exec          : @|grid, block, body| {
+            let work_item = WorkItem {
+                tidx  : @|| 0, tidy  : @|| 0, tidz  : @|| 0,
+                bidx  : @|| 0, bidy  : @|| 0, bidz  : @|| 0,
+                gidx  : @|| 0, gidy  : @|| 0, gidz  : @|| 0,
+                bdimx : @|| 1, bdimy : @|| 1, bdimz : @|| 1,
+                gdimx : @|| 1, gdimy : @|| 1, gdimz : @|| 1,
+                nblkx : @|| 1, nblky : @|| 1, nblkz : @|| 1
+            };
+            cgra(dev, || @@body(work_item));
+        },
+        sync          : @|| synchronize_cgra(dev),
+        alloc         : @|size| alloc_cgra(dev, size),
+        alloc_unified : @|size| alloc_cgra_unified(dev, size),
+        barrier       : @|| ()
+    }
+};
+
+static cgra_intrinsics = Intrinsics {
+    expf        : cgra_expf,
+    exp2f       : cgra_exp2f,
+    logf        : cgra_logf,
+    log2f       : cgra_log2f,
+    powf        : cgra_powf,
+    rsqrtf      : cgra_rsqrtf,
+    sqrtf       : cgra_sqrtf,
+    fabsf       : cgra_fabsf,
+    sinf        : cgra_sinf,
+    cosf        : cgra_cosf,
+    tanf        : cgra_tanf,
+    asinf       : cgra_asinf,
+    acosf       : cgra_acosf,
+    atanf       : cgra_atanf,
+    erff        : cgra_erff,
+    atan2f      : cgra_atan2f,
+    copysignf   : cgra_copysignf,
+    fmaf        : cgra_fmaf,
+    fmaxf       : cgra_fmaxf,
+    fminf       : cgra_fminf,
+    fmodf       : cgra_fmodf,
+    floorf      : cgra_floorf,
+    isinff      : cgra_isinff,
+    isnanf      : cgra_isnanf,
+    isfinitef   : cgra_isfinitef,
+    exp         : cgra_exp,
+    exp2        : cgra_exp2,
+    log         : cgra_log,
+    log2        : cgra_log2,
+    pow         : cgra_pow,
+    rsqrt       : cgra_rsqrt,
+    sqrt        : cgra_sqrt,
+    fabs        : cgra_fabs,
+    sin         : cgra_sin,
+    cos         : cgra_cos,
+    tan         : cgra_tan,
+    asin        : cgra_asin,
+    acos        : cgra_acos,
+    atan        : cgra_atan,
+    erf         : cgra_erf,
+    atan2       : cgra_atan2,
+    copysign    : cgra_copysign,
+    fma         : cgra_fma,
+    fmax        : cgra_fmax,
+    fmin        : cgra_fmin,
+    fmod        : cgra_fmod,
+    floor       : cgra_floor,
+    isinf       : cgra_isinf,
+    isnan       : cgra_isnan,
+    isfinite    : cgra_isfinite,
+    min         : cgra_min,
+    max         : cgra_max,
+};

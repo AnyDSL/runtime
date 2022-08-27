@@ -150,6 +150,7 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_rv.impala
             ../platforms/${frontend}/intrinsics_cpu.impala
             ../platforms/${frontend}/intrinsics_hls.impala
+            ../platforms/${frontend}/intrinsics_cgra.impala
             ../platforms/${frontend}/intrinsics_cuda.impala
             ../platforms/${frontend}/intrinsics_nvvm.impala
             ../platforms/${frontend}/intrinsics_amdgpu.impala
