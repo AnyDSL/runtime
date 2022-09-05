@@ -54,6 +54,8 @@ public:
     virtual size_t dev_count() const = 0;
     /// Returns the name of the given device.
     virtual const char* device_name(DeviceId dev) const = 0;
+    /// Checks whether the given platform-specific feature is supported on the given device.
+    virtual bool device_check_feature_support(DeviceId dev, const char* feature) const = 0;
 
 protected:
     [[noreturn]] void platform_error() {
