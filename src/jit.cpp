@@ -73,9 +73,9 @@ struct JIT {
 
             world.opt();
 
+            std::string host_triple, host_cpu, host_attr, hls_flags;
             thorin::DeviceBackends backends(world, opt, debug, hls_flags);
 
-            std::string host_triple, host_cpu, host_attr, hls_flags;
             thorin::llvm::CPUCodeGen cg(world, opt, debug, host_triple, host_cpu, host_attr);
             std::tie(llvm_context, llvm_module) = cg.emit_module();
             std::stringstream stream;
