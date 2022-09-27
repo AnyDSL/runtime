@@ -670,8 +670,7 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
         info("Compilation info: %", info_log);
     CHECK_CUDA(err, "cuLinkComplete()");
 
-    if (dump_binaries)
-    {
+    if (dump_binaries) {
         auto cubin_name = filename + ".sm_" + std::to_string(devices_[dev].compute_capability) + ".cubin";
         runtime_->store_file(cubin_name, static_cast<const std::byte*>(binary), binary_size);
     }
