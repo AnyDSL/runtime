@@ -2,6 +2,7 @@
 #define RUNTIME_H
 
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -83,6 +84,7 @@ public:
 
     std::string load_file(const std::string& filename) const;
     void store_file(const std::string& filename, const std::string& str) const;
+    void store_file(const std::string& filename, const std::byte* data, size_t size) const;
 
     std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
     void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
