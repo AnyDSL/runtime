@@ -12,7 +12,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <string>
 
 static std::string get_opencl_error_code_str(int error) {
@@ -105,14 +104,6 @@ static std::string get_opencl_error_code_str(int error) {
 inline void check_opencl_error(cl_int err, const char* name, const char* file, const int line) {
     if (err != CL_SUCCESS)
         error("OpenCL API function % (%) [file %, line %]: %", name, err, file, line, get_opencl_error_code_str(err));
-}
-
-std::string load_program_file(const std::string& filename) {
-    std::ifstream src_file(filename);
-    if (!src_file.is_open())
-        error("Can't open source file '%'", filename);
-
-    return std::string(std::istreambuf_iterator<char>(src_file), (std::istreambuf_iterator<char>()));
 }
 
 OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
