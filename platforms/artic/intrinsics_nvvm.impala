@@ -488,7 +488,7 @@ fn @nvvm_trap() -> () {
 }
 
 fn @nvvm_nanosleep(t: u32) -> () {
-    asm("nanosleep.u32 $0;" : : "r"(t));
+    asm("nanosleep.u32 $0;" :: "r"(t) :: "volatile");
 }
 
 fn @nvvm_clock() -> u32 {
