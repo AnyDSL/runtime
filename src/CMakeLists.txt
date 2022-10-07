@@ -67,7 +67,7 @@ else()
     if(CUDAToolkit_FOUND)
         # this is more robust in case CUDAToolkit_LIBRARY_ROOT is not defined
         find_path(CUDAToolkit_LIBRARY_ROOT
-            NAMES version.txt version.json
+            NAMES version.txt version.json bin/nvcc
             HINTS ${CUDAToolkit_LIBRARY_ROOT} ${CUDAToolkit_ROOT} ${CUDAToolkit_BIN_DIR}/../)
         find_library(CUDAToolkit_NVVM_LIBRARY nvvm
             HINTS ${CUDAToolkit_LIBRARY_ROOT}/nvvm
