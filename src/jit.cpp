@@ -148,7 +148,7 @@ JIT& jit() {
 }
 
 void anydsl_set_cache_directory(const char* dir) {
-    jit().runtime->set_cache_directory(dir);
+    jit().runtime->set_cache_directory(dir == nullptr ? std::string() : dir);
 }
 
 const char* anydsl_get_cache_directory() {
