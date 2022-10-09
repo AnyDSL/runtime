@@ -152,7 +152,9 @@ void anydsl_set_cache_directory(const char* dir) {
 }
 
 const char* anydsl_get_cache_directory() {
-    return jit().runtime->get_cache_directory().c_str();
+    static std::string dir;
+    dir = jit().runtime->get_cache_directory();
+    return dir.c_str();
 }
 
 void anydsl_link(const char* lib) {
