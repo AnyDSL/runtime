@@ -147,6 +147,16 @@ JIT& jit() {
     return *jit;
 }
 
+void anydsl_set_cache_directory(const char* dir) {
+    jit().runtime->set_cache_directory(dir == nullptr ? std::string() : dir);
+}
+
+const char* anydsl_get_cache_directory() {
+    static std::string dir;
+    dir = jit().runtime->get_cache_directory();
+    return dir.c_str();
+}
+
 void anydsl_link(const char* lib) {
     jit().link(lib);
 }

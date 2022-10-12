@@ -20,6 +20,7 @@ void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyP
 
 Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)
+    , cache_dir_("")
 {}
 
 void Runtime::display_info() const {
@@ -176,14 +177,22 @@ static std::string get_self_directory() {
 }
 #endif
 
-static std::string get_cache_directory() {
-    std::string cache_path = get_self_directory();
-    if (!cache_path.empty())
-        cache_path += PATH_DIR_SEPARATOR;
-    return cache_path + "cache";
+void Runtime::set_cache_directory(const std::string& dir) {
+    cache_dir_ = dir;
 }
 
-static std::string get_cached_filename(const std::string& str, const std::string& ext) {
+std::string Runtime::get_cache_directory() const {
+    if (cache_dir_.empty()) {
+        std::string cache_path = get_self_directory();
+        if (!cache_path.empty())
+            cache_path += PATH_DIR_SEPARATOR;
+        return cache_path + "cache";
+    } else {
+        return cache_dir_;
+    }
+}
+
+std::string Runtime::get_cached_filename(const std::string& str, const std::string& ext) const {
     size_t key = std::hash<std::string>{}(str);
     std::stringstream hex_stream;
     hex_stream << std::hex << key;

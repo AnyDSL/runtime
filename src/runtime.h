@@ -86,6 +86,10 @@ public:
     void store_file(const std::string& filename, const std::string& str) const;
     void store_file(const std::string& filename, const std::byte* data, size_t size) const;
 
+    /// Set an optional directory for generated cache data. If not specified, or empty, an internal directory will be used. User has to make sure the directory exists.
+    void set_cache_directory(const std::string& dir);
+    std::string get_cache_directory() const;
+
     std::string load_from_cache(const std::string& str, const std::string& ext=".bin") const;
     void store_to_cache(const std::string& key, const std::string& str, const std::string ext=".bin") const;
 
@@ -98,11 +102,13 @@ public:
 
 private:
     void check_device(PlatformId, DeviceId) const;
+    std::string get_cached_filename(const std::string& str, const std::string& ext) const;
 
     std::pair<ProfileLevel, ProfileLevel> profile_;
     std::atomic<uint64_t> kernel_time_;
     std::vector<std::unique_ptr<Platform>> platforms_;
     std::unordered_map<std::string, std::string> files_;
+    std::string cache_dir_;
 };
 
 #endif
