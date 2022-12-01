@@ -73,6 +73,10 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
     #endif
 
     CUresult err = cuInit(0);
+    if (err == CUDA_ERROR_NO_DEVICE) {
+        info("CUDA backend did not initialise because no devices were found (CUDA_ERROR_NO_DEVICE).");
+        return;
+    }
     CHECK_CUDA(err, "cuInit()");
 
     err = cuDeviceGetCount(&device_count);
