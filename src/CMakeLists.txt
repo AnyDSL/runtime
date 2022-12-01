@@ -128,6 +128,17 @@ if(hsa-runtime64_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
+# look for shady
+find_package(shady)
+if (shady_FOUND)
+    find_package(Vulkan REQUIRED)
+    message("It's shading time")
+    add_library(runtime_shady STATIC shady_platform.cpp shady_platform.h)
+    target_link_libraries(runtime_shady PRIVATE shady::runtime)
+    list(APPEND RUNTIME_PLATFORMS runtime_shady)
+endif()
+set(AnyDSL_runtime_HAS_SHADY_SUPPORT ${shady_FOUND} CACHE INTERNAL "enables Shady support")
+
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
 if(LLVM_FOUND)

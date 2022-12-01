@@ -9,6 +9,7 @@
 #cmakedefine AnyDSL_runtime_HAS_CUDA_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_OPENCL_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_HSA_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_SHADY_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_TBB_SUPPORT
 
 

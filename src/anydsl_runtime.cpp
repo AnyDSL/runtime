@@ -35,6 +35,7 @@ struct RuntimeSingleton {
         register_cuda_platform(&runtime);
         register_opencl_platform(&runtime);
         register_hsa_platform(&runtime);
+        register_shady_platform(&runtime);
     }
 
     static std::pair<ProfileLevel, ProfileLevel> detect_profile_level() {

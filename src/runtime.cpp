@@ -17,6 +17,9 @@ void register_opencl_platform(Runtime* runtime) { runtime->register_platform<Dum
 #ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
 void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
 #endif
+#ifndef AnyDSL_runtime_HAS_SHADY_SUPPORT
+void register_shady_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("Shady"); }
+#endif
 
 Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)

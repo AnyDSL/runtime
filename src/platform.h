@@ -12,6 +12,7 @@ void register_cpu_platform(Runtime*);
 void register_cuda_platform(Runtime*);
 void register_opencl_platform(Runtime*);
 void register_hsa_platform(Runtime*);
+void register_shady_platform(Runtime*);
 
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.
