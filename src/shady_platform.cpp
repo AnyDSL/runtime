@@ -26,7 +26,9 @@ void ShadyPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_param
     std::string program_src = runtime_->load_file(launch_params.file_name);
     shady::Program* program = shady::load_program(shd_rt, program_src.c_str());
     auto device = shady::get_device(shd_rt, dev);
-    shady::launch_kernel(program, device, launch_params.grid[0], launch_params.grid[1], launch_params.grid[2], 0, nullptr);
+    shady::Dispatch* d = shady::launch_kernel(program, device, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2], 0, nullptr);
+    assert(d);
+    shady::wait_completion(d);
 }
 void ShadyPlatform::synchronize(DeviceId dev) {}
 
