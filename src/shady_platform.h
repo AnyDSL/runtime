@@ -3,6 +3,12 @@
 
 #include "platform.h"
 
+namespace shady {
+extern "C" {
+#include "shady/runtime.h"
+}
+}
+
 class ShadyPlatform : public Platform {
 public:
     ShadyPlatform(Runtime* runtime);
@@ -26,6 +32,9 @@ public:
     size_t dev_count() const override { return 1; }
     const char * device_name(DeviceId dev) const override { return "TODO"; }
     bool device_check_feature_support(DeviceId dev, const char* feature) const override { return false; }
+
+private:
+    shady::Runtime* shd_rt;
 };
 
 #endif //ANYDSL_RUNTIME_RUNTIME_SHADY_H
