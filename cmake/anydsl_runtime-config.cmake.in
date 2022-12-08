@@ -78,7 +78,19 @@ find_program(Artic_BIN artic
     PATHS ${Artic_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
+# determine anyopt binary for toolchain
+find_path(Anyopt_DIR
+    NAMES anyopt-config.cmake
+    PATHS ${Anyopt_DIR} $ENV{Anyopt_DIR} "@Anyopt_DIR@" "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
+    PATH_SUFFIXES share/anydsl/cmake
+)
+find_package(Anyopt QUIET PATHS ${Anyopt_DIR})
+if(TARGET anyopt AND NOT Anyopt_BIN)
+    get_target_property(Anyopt_BIN anyopt LOCATION)
+    set(Anyopt_BIN ${Anyopt_BIN} CACHE FILEPATH "path to anyopt executable")
+endif()
 find_program(Anyopt_BIN anyopt
+    PATHS ${Anyopt_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
 # determine impala binary for toolchain
