@@ -659,11 +659,16 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     CUlinkState linker;
     CHECK_CUDA(cuLinkCreate(std::size(options), options, option_values, &linker), "cuLinkCreate()");
 
-    CHECK_CUDA(cuLinkAddData(linker, CU_JIT_INPUT_PTX, const_cast<char*>(ptx_string.c_str()), ptx_string.length(), filename.c_str(), 0U, nullptr, nullptr), "cuLinkAddData");
+    CUresult err = cuLinkAddData(linker, CU_JIT_INPUT_PTX, const_cast<char*>(ptx_string.c_str()), ptx_string.length(), filename.c_str(), 0U, nullptr, nullptr);
+    if (CUDA_SUCCESS != err)
+        info("Compilation error: %", error_log);
+    if (*info_log)
+        info("Compilation info: %", info_log);
+    CHECK_CUDA(err, "cuLinkAddData");
 
     void* binary;
     size_t binary_size;
-    CUresult err = cuLinkComplete(linker, &binary, &binary_size);
+    err = cuLinkComplete(linker, &binary, &binary_size);
     if (err != CUDA_SUCCESS)
         info("Compilation error: %", error_log);
     if (*info_log)
