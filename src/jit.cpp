@@ -14,12 +14,16 @@
 #include <llvm/Support/TargetSelect.h>
 
 #include <thorin/be/codegen.h>
+#include <thorin/be/json/json.h>
 #include <thorin/be/llvm/cpu.h>
 #include <thorin/world.h>
 
 #include "anydsl_jit.h"
 #include "log.h"
 #include "runtime.h"
+
+#include <anyopt/typetable.h>
+#include <anyopt/irbuilder.h>
 
 bool compile(
     const std::vector<std::string>& file_names,
