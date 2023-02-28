@@ -131,6 +131,11 @@ set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enable
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
 if(LLVM_FOUND)
+    if (NOT DEFINED AnyDSL_LLVM_LINK_SHARED)
+        if(LLVM_LINK_LLVM_DYLIB)
+            set(AnyDSL_LLVM_LINK_SHARED "USE_SHARED")
+        endif()
+    endif()
     add_definitions(${LLVM_DEFINITIONS})
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     set(AnyDSL_runtime_LLVM_COMPONENTS irreader support ${LLVM_TARGETS_TO_BUILD})
