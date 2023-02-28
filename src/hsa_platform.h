@@ -94,6 +94,7 @@ protected:
 
     uint64_t frequency_;
     std::vector<DeviceData> devices_;
+    bool initialized_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
     void* alloc_hsa(int64_t, hsa_amd_memory_pool_t);

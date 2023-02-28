@@ -251,7 +251,12 @@ HSAPlatform::HSAPlatform(Runtime* runtime)
     : Platform(runtime)
 {
     hsa_status_t status = hsa_init();
+    if (status == HSA_STATUS_ERROR_OUT_OF_RESOURCES) {
+        info("HSA runtime failed to initialize (HSA_STATUS_ERROR_OUT_OF_RESOURCES). This is likely caused by a lack of suitable HSA devices and may be ignored.");
+        return;
+    }
     CHECK_HSA(status, "hsa_init()");
+    initialized_ = true;
 
     uint16_t version_major, version_minor;
     status = hsa_system_get_info(HSA_SYSTEM_INFO_VERSION_MAJOR, &version_major);
@@ -291,7 +296,8 @@ HSAPlatform::~HSAPlatform() {
         }
     }
 
-    hsa_shut_down();
+    if (initialized_)
+        hsa_shut_down();
 }
 
 void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
