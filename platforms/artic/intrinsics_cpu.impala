@@ -63,7 +63,7 @@
 #[import(cc = "device", name = "llvm.x86.bmi.pext.64")] fn cpu_pext64(_: i64, _: i64) -> i64;
 #[import(cc = "device", name = "llvm.x86.bmi.pdep.32")] fn cpu_pdep32(_: i32, _: i32) -> i32;
 #[import(cc = "device", name = "llvm.x86.bmi.pdep.64")] fn cpu_pdep64(_: i64, _: i64) -> i64;
-#[import(cc = "device", name = "llvm.prefetch.p0i8")]   fn cpu_prefetch(&u8, i32, i32, i32) -> ();
+#[import(cc = "device", name = "llvm.prefetch.p0")]   fn cpu_prefetch(&u8, i32, i32, i32) -> ();
 
 //
 // atomics
