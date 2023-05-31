@@ -22,8 +22,8 @@ extern "device" {
     fn "llvm.amdgcn.s.sleep"                amdgcn_s_sleep(i32) -> ();
     fn "llvm.amdgcn.icmp.i32.i32"           amdgcn_icmp_i32(i32, i32, i32) -> i32;
     fn "llvm.amdgcn.icmp.i64.i32"           amdgcn_icmp_i64(i32, i32, i32) -> i64;
-    fn "llvm.amdgcn.atomic.inc.i32.p1i32"   amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
-    fn "llvm.amdgcn.atomic.dec.i32.p1i32"   amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
+    fn "llvm.amdgcn.atomic.inc.i32.p1"   amdgcn_atomic_inc_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
+    fn "llvm.amdgcn.atomic.dec.i32.p1"   amdgcn_atomic_dec_global_u32(&mut[1]u32, u32, u32, u32, bool) -> u32;
     fn "llvm.amdgcn.s.memrealtime"          amdgcn_s_memrealtime() -> u64;
 }
 

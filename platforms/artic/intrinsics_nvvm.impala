@@ -273,13 +273,13 @@
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rn")] fn nvvm_ull2f_rn(i64) -> f32;
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rp")] fn nvvm_ull2f_rp(i64) -> f32;
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rz")] fn nvvm_ull2f_rz(i64) -> f32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i8.p1i8")] fn nvvm_ldg_u8_p1(&addrspace(1)u8, i32) -> u8;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i32.p1i32")] fn nvvm_ldg_i32_p1(&addrspace(1)i32, i32) -> i32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.f32.p1f32")] fn nvvm_ldg_f32_p1(&addrspace(1)f32, i32) -> f32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.v4i32.p1v4i32")] fn nvvm_ldg4_i32_p1(&addrspace(1)simd[i32 * 4], i32) -> simd[i32 * 4];
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.v4f32.p1v4f32")] fn nvvm_ldg4_f32_p1(&addrspace(1)simd[f32 * 4], i32) -> simd[f32 * 4];
-#[import(cc = "device", name = "llvm.nvvm.atomic.load.inc.32.p1i32")] fn nvvm_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
-#[import(cc = "device", name = "llvm.nvvm.atomic.load.dec.32.p1i32")] fn nvvm_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i8.p1")] fn nvvm_ldg_u8_p1(&addrspace(1)u8, i32) -> u8;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i32.p1")] fn nvvm_ldg_i32_p1(&addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.f32.p1")] fn nvvm_ldg_f32_p1(&addrspace(1)f32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.v4i32.p1")] fn nvvm_ldg4_i32_p1(&addrspace(1)simd[i32 * 4], i32) -> simd[i32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.v4f32.p1")] fn nvvm_ldg4_f32_p1(&addrspace(1)simd[f32 * 4], i32) -> simd[f32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.inc.32.p1")] fn nvvm_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.dec.32.p1")] fn nvvm_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
 
 #[import(cc = "device", name = "llvm.nvvm.membar.gl")] fn nvvm_threadfence() -> ();
 #[import(cc = "device", name = "llvm.nvvm.membar.cta")] fn nvvm_threadfence_block() -> ();
