@@ -14,14 +14,13 @@
 #include <thread>
 
 #ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
-#include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
-#include <llvm/Passes/PassBuilder.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
@@ -451,7 +450,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
 
     machine->Options.MCOptions.AsmVerbose = true;
 
-    // Create the analysis managers.
+    // create the analysis managers
     llvm::LoopAnalysisManager LAM;
     llvm::FunctionAnalysisManager FAM;
     llvm::CGSCCAnalysisManager CGAM;
