@@ -253,7 +253,6 @@ HSAPlatform::HSAPlatform(Runtime* runtime)
         return;
     }
     CHECK_HSA(status, "hsa_init()");
-    initialized_ = true;
 
     uint16_t version_major, version_minor;
     status = hsa_system_get_info(HSA_SYSTEM_INFO_VERSION_MAJOR, &version_major);
@@ -293,8 +292,7 @@ HSAPlatform::~HSAPlatform() {
         }
     }
 
-    if (initialized_)
-        hsa_shut_down();
+    hsa_shut_down();
 }
 
 void* HSAPlatform::alloc_hsa(int64_t size, hsa_region_t region) {
