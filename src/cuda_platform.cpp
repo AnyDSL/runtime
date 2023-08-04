@@ -217,7 +217,9 @@ void CudaPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params
         launch_params.grid[1] / launch_params.block[1],
         launch_params.grid[2] / launch_params.block[2],
         launch_params.block[0], launch_params.block[1], launch_params.block[2],
-        0, nullptr, launch_params.args.data, nullptr);
+        launch_params.lmem,
+        nullptr,
+        launch_params.args.data, nullptr);
     CHECK_CUDA(err, "cuLaunchKernel()");
 
     if (runtime_->profiling_enabled()) {

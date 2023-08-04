@@ -409,7 +409,7 @@ void HSAPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params)
     aql.kernel_object        = kernel_info.kernel;
     aql.kernarg_address      = kernel_info.kernarg_segment;
     aql.private_segment_size = kernel_info.private_segment_size;
-    aql.group_segment_size   = kernel_info.group_segment_size;
+    aql.group_segment_size   = (kernel_info.group_segment_size + 15) / 16 * kernel_info.group_segment_size + launch_params.lmem;
 
     // write to command queue
     const uint64_t index = hsa_queue_load_write_index_relaxed(queue);

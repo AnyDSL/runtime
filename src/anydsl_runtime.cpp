@@ -118,6 +118,7 @@ void anydsl_copy(
 void anydsl_launch_kernel(
     int32_t mask, const char* file_name, const char* kernel_name,
     const uint32_t* grid, const uint32_t* block,
+    uint32_t lmem,
     void** arg_data,
     const uint32_t* arg_sizes,
     const uint32_t* arg_aligns,
@@ -129,6 +130,7 @@ void anydsl_launch_kernel(
         kernel_name,
         grid,
         block,
+        lmem,
         {
             arg_data,
             arg_sizes,
