@@ -391,7 +391,7 @@ std::string get_libdevice_path(CUjit_target) {
 
 #ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 bool llvm_nvptx_initialized = false;
-static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string &filename, llvm::OptimizationLevel OptLevel) {
+static std::string emit_nvptx(const std::string& program, const std::string& libdevice_file, const std::string& cpu, const std::string& filename, llvm::OptimizationLevel opt_level) {
     if (!llvm_nvptx_initialized) {
         // ANYDSL_LLVM_ARGS="-nvptx-sched4reg -nvptx-fma-level=2 -nvptx-prec-divf32=0 -nvptx-prec-sqrtf32=0 -nvptx-f32ftz=1"
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
@@ -464,7 +464,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& lib
     PB.registerLoopAnalyses(LAM);
     PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(OptLevel);
+    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(opt_level);
 
     MPM.run(*llvm_module, MAM);
 

@@ -570,7 +570,7 @@ HSAPlatform::KernelInfo& HSAPlatform::load_kernel(DeviceId dev, const std::strin
 #define AnyDSL_runtime_HSA_BITCODE_SUFFIX ".bc"
 #endif
 bool llvm_amdgpu_initialized = false;
-std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string &filename, llvm::OptimizationLevel OptLevel) const {
+std::string HSAPlatform::emit_gcn(const std::string& program, const std::string& cpu, const std::string& filename, llvm::OptimizationLevel opt_level) const {
     if (!llvm_amdgpu_initialized) {
         // ANYDSL_LLVM_ARGS="-amdgpu-sroa -amdgpu-load-store-vectorizer -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments -amdgpu-atomic-optimizations -amdgpu-mode-register"
         const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
@@ -680,7 +680,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
         PB.registerLoopAnalyses(LAM);
         PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(OptLevel);
+        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(opt_level);
 
         MPM.run(*module, MAM);
 
@@ -724,7 +724,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     return runtime_->load_file(gcn_file);
 }
 #else
-std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string &, llvm::OptimizationLevel) const {
+std::string HSAPlatform::emit_gcn(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) const {
     error("Recompile runtime with LLVM enabled for gcn support.");
 }
 #endif

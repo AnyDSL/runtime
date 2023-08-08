@@ -106,7 +106,7 @@ protected:
     static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
     KernelInfo& load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
-    std::string emit_gcn(const std::string&, const std::string&, const std::string &, llvm::OptimizationLevel) const;
+    std::string emit_gcn(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) const;
 };
 
 #endif
