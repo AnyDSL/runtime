@@ -177,6 +177,17 @@ fn @hls_accelerator(dev: i32) -> Accelerator {
             };
             hls(dev, || @@body(work_item));
         },
+        exec_named          : @|_, grid, block, body| {
+            let work_item = WorkItem {
+                tidx  : @|| 0, tidy  : @|| 0, tidz  : @|| 0,
+                bidx  : @|| 0, bidy  : @|| 0, bidz  : @|| 0,
+                gidx  : @|| 0, gidy  : @|| 0, gidz  : @|| 0,
+                bdimx : @|| 1, bdimy : @|| 1, bdimz : @|| 1,
+                gdimx : @|| 1, gdimy : @|| 1, gdimz : @|| 1,
+                nblkx : @|| 1, nblky : @|| 1, nblkz : @|| 1
+            };
+            hls(dev, || @@body(work_item));
+        },
         sync          : @|| synchronize_hls(dev),
         alloc         : @|size| alloc_hls(dev, size),
         alloc_unified : @|size| alloc_hls_unified(dev, size),

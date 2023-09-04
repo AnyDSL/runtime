@@ -71,7 +71,7 @@ static CLK_LOCAL_MEM_FENCE  = 1:u32;
 static CLK_GLOBAL_MEM_FENCE = 2:u32;
 
 fn @opencl_accelerator(dev: i32) = Accelerator {
-    exec          = @|body| |grid, block| {
+    exec = @|body| |grid, block| {
         let work_item = WorkItem {
             tidx  = @|| opencl_get_local_id(0) as i32,
             tidy  = @|| opencl_get_local_id(1) as i32,
@@ -92,7 +92,30 @@ fn @opencl_accelerator(dev: i32) = Accelerator {
             nblky = @|| opencl_get_num_groups(1) as i32,
             nblkz = @|| opencl_get_num_groups(2) as i32
         };
-        opencl(dev, grid, block, || @body(work_item))
+        opencl(dev, "", grid, block, || @body(work_item))
+    },
+    exec_named = @|name, body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = @|| opencl_get_local_id(0) as i32,
+            tidy  = @|| opencl_get_local_id(1) as i32,
+            tidz  = @|| opencl_get_local_id(2) as i32,
+            bidx  = @|| opencl_get_group_id(0) as i32,
+            bidy  = @|| opencl_get_group_id(1) as i32,
+            bidz  = @|| opencl_get_group_id(2) as i32,
+            gidx  = @|| opencl_get_global_id(0) as i32,
+            gidy  = @|| opencl_get_global_id(1) as i32,
+            gidz  = @|| opencl_get_global_id(2) as i32,
+            bdimx = @|| opencl_get_local_size(0) as i32,
+            bdimy = @|| opencl_get_local_size(1) as i32,
+            bdimz = @|| opencl_get_local_size(2) as i32,
+            gdimx = @|| opencl_get_global_size(0) as i32,
+            gdimy = @|| opencl_get_global_size(1) as i32,
+            gdimz = @|| opencl_get_global_size(2) as i32,
+            nblkx = @|| opencl_get_num_groups(0) as i32,
+            nblky = @|| opencl_get_num_groups(1) as i32,
+            nblkz = @|| opencl_get_num_groups(2) as i32
+        };
+        opencl(dev, name, grid, block, || @body(work_item))
     },
     sync          = @|| synchronize_opencl(dev),
     alloc         = @|size| alloc_opencl(dev, size),

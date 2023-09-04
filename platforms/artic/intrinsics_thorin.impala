@@ -12,10 +12,10 @@
 #[import(cc = "thorin")] fn cmpxchg_weak[T](_addr: &mut T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool); // only for integer data types
 #[import(cc = "thorin")] fn fence(_order: u32, _scope: &[u8]) -> ();
 #[import(cc = "thorin")] fn pe_info[T](_src: &[u8], _val: T) -> ();
-#[import(cc = "thorin")] fn cuda(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
-#[import(cc = "thorin")] fn nvvm(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
-#[import(cc = "thorin")] fn opencl(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
-#[import(cc = "thorin")] fn amdgpu(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn cuda(_dev: i32, _name: &[u8], _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn nvvm(_dev: i32, _name: &[u8], _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn opencl(_dev: i32, _name: &[u8], _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn amdgpu(_dev: i32, _name: &[u8], _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn reserve_shared[T](_size: i32) -> &mut addrspace(3)[T];
 #[import(cc = "thorin")] fn hls(_dev: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "pipeline")] fn thorin_pipeline(_initiation_interval: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> (); // only for HLS/OpenCL backend

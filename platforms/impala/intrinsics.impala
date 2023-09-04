@@ -23,6 +23,10 @@ struct Accelerator {
     exec          : fn((i32, i32, i32), // grid
                        (i32, i32, i32), // block
                        fn(WorkItem) -> ()) -> (),
+    exec_named    : fn(&[u8],           // prefix
+                       (i32, i32, i32), // grid
+                       (i32, i32, i32), // block
+                       fn(WorkItem) -> ()) -> (),
     sync          : fn() -> (),
     alloc         : fn(i64) -> Buffer,
     alloc_unified : fn(i64) -> Buffer,

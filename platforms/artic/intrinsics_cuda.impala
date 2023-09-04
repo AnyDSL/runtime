@@ -342,7 +342,30 @@ fn @cuda_accelerator(dev: i32) = Accelerator {
             nblky = cuda_gridDim_y,
             nblkz = cuda_gridDim_z
         };
-        cuda(dev, grid, block, || @body(work_item))
+        cuda(dev, "", grid, block, || @body(work_item))
+    },
+    exec_named = @|name, body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = cuda_threadIdx_x,
+            tidy  = cuda_threadIdx_y,
+            tidz  = cuda_threadIdx_z,
+            bidx  = cuda_blockIdx_x,
+            bidy  = cuda_blockIdx_y,
+            bidz  = cuda_blockIdx_z,
+            gidx  = @|| cuda_threadIdx_x() + cuda_blockDim_x() * cuda_blockIdx_x(),
+            gidy  = @|| cuda_threadIdx_y() + cuda_blockDim_y() * cuda_blockIdx_y(),
+            gidz  = @|| cuda_threadIdx_z() + cuda_blockDim_z() * cuda_blockIdx_z(),
+            bdimx = cuda_blockDim_x,
+            bdimy = cuda_blockDim_y,
+            bdimz = cuda_blockDim_z,
+            gdimx = @|| cuda_gridDim_x() * cuda_blockDim_x(),
+            gdimy = @|| cuda_gridDim_y() * cuda_blockDim_y(),
+            gdimz = @|| cuda_gridDim_z() * cuda_blockDim_z(),
+            nblkx = cuda_gridDim_x,
+            nblky = cuda_gridDim_y,
+            nblkz = cuda_gridDim_z
+        };
+        cuda(dev, name, grid, block, || @body(work_item))
     },
     sync          = @|| synchronize_cuda(dev),
     alloc         = @|size| alloc_cuda(dev, size),

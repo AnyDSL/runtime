@@ -21,6 +21,7 @@ struct WorkItem {
 
 struct Accelerator {
     exec          : fn(fn(WorkItem) -> ()) -> fn((i32, i32, i32), (i32, i32, i32)) -> (), // fn(grid, block)->()
+    exec_named    : fn(&[u8], fn(WorkItem) -> ()) -> fn((i32, i32, i32), (i32, i32, i32)) -> (), // fn(grid, block)->()
     sync          : fn() -> (),
     alloc         : fn(i64) -> Buffer,
     alloc_unified : fn(i64) -> Buffer,

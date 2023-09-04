@@ -593,7 +593,30 @@ fn @nvvm_accelerator(dev: i32) = Accelerator {
             nblky = nvvm_read_ptx_sreg_nctaid_y,
             nblkz = nvvm_read_ptx_sreg_nctaid_z
         };
-        nvvm(dev, grid, block, || @body(work_item))
+        nvvm(dev, "", grid, block, || @body(work_item))
+    },
+    exec_named = @|name, body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = nvvm_read_ptx_sreg_tid_x,
+            tidy  = nvvm_read_ptx_sreg_tid_y,
+            tidz  = nvvm_read_ptx_sreg_tid_z,
+            bidx  = nvvm_read_ptx_sreg_ctaid_x,
+            bidy  = nvvm_read_ptx_sreg_ctaid_y,
+            bidz  = nvvm_read_ptx_sreg_ctaid_z,
+            gidx  = @|| nvvm_read_ptx_sreg_tid_x() + nvvm_read_ptx_sreg_ntid_x() * nvvm_read_ptx_sreg_ctaid_x(),
+            gidy  = @|| nvvm_read_ptx_sreg_tid_y() + nvvm_read_ptx_sreg_ntid_y() * nvvm_read_ptx_sreg_ctaid_y(),
+            gidz  = @|| nvvm_read_ptx_sreg_tid_z() + nvvm_read_ptx_sreg_ntid_z() * nvvm_read_ptx_sreg_ctaid_z(),
+            bdimx = nvvm_read_ptx_sreg_ntid_x,
+            bdimy = nvvm_read_ptx_sreg_ntid_y,
+            bdimz = nvvm_read_ptx_sreg_ntid_z,
+            gdimx = @|| nvvm_read_ptx_sreg_nctaid_x() * nvvm_read_ptx_sreg_ntid_x(),
+            gdimy = @|| nvvm_read_ptx_sreg_nctaid_y() * nvvm_read_ptx_sreg_ntid_y(),
+            gdimz = @|| nvvm_read_ptx_sreg_nctaid_z() * nvvm_read_ptx_sreg_ntid_z(),
+            nblkx = nvvm_read_ptx_sreg_nctaid_x,
+            nblky = nvvm_read_ptx_sreg_nctaid_y,
+            nblkz = nvvm_read_ptx_sreg_nctaid_z
+        };
+        nvvm(dev, name, grid, block, || @body(work_item))
     },
     sync          = @|| synchronize_cuda(dev),
     alloc         = @|size| alloc_cuda(dev, size),
