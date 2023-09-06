@@ -247,7 +247,7 @@ void CudaPlatform::synchronize(DeviceId dev) {
     erase_profiles(false);
 }
 
-void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     assert(dev_src == dev_dst);
     unused(dev_dst);
 
@@ -255,29 +255,45 @@ void CudaPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, D
 
     CUdeviceptr src_mem = (CUdeviceptr)src;
     CUdeviceptr dst_mem = (CUdeviceptr)dst;
-    CUresult err = cuMemcpyDtoD(dst_mem + offset_dst, src_mem + offset_src, size);
-    CHECK_CUDA(err, "cuMemcpyDtoD()");
+    if (!hint_async) {
+        CUresult err = cuMemcpyDtoD(dst_mem + offset_dst, src_mem + offset_src, size);
+        CHECK_CUDA(err, "cuMemcpyDtoD()");
+    } else {
+        CUresult err = cuMemcpyDtoDAsync(dst_mem + offset_dst, src_mem + offset_src, size, 0);
+        CHECK_CUDA(err, "cuMemcpyDtoDAsync()");
+    }
 
     cuCtxPopCurrent(NULL);
 }
 
-void CudaPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+void CudaPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     cuCtxPushCurrent(devices_[dev_dst].ctx);
 
     CUdeviceptr dst_mem = (CUdeviceptr)dst;
 
-    CUresult err = cuMemcpyHtoD(dst_mem + offset_dst, (char*)src + offset_src, size);
-    CHECK_CUDA(err, "cuMemcpyHtoD()");
+    if (!hint_async) {
+        CUresult err = cuMemcpyHtoD(dst_mem + offset_dst, (char*)src + offset_src, size);
+        CHECK_CUDA(err, "cuMemcpyHtoD()");
+    } else {
+        CUresult err = cuMemcpyHtoDAsync(dst_mem + offset_dst, (char*)src + offset_src, size, 0);
+        CHECK_CUDA(err, "cuMemcpyHtoDAsync()");
+    }
 
     cuCtxPopCurrent(NULL);
 }
 
-void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+void CudaPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     cuCtxPushCurrent(devices_[dev_src].ctx);
 
     CUdeviceptr src_mem = (CUdeviceptr)src;
-    CUresult err = cuMemcpyDtoH((char*)dst + offset_dst, src_mem + offset_src, size);
-    CHECK_CUDA(err, "cuMemcpyDtoH()");
+
+    if (!hint_async) {
+        CUresult err = cuMemcpyDtoH((char*)dst + offset_dst, src_mem + offset_src, size);
+        CHECK_CUDA(err, "cuMemcpyDtoH()");
+    } else {
+        CUresult err = cuMemcpyDtoHAsync((char*)dst + offset_dst, src_mem + offset_src, size, 0);
+        CHECK_CUDA(err, "cuMemcpyDtoHAsync()");
+    }
 
     cuCtxPopCurrent(NULL);
 }

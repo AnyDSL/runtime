@@ -32,6 +32,7 @@ AnyDSL_runtime_API void  anydsl_release(int32_t, void*);
 AnyDSL_runtime_API void  anydsl_release_host(int32_t, void*);
 
 AnyDSL_runtime_API void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t);
+AnyDSL_runtime_API void anydsl_copy_async(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t);
 
 AnyDSL_runtime_API void anydsl_launch_kernel(
     int32_t, const char*, const char*,

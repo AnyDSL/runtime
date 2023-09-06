@@ -445,7 +445,7 @@ void OpenCLPlatform::synchronize(DeviceId dev) {
     }
 }
 
-void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     assert(dev_src == dev_dst);
     unused(dev_dst);
 
@@ -458,27 +458,30 @@ void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src,
     #endif
 
     cl_int err = clEnqueueCopyBuffer(devices_[dev_src].queue, (cl_mem)src, (cl_mem)dst, offset_src, offset_dst, size, 0, NULL, NULL);
-    err |= clFinish(devices_[dev_src].queue);
+    if (!hint_async)
+        err |= clFinish(devices_[dev_src].queue);
     CHECK_OPENCL(err, "clEnqueueCopyBuffer()");
 }
 
-void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
+void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     #ifdef CL_VERSION_2_0
     if (devices_[dev_dst].version_major == 2)
         return copy_svm(src, offset_src, dst, offset_dst, size);
     #endif
     cl_int err = clEnqueueWriteBuffer(devices_[dev_dst].queue, (cl_mem)dst, CL_FALSE, offset_dst, size, (char*)src + offset_src, 0, NULL, NULL);
-    err |= clFinish(devices_[dev_dst].queue);
+    if (!hint_async)
+        err |= clFinish(devices_[dev_dst].queue);
     CHECK_OPENCL(err, "clEnqueueWriteBuffer()");
 }
 
-void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
     #ifdef CL_VERSION_2_0
     if (devices_[dev_src].version_major == 2)
         return copy_svm(src, offset_src, dst, offset_dst, size);
     #endif
     cl_int err = clEnqueueReadBuffer(devices_[dev_src].queue, (cl_mem)src, CL_FALSE, offset_src, size, (char*)dst + offset_dst, 0, NULL, NULL);
-    err |= clFinish(devices_[dev_src].queue);
+    if (!hint_async)
+        err |= clFinish(devices_[dev_src].queue);
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
 }
 
