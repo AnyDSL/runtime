@@ -57,6 +57,12 @@ public:
     /// Checks whether the given platform-specific feature is supported on the given device.
     virtual bool device_check_feature_support(DeviceId dev, const char* feature) const = 0;
 
+    virtual EventId create_event(DeviceId) = 0;
+    virtual void destroy_event(DeviceId, EventId) = 0;
+    virtual void record_event(DeviceId, EventId) = 0;
+    virtual bool check_event(DeviceId, EventId) = 0;
+    virtual uint64_t query_us_event(DeviceId, EventId, EventId) = 0;
+    virtual void sync_event(DeviceId, EventId) = 0;
 protected:
     [[noreturn]] void platform_error() {
         error("The selected '%' platform is not available", name());

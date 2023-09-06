@@ -6,6 +6,10 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <string_view>
+
+#include <condition_variable>
+#include <mutex>
 
 #if defined(__APPLE__)
 #include <sys/types.h>
@@ -68,4 +72,61 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
     std::search(std::istreambuf_iterator<char>(cpuinfo), {}, model_string.begin(), model_string.end());
     std::getline(cpuinfo >> std::ws, device_name_);
     #endif
+}
+
+bool CpuPlatform::device_check_feature_support(DeviceId, const char* feature) const {
+    using namespace std::literals;
+
+    if (feature == "event"sv)
+        return true;
+    return false;
+}
+
+struct CpuEvent {
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool recorded = false;
+    std::chrono::high_resolution_clock::time_point pointOfRecord;
+};
+
+EventId CpuPlatform::create_event(DeviceId) {
+    CpuEvent* event = new CpuEvent;
+    return (EventId)reinterpret_cast<uintptr_t>(event);
+}
+
+void CpuPlatform::destroy_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event);
+    delete eventPtr;
+}
+
+void CpuPlatform::record_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event);
+
+    std::unique_lock lk(eventPtr->mutex);
+    eventPtr->recorded      = true;
+    eventPtr->pointOfRecord = std::chrono::high_resolution_clock::now();
+    lk.unlock();
+
+    eventPtr->cv.notify_all();
+}
+
+bool CpuPlatform::check_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event);
+    return eventPtr->recorded;
+}
+
+uint64_t CpuPlatform::query_us_event(DeviceId dev, EventId event_start, EventId event_end) {
+    if (!check_event(dev, event_start) || !check_event(dev, event_end)) return UINT64_MAX;
+
+    auto eventStartPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event_start);
+    auto eventEndPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event_end);
+
+    return (uint64_t)std::chrono::duration_cast<std::chrono::microseconds>(eventEndPtr->pointOfRecord - eventStartPtr->pointOfRecord).count();
+}
+
+void CpuPlatform::sync_event(DeviceId, EventId event){
+    auto eventPtr = reinterpret_cast<CpuEvent*>((uintptr_t)event);
+
+    std::unique_lock lk(eventPtr->mutex);
+    eventPtr->cv.wait(lk, [eventPtr]() { return eventPtr->recorded; });
 }

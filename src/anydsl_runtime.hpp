@@ -123,6 +123,82 @@ void copy(const Array<T>& a, int64_t offset_a, Array<T>& b, int64_t offset_b, in
                 size * sizeof(T));
 }
 
+
+class Event {
+public:
+    inline Event(int32_t dev)
+        : dev_(dev),
+          event_(0)
+    {
+        create();
+    }
+
+    inline ~Event()
+    {
+        destroy();
+    }
+
+    inline Event(Event&& other)
+        : dev_(other.dev_),
+          event_(other.event_)
+    {
+        other.event_ = 0;
+    }
+
+    inline Event& operator=(Event&& other)
+    {
+        destroy();
+        dev_         = other.dev_;
+        event_       = other.event_;
+        other.event_ = 0;
+        return *this;
+    }
+
+    inline Event(const Event&)            = delete;
+    inline Event& operator=(const Event&) = delete;
+
+    inline bool record()
+    {
+        anydsl_record_event(dev_, event_);
+        return true;
+    }
+
+    inline bool wait()
+    {
+        anydsl_sync_event(dev_, event_);
+        return true;
+    }
+
+    inline anydsl_event_t handle() const { return event_; }
+
+    inline static float elapsedTimeMS(const Event& start, const Event& end)
+    {
+        if (!anydsl_check_event(start.dev_, start.handle()))
+            return -1;
+        if (!anydsl_check_event(end.dev_, end.handle()))
+            return -1;
+
+        const uint64_t us = anydsl_query_us_event(start.dev_, start.handle(), end.handle());
+        return us / 1000.0f;
+    }
+
+private:
+    inline void create()
+    {
+        event_ = anydsl_create_event(dev_);
+    }
+
+    inline void destroy()
+    {
+        if (event_ != 0) {
+            anydsl_destroy_event(dev_, event_);
+            event_ = 0;
+        }
+    }
+
+    int32_t dev_;
+    anydsl_event_t event_;
+};
 } // namespace anydsl
 
 #endif

@@ -209,6 +209,33 @@ uint64_t anydsl_random_val_u64() {
     return std_dist_u64(std_gen);
 }
 
+// Event stuff
+//----------------------------------------------
+
+anydsl_event_t anydsl_create_event(int32_t mask) {
+    return runtime().create_event(to_platform(mask), to_device(mask));
+}
+
+void anydsl_destroy_event(int32_t mask, anydsl_event_t event) {
+    runtime().destroy_event(to_platform(mask), to_device(mask), event);
+}
+
+void anydsl_record_event(int32_t mask, anydsl_event_t event) {
+    runtime().record_event(to_platform(mask), to_device(mask), event);
+}
+
+bool anydsl_check_event(int32_t mask, anydsl_event_t event) {
+    return runtime().check_event(to_platform(mask), to_device(mask), event);
+}
+
+uint64_t anydsl_query_us_event(int32_t mask, anydsl_event_t event_start, anydsl_event_t event_end) {
+    return runtime().query_us_event(to_platform(mask), to_device(mask), event_start, event_end);
+}
+
+void anydsl_sync_event(int32_t mask, anydsl_event_t event) {
+    runtime().sync_event(to_platform(mask), to_device(mask), event);
+}
+
 #ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;

@@ -101,6 +101,13 @@ protected:
     std::string compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     std::string compile_cuda(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     CUmodule create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const;
+
+    EventId create_event(DeviceId dev) override;
+    void destroy_event(DeviceId dev, EventId event) override;
+    void record_event(DeviceId dev, EventId event) override;
+    bool check_event(DeviceId dev, EventId event) override;
+    uint64_t query_us_event(DeviceId dev, EventId event_start, EventId event_end) override;
+    void sync_event(DeviceId dev, EventId event) override;
 };
 
 #endif

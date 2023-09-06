@@ -84,6 +84,20 @@ AnyDSL_runtime_API int32_t anydsl_create_task(int32_t, Closure);
 AnyDSL_runtime_API void    anydsl_create_edge(int32_t, int32_t);
 AnyDSL_runtime_API void    anydsl_execute_graph(int32_t, int32_t);
 
+typedef uint64_t anydsl_event_t;
+/// Create event for device. Will return id of event
+AnyDSL_runtime_API anydsl_event_t anydsl_create_event(int32_t);
+/// Destroy event
+AnyDSL_runtime_API void anydsl_destroy_event(int32_t, anydsl_event_t);
+/// Record the event for the device
+AnyDSL_runtime_API void anydsl_record_event(int32_t, anydsl_event_t);
+/// Check if event has completed. True if the event is completed, false otherwise
+AnyDSL_runtime_API bool anydsl_check_event(int32_t, anydsl_event_t);
+/// Query time between two events in micro seconds. Both events have to be completed, else UINT64_MAX is returned
+AnyDSL_runtime_API uint64_t anydsl_query_us_event(int32_t, anydsl_event_t, anydsl_event_t);
+/// Wait for the event to complete
+AnyDSL_runtime_API void anydsl_sync_event(int32_t, anydsl_event_t);
+
 #ifdef __cplusplus
 }
 #include "anydsl_runtime.hpp"
