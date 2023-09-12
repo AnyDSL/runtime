@@ -307,7 +307,7 @@
 #[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.i32")] fn nvvm_warp_shfl_sync_bfly_i32(u32, i32, i32, i32) -> i32;
 #[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.f32")] fn nvvm_warp_shfl_sync_bfly_f32(u32, f32, i32, i32) -> f32;
 
-// libdevice intrinsics: http://docs.nvidia.com/cuda/libdevice-users-guide
+// libdevice intrinsics: https://docs.nvidia.com/cuda/libdevice-users-guide
 #[import(cc = "C", name = "__nv_expf")]      fn nvvm_expf(f32) -> f32;
 #[import(cc = "C", name = "__nv_exp2f")]     fn nvvm_exp2f(f32) -> f32;
 #[import(cc = "C", name = "__nv_logf")]      fn nvvm_logf(f32) -> f32;
