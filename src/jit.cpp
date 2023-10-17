@@ -63,19 +63,18 @@ struct JIT {
             assert(opt <= 3);
 
             thorin::Thorin thorin(module_name);
-            thorin::World& world = thorin.world();
-            world.set(log_level);
-            world.set(std::make_shared<thorin::Stream>(std::cerr));
+            thorin.world().set(log_level);
+            thorin.world().set(std::make_shared<thorin::Stream>(std::cerr));
             if (!::compile(
                 { "runtime", module_name },
                 { std::string(runtime_srcs), program_str },
-                world, std::cerr))
+                thorin.world(), std::cerr))
                 error("JIT: error while compiling sources");
 
             thorin.opt();
 
             std::string host_triple, host_cpu, host_attr, hls_flags;
-            thorin::DeviceBackends backends(world, opt, debug, hls_flags);
+            thorin::DeviceBackends backends(thorin.world(), opt, debug, hls_flags);
 
             thorin::llvm::CPUCodeGen cg(thorin, opt, debug, host_triple, host_cpu, host_attr);
             std::tie(llvm_context, llvm_module) = cg.emit_module();
