@@ -111,6 +111,13 @@ protected:
     cl_program compile_program(DeviceId dev, cl_program program, const std::string& filename) const;
 
     friend void time_kernel_callback(cl_event, cl_int, void*);
+
+    EventId create_event(DeviceId) override { command_unavailable("create_event"); return 0; }
+    void destroy_event(DeviceId, EventId) override { command_unavailable("destroy_event"); }
+    void record_event(DeviceId, EventId) override { command_unavailable("record_event"); }
+    bool check_event(DeviceId, EventId) override { command_unavailable("check_event"); return false; }
+    uint64_t query_us_event(DeviceId, EventId, EventId) override { command_unavailable("query_us_event"); return 0; }
+    void sync_event(DeviceId, EventId) override { command_unavailable("sync_event"); }
 };
 
 #endif
