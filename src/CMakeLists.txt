@@ -9,7 +9,7 @@ endif()
 
 # Necessary to specify whether or not to build shared libraries on a per-project basis
 option(AnyDSL_runtime_BUILD_SHARED "Builds a shared library for the runtime (and JIT, if enabled)" ${BUILD_SHARED_LIBS})
-if (AnyDSL_runtime_BUILD_SHARED)
+if(AnyDSL_runtime_BUILD_SHARED)
     set(AnyDSL_runtime_BUILD "SHARED")
 else()
     set(AnyDSL_runtime_BUILD "STATIC")
@@ -36,11 +36,6 @@ if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
         find_library(CUDA_NVRTC_LIBRARY nvrtc
             HINTS ${CUDA_TOOLKIT_ROOT_DIR}
             PATH_SUFFIXES lib lib64 lib/x64)
-        if(CUDA_NVRTC_LIBRARY)
-            set(AnyDSL_runtime_CUDA_NVRTC TRUE)
-        else()
-            set(CUDA_NVRTC_LIBRARY "")
-        endif()
         find_library(CUDA_LIBRARY cuda
             HINTS ${CUDA_TOOLKIT_ROOT_DIR}
             PATH_SUFFIXES lib lib64 lib/x64)
@@ -49,17 +44,12 @@ if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
         target_link_libraries(runtime_cuda PRIVATE runtime_base ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
         list(APPEND RUNTIME_PLATFORMS runtime_cuda)
         # TODO: would be nice to reference directly the file
-        find_path(AnyDSL_runtime_LIBDEVICE_DIR
-            NAMES libdevice.10.bc libdevice.compute_50.10.bc libdevice.compute_35.10.bc libdevice.compute_30.10.bc libdevice.compute_20.10.bc
+        find_file(AnyDSL_runtime_LIBDEVICE_LIB
+            NAMES libdevice.10.bc
             HINTS ${CUDA_TOOLKIT_ROOT_DIR}
             PATH_SUFFIXES nvvm/libdevice)
-        find_program(AnyDSL_runtime_NVCC_BIN nvcc
-            HINTS ${CUDA_NVCC_EXECUTABLE} ${CUDA_TOOLKIT_ROOT_DIR}
-            PATH_SUFFIXES bin)
-        find_path(AnyDSL_runtime_NVCC_INC NAMES cuda.h nvrtc.h
-            HINTS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE} ${CUDA_TOOLKIT_ROOT_DIR}
-            PATH_SUFFIXES include)
-        mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_BIN AnyDSL_runtime_NVCC_INC)
+        set(AnyDSL_runtime_NVCC_INC ${CUDA_INCLUDE_DIRS})
+        mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_INC)
     endif()
     set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDA_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 else()
@@ -77,20 +67,13 @@ else()
         target_link_libraries(runtime_cuda PRIVATE runtime_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
         list(APPEND RUNTIME_PLATFORMS runtime_cuda)
         # TODO: would be nice to reference directly the file
-        find_path(AnyDSL_runtime_LIBDEVICE_DIR
+        find_file(AnyDSL_runtime_LIBDEVICE_LIB
             NAMES libdevice.10.bc
             HINTS ${CUDAToolkit_LIBRARY_ROOT} ${CUDAToolkit_LIBRARY_DIR}
-            PATH_SUFFIXES cuda/nvvm/libdevice nvvm/libdevice)
-        # using find_*() in favor of set() here
-        # allows to fix issues that may happen on some system configuration
-        find_program(AnyDSL_runtime_NVCC_BIN nvcc
-            HINTS ${CUDAToolkit_NVCC_EXECUTABLE} ${CUDAToolkit_BIN_DIR}
-            PATH_SUFFIXES bin)
-        find_path(AnyDSL_runtime_NVCC_INC NAMES cuda.h nvrtc.h
-            HINTS ${CUDAToolkit_INCLUDE_DIRS} ${CUDAToolkit_LIBRARY_ROOT}
-            PATH_SUFFIXES include)
-        set(AnyDSL_runtime_CUDA_NVRTC TRUE)
-        mark_as_advanced(AnyDSL_runtime_LIBDEVICE_DIR AnyDSL_runtime_NVCC_BIN AnyDSL_runtime_NVCC_INC)
+            PATH_SUFFIXES cuda/nvvm/libdevice nvvm/libdevice
+            REQUIRED)
+        set(AnyDSL_runtime_NVCC_INC ${CUDAToolkit_INCLUDE_DIRS})
+        mark_as_advanced(AnyDSL_runtime_LIBDEVICE_LIB AnyDSL_runtime_NVCC_INC)
     endif()
     set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDAToolkit_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 endif()
@@ -131,11 +114,16 @@ set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enable
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
 if(LLVM_FOUND)
+    if(NOT DEFINED AnyDSL_LLVM_LINK_SHARED)
+        if(LLVM_LINK_LLVM_DYLIB)
+            set(AnyDSL_LLVM_LINK_SHARED "USE_SHARED")
+        endif()
+    endif()
     add_definitions(${LLVM_DEFINITIONS})
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    set(AnyDSL_runtime_LLVM_COMPONENTS irreader support ${LLVM_TARGETS_TO_BUILD})
+    set(AnyDSL_runtime_LLVM_COMPONENTS irreader support passes ${LLVM_TARGETS_TO_BUILD})
     set(AnyDSL_runtime_JIT_LLVM_COMPONENTS ${AnyDSL_runtime_LLVM_COMPONENTS} mcjit)
-    if(AnyDSL_runtime_HAS_HSA_SUPPORT)
+    if(AnyDSL_runtime_HAS_HSA_SUPPORT AND RUNTIME_JIT)
         find_package(LLD REQUIRED)
         target_link_libraries(runtime_hsa PRIVATE lldELF lldCommon)
         llvm_config(runtime_hsa ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})

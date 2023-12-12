@@ -78,21 +78,6 @@ find_program(Artic_BIN artic
     PATHS ${Artic_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
     PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
 
-# determine anyopt binary for toolchain
-find_path(Anyopt_DIR
-    NAMES anyopt-config.cmake
-    PATHS ${Anyopt_DIR} $ENV{Anyopt_DIR} "@Anyopt_DIR@" "@CMAKE_CURRENT_BINARY_DIR@/share/anydsl/cmake"
-    PATH_SUFFIXES share/anydsl/cmake
-)
-find_package(Anyopt QUIET PATHS ${Anyopt_DIR})
-if(TARGET anyopt AND NOT Anyopt_BIN)
-    get_target_property(Anyopt_BIN anyopt LOCATION)
-    set(Anyopt_BIN ${Anyopt_BIN} CACHE FILEPATH "path to anyopt executable")
-endif()
-find_program(Anyopt_BIN anyopt
-    PATHS ${Anyopt_BINARY_DIR} "@CMAKE_CURRENT_BINARY_DIR@/bin"
-    PATH_SUFFIXES Release ${CMAKE_CONFIGURATION_TYPES})
-
 # determine impala binary for toolchain
 find_path(Impala_DIR
     NAMES impala-config.cmake
@@ -275,7 +260,6 @@ function(anydsl_runtime_wrap outfiles)
 
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
     set(_llfile ${_basepath}.ll)
-    set(_thorinfile ${_basepath}.thorin.json)
     set(_cfile ${_basepath}.c)
     set(_objfile ${_basepath}.o)
 
@@ -309,10 +293,7 @@ function(anydsl_runtime_wrap outfiles)
     else()
         # generate .ll file and patch it
         add_custom_command(OUTPUT ${_llfile}
-
-            COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-json -o ${_basepath}
-            COMMAND ${Anyopt_BIN} --emit-llvm ${_thorinfile}
-
+            COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
             COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
             COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
             ${HLS_COMMAND}
