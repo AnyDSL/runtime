@@ -22,8 +22,10 @@
 #include "log.h"
 #include "runtime.h"
 
+#if THORIN_ENABLE_JSON
 #include <anyopt/typetable.h>
 #include <anyopt/irbuilder.h>
+#endif
 
 bool compile(
     const std::vector<std::string>& file_names,
@@ -51,7 +53,7 @@ struct JIT {
         llvm::InitializeNativeTargetAsmPrinter();
     }
 
-    int32_t compile(const char* program_src, uint32_t size, uint32_t opt) {
+    int32_t compile(const char* program_src, uint32_t size, uint32_t opt, bool compile_json) {
         // The LLVM context and module have to be alive for the duration of this function
         std::unique_ptr<llvm::LLVMContext> llvm_context;
         std::unique_ptr<llvm::Module> llvm_module;
@@ -69,11 +71,29 @@ struct JIT {
             thorin::World world(module_name);
             world.set(log_level);
             world.set(std::make_shared<thorin::Stream>(std::cerr));
-            if (!::compile(
-                { "runtime", module_name },
-                { std::string(runtime_srcs), program_str },
-                world, std::cerr))
-                error("JIT: error while compiling sources");
+
+            if (compile_json) {
+#if THORIN_ENABLE_JSON
+                thorin::World::Externals extern_globals;
+
+                json json_repr = json::parse(program_str);
+                anyopt::TypeTable table(world);
+                for (auto it : json_repr["type_table"])
+                    table.reconstruct_type(it);
+
+                anyopt::IRBuilder irbuilder(world, table, extern_globals);
+                for (auto it : json_repr["defs"])
+                    irbuilder.reconstruct_def(it);
+#else
+                abort();
+#endif
+            } else {
+                if (!::compile(
+                    { "runtime", module_name },
+                    { std::string(runtime_srcs), program_str },
+                    world, std::cerr))
+                    error("JIT: error while compiling sources");
+            }
 
             world.opt();
 
@@ -166,8 +186,14 @@ void anydsl_link(const char* lib) {
 }
 
 int32_t anydsl_compile(const char* program, uint32_t size, uint32_t opt) {
-    return jit().compile(program, size, opt);
+    return jit().compile(program, size, opt, false);
 }
+
+#if THORIN_ENABLE_JSON
+int32_t anyopt_compile(const char* program, uint32_t size, uint32_t opt) {
+    return jit().compile(program, size, opt, true);
+}
+#endif
 
 void anydsl_set_log_level(uint32_t log_level) {
     jit().log_level = log_level <= 4 ? static_cast<thorin::LogLevel>(log_level) : thorin::LogLevel::Warn;
