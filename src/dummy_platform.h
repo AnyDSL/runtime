@@ -31,6 +31,7 @@ protected:
     size_t dev_count() const override { return 0; }
     std::string name() const override { return name_; }
     const char* device_name(DeviceId) const override { return "Dummy"; }
+    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     std::string name_;
 };

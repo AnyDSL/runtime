@@ -1,6 +1,7 @@
 #include <random>
 #include <chrono>
 #include <locale>
+#include <mutex>
 #include <sstream>
 
 #include "anydsl_runtime.h"
@@ -18,6 +19,8 @@
 #include <tbb/parallel_for.h>
 #include <tbb/task_arena.h>
 #include <tbb/task_group.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_queue.h>
 #else
 #include <thread>
 #endif
@@ -73,6 +76,10 @@ void anydsl_info(void) {
 
 const char* anydsl_device_name(int32_t mask) {
     return runtime().device_name(to_platform(mask), to_device(mask));
+}
+
+bool anydsl_device_check_feature_support(int32_t mask, const char* feature) {
+    return runtime().device_check_feature_support(to_platform(mask), to_device(mask), feature);
 }
 
 void* anydsl_alloc(int32_t mask, int64_t size) {
@@ -205,6 +212,7 @@ uint64_t anydsl_random_val_u64() {
 #ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
+static std::mutex thread_lock;
 
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     // Get number of available hardware threads
@@ -236,6 +244,8 @@ void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void
 }
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
+    std::lock_guard<std::mutex> lock(thread_lock);
+
     int32_t (*fun_ptr) (void*) = reinterpret_cast<int32_t (*) (void*)>(fun);
 
     int32_t id;
@@ -252,11 +262,18 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto thread = thread_pool.find(id);
+    auto thread = thread_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        thread = thread_pool.find(id);
+    }
     if (thread != thread_pool.end()) {
         thread->second.join();
-        free_ids.push_back(thread->first);
-        thread_pool.erase(thread);
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push_back(thread->first);
+            thread_pool.erase(thread);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid thread id");
     }
@@ -280,50 +297,43 @@ void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void
     limited.execute([&] { tg.wait(); });
 }
 
-static std::unordered_map<int32_t, tbb::task*> task_pool;
-static std::vector<int32_t> free_ids;
-
-class RuntimeTask : public tbb::task {
-public:
-    RuntimeTask(void* args, void* fun)
-        : args_(args), fun_(fun)
-    {}
-
-    tbb::task* execute() {
-        int32_t (*fun_ptr) (void*) = reinterpret_cast<int32_t (*) (void*)>(fun_);
-        fun_ptr(args_);
-        return nullptr;
-    }
-
-private:
-    void* args_;
-    void* fun_;
-};
+typedef tbb::concurrent_unordered_map<int32_t, tbb::task_group, std::hash<int32_t>> task_group_map;
+typedef std::pair<task_group_map::iterator, bool> task_group_node_ref;
+static task_group_map task_pool;
+static tbb::concurrent_queue<int32_t> free_ids;
+static std::mutex thread_lock;
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
-    int32_t id;
-    if (free_ids.size()) {
-        id = free_ids.back();
-        free_ids.pop_back();
-    } else {
+    std::lock_guard<std::mutex> lock(thread_lock);
+    int32_t id = -1;
+    if (!free_ids.try_pop(id)) {
         id = int32_t(task_pool.size());
     }
 
-    tbb::task* root = new (tbb::task::allocate_root()) RuntimeTask(args, fun);
-    root->set_ref_count(2);
-    tbb::task* child = new (root->allocate_child()) RuntimeTask(args, fun);
-    root->spawn(*child);
-    task_pool[id] = root;
+    int32_t(*fun_ptr) (void*) = reinterpret_cast<int32_t(*)(void*)>(fun);
+
+    assert(id >= 0);
+
+    task_group_node_ref p = task_pool.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple());
+    tbb::task_group& tg = p.first->second;
+
+    tg.run([=] { fun_ptr(args); });
+
     return id;
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto task = task_pool.find(id);
+    auto task = task_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        task = task_pool.find(id);
+    }
     if (task != task_pool.end()) {
-        task->second->wait_for_all();
-        tbb::task::destroy(*task->second);
-        free_ids.push_back(task->first);
-        task_pool.erase(task);
+        task->second.wait();
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push(task->first);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid task id");
     }

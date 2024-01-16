@@ -10,7 +10,7 @@ def patch_llvmir(rttype):
             for line in f:
                 if rttype=="amdgpu" or rttype=="nvvm" or rttype=="ll":
                     # patch to opaque identity functions
-                    m = re.match('^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr\n$', line)
+                    m = re.match('^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr(?: #[0-9]+)?\n$', line)
                     if m is not None:
                         ty1, fname, ty2 = m.groups()
                         assert ty1 == ty2, "Argument and return types of magic IDs must match"

@@ -1,6 +1,7 @@
 extern "C" {
-    fn "anydsl_info"           runtime_info() -> ();
-    fn "anydsl_device_name"    runtime_device_name(_device: i32) -> &[u8];
+    fn "anydsl_info"                         runtime_info() -> ();
+    fn "anydsl_device_name"                  runtime_device_name(_device: i32) -> &[u8];
+    fn "anydsl_device_check_feature_support" runtime_device_check_feature_support(_device: i32, _feature: &[u8]) -> bool;
 
     fn "anydsl_alloc"          runtime_alloc(i32, i64) -> &[i8];
     fn "anydsl_alloc_host"     runtime_alloc_host(i32, i64) -> &[i8];

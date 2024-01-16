@@ -74,6 +74,8 @@ struct JIT {
             world.opt();
 
             std::string host_triple, host_cpu, host_attr, hls_flags;
+            thorin::DeviceBackends backends(world, opt, debug, hls_flags);
+
             thorin::llvm::CPUCodeGen cg(world, opt, debug, host_triple, host_cpu, host_attr);
             std::tie(llvm_context, llvm_module) = cg.emit_module();
             std::stringstream stream;
@@ -81,7 +83,6 @@ struct JIT {
             llvm_module->print(llvm_stream, nullptr);
             runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
-            thorin::DeviceBackends backends(world, opt, debug, hls_flags);
             if (backends.cgs[thorin::DeviceBackends::HLS])
                 error("JIT compilation of hls not supported!");
             for (auto& cg : backends.cgs) {
@@ -144,6 +145,16 @@ struct JIT {
 JIT& jit() {
     static std::unique_ptr<JIT> jit(new JIT(&runtime()));
     return *jit;
+}
+
+void anydsl_set_cache_directory(const char* dir) {
+    jit().runtime->set_cache_directory(dir == nullptr ? std::string() : dir);
+}
+
+const char* anydsl_get_cache_directory() {
+    static std::string dir;
+    dir = jit().runtime->get_cache_directory();
+    return dir.c_str();
 }
 
 void anydsl_link(const char* lib) {

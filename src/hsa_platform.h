@@ -12,6 +12,10 @@
 #include <hsa.h>
 #include <hsa_ext_amd.h>
 
+namespace llvm {
+class OptimizationLevel;
+}
+
 /// HSA platform. Has the same number of devices as that of the HSA implementation.
 class HSAPlatform : public Platform {
 public:
@@ -37,6 +41,7 @@ protected:
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
     const char* device_name(DeviceId dev) const override;
+    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     struct KernelInfo {
         uint64_t kernel;
@@ -101,7 +106,7 @@ protected:
     static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
     KernelInfo& load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
-    std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
+    std::string emit_gcn(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) const;
 };
 
 #endif
