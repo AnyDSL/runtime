@@ -111,7 +111,15 @@ void anydsl_copy(
     int32_t mask_dst, void* dst, int64_t offset_dst, int64_t size) {
     runtime().copy(
         to_platform(mask_src), to_device(mask_src), src, offset_src,
-        to_platform(mask_dst), to_device(mask_dst), dst, offset_dst, size);
+        to_platform(mask_dst), to_device(mask_dst), dst, offset_dst, size, false);
+}
+
+void anydsl_copy_async(
+    int32_t mask_src, const void* src, int64_t offset_src,
+    int32_t mask_dst, void* dst, int64_t offset_dst, int64_t size) {
+    runtime().copy(
+        to_platform(mask_src), to_device(mask_src), src, offset_src,
+        to_platform(mask_dst), to_device(mask_dst), dst, offset_dst, size, true);
 }
 
 void anydsl_launch_kernel(

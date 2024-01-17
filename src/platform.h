@@ -42,11 +42,11 @@ public:
     virtual void synchronize(DeviceId dev) = 0;
 
     /// Copies memory. Copy can only be performed devices in the same platform.
-    virtual void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) = 0;
+    virtual void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) = 0;
     /// Copies memory from the host (CPU).
-    virtual void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) = 0;
+    virtual void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size, bool hint_async) = 0;
     /// Copies memory to the host (CPU).
-    virtual void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) = 0;
+    virtual void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async) = 0;
 
     /// Returns the platform name.
     virtual std::string name() const = 0;

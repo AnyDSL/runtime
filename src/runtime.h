@@ -70,7 +70,8 @@ public:
     /// Copies memory between devices.
     void copy(
         PlatformId plat_src, DeviceId dev_src, const void* src, int64_t offset_src,
-        PlatformId plat_dst, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size);
+        PlatformId plat_dst, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size,
+        bool hint_async = false);
 
     /// Launches a kernel on the platform and device.
     void launch_kernel(PlatformId plat, DeviceId dev, const LaunchParams& launch_params);
