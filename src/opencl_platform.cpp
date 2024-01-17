@@ -375,7 +375,8 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
             cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, launch_params.args.sizes[i], launch_params.args.data[i], &err);
             CHECK_OPENCL(err, "clCreateBuffer()");
             kernel_structs[i] = struct_buf;
-            clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
+            err = clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
+            CHECK_OPENCL(err, "clSetKernelArg()");
         } else {
             #ifdef CL_VERSION_2_0
             if (launch_params.args.types[i] == KernelArgType::Ptr && devices_[dev].version_major == 2) {
@@ -389,6 +390,11 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
                 launch_params.args.data[i]);
             CHECK_OPENCL(err, "clSetKernelArg()");
         }
+    }
+
+    if (launch_params.lmem != 0) {
+        cl_int err = clSetKernelArg(kernel, launch_params.num_args, launch_params.lmem, nullptr);
+        CHECK_OPENCL(err, "clSetKernelArg()");
     }
 
     size_t global_work_size[] = {launch_params.grid [0], launch_params.grid [1], launch_params.grid [2]};
