@@ -19,8 +19,8 @@ void pal_destroy(Pal::IDestroyable* object) {
     free(object);
 }
 
-PalDevice::PalDevice(Pal::IDevice* base_device)
-    : device_(base_device) {
+PalDevice::PalDevice(Pal::IDevice* base_device, Runtime* runtime)
+    : runtime_(runtime), device_(base_device) {
     Pal::Result result = init();
     CHECK_PAL(result, "init pal device");
 
@@ -32,6 +32,11 @@ PalDevice::PalDevice(Pal::IDevice* base_device)
 
     Pal::DeviceProperties device_properties;
     CHECK_PAL(device_->GetProperties(&device_properties), "device->GetProperties()");
+
+    if (runtime_->profiling_enabled()) {
+        allocate_memory(sizeof(ProfilingTimestamps), Pal::GpuHeap::GpuHeapLocal, &profiling_timestamps_);
+        timestamps_frequency_ = device_properties.timestampFrequency;
+    }
 
     gfx_level = device_properties.gfxLevel;
     isa = pal_utils::get_gfx_isa_id(device_properties.gfxLevel);
@@ -46,12 +51,22 @@ Pal::Result PalDevice::init() {
 
     if (device_properties.engineProperties[Pal::QueueTypeUniversal].engineCount < 1) {
         // AnyDSL assumes a universal engine is available.
-        result = Pal::Result::ErrorUnavailable;
+        return Pal::Result::ErrorUnavailable;
+    }
+
+    if (device_properties.engineProperties[Pal::QueueTypeUniversal].flags.supportsTimestamps != 1) {
+        // Timestamps must be supported to support AnyDSL profiling
+        return Pal::Result::Aborted;
     }
 
     if (device_properties.engineProperties[Pal::QueueTypeCompute].engineCount < 1) {
         // AnyDSL assumes a compute engine is available.
-        result = Pal::Result::ErrorUnavailable;
+        return Pal::Result::ErrorUnavailable;
+    }
+
+    if (device_properties.engineProperties[Pal::QueueTypeCompute].flags.supportsTimestamps != 1) {
+        // Timestamps must be supported to support AnyDSL profiling
+        return Pal::Result::Aborted;
     }
 
     // At this point, we could configure PAL's behavior for this device:
@@ -149,7 +164,7 @@ Pal::Result PalDevice::init_cmd_allocator() {
     allocator_create_info.allocInfo[Pal::GpuScratchMemAlloc].suballocSize = embedded_data_suballocSize;
     allocator_create_info.allocInfo[Pal::GpuScratchMemAlloc].allocSize = embedded_data_allocSize;
 
-    Pal::Result result  = Pal::Result::ErrorUnknown;
+    Pal::Result result = Pal::Result::ErrorUnknown;
     const size_t allocator_size = device_->GetCmdAllocatorSize(allocator_create_info, &result);
 
     CHECK_PAL(result, "GetCmdAllocatorSize()");
@@ -188,7 +203,7 @@ Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type)
     queue_create_info.queueType = queue_type;
     queue_create_info.engineType = engine_type;
 
-    Pal::Result result  = Pal::Result::ErrorUnknown;
+    Pal::Result result = Pal::Result::ErrorUnknown;
 
     // Create the queue
     const size_t queue_size = device_->GetQueueSize(queue_create_info, &result);
@@ -389,8 +404,27 @@ void PalDevice::dispatch(const Pal::CmdBufferBuildInfo& cmd_buffer_build_info,
 
     cmd_buffer_->CmdBindPipeline(pipeline_bind_params);
 
+    if (runtime_->profiling_enabled()) {
+        constexpr Pal::HwPipePoint pipe_point = Pal::HwPipeTop;
+        Pal::BarrierInfo barrier_info = {};
+        barrier_info.waitPoint = Pal::HwPipePreCs;
+        barrier_info.pipePointWaitCount = 1;
+        barrier_info.pPipePoints = &pipe_point;
+        barrier_info.globalSrcCacheMask = Pal::CoherShader;
+        barrier_info.globalDstCacheMask = Pal::CoherShader;
+        cmd_buffer_->CmdBarrier(barrier_info);
+        // Record start
+        cmd_buffer_->CmdWriteTimestamp(Pal::HwPipeBottom, *profiling_timestamps_, offsetof(ProfilingTimestamps, start));
+    }
+
     cmd_buffer_->CmdDispatch(dispatch_dimensions);
     cmd_buffer_->CmdBarrier(barrier_info);
+
+    if (runtime_->profiling_enabled()) {
+        // Record end
+        cmd_buffer_->CmdWriteTimestamp(Pal::HwPipeBottom, *profiling_timestamps_, offsetof(ProfilingTimestamps, end)); 
+    }
+
     result = cmd_buffer_->End();
     CHECK_PAL(result, "cmdBuffer->End()");
 
@@ -405,6 +439,17 @@ void PalDevice::dispatch(const Pal::CmdBufferBuildInfo& cmd_buffer_build_info,
 
     result = queue_->Submit(submit_info);
     CHECK_PAL(result, "queue->Submit()");
+
+    if (runtime_->profiling_enabled()) {
+        result = queue_->WaitIdle();
+        CHECK_PAL(result, "queue->WaitIdle() for profiling purposes");
+
+        ProfilingTimestamps timestamps;
+        pal_utils::read_from_memory(reinterpret_cast<uint8_t*>(&timestamps), profiling_timestamps_, 0, sizeof(ProfilingTimestamps));
+
+        // Convert to seconds, as frequency is in HZ, then convert to microseconds for reporting
+        runtime_->kernel_time().fetch_add(1000000.0 * double(timestamps.end - timestamps.start) / double(timestamps_frequency_));
+    }
 }
 
 PalDevice::GpuVirtAddr_t PalDevice::write_data_to_gpu(

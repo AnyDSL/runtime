@@ -27,13 +27,16 @@ public:
     enum class queue_and_cmd_buffer_type { Compute, Universal };
 
     PalDevice(){};
-    PalDevice(Pal::IDevice* base_device);
+    PalDevice(Pal::IDevice* base_device, Runtime* runtime);
     PalDevice(const PalDevice&) = delete;
     PalDevice(PalDevice&& other)
-        : device_(other.device_)
+        : runtime_(other.runtime_)
+        , device_(other.device_)
         , cmd_allocator_(other.cmd_allocator_)
         , queue_(other.queue_)
         , cmd_buffer_(other.cmd_buffer_)
+        , profiling_timestamps_(other.profiling_timestamps_)
+        , timestamps_frequency_(other.timestamps_frequency_)
         , programs_(std::move(other.programs_))
         , kernels_(std::move(other.kernels_))
         , memory_objects_(std::move(other.memory_objects_))
@@ -114,10 +117,19 @@ private:
     size_t write_launch_params(const ParamsArgs& params_args, uint32_t num_args, void* memory, size_t memory_size);
 
 private:
+    Runtime* runtime_ = nullptr;
+
     Pal::IDevice* device_ = nullptr;
     Pal::ICmdAllocator* cmd_allocator_ = nullptr;
     Pal::IQueue* queue_ = nullptr;
     Pal::ICmdBuffer* cmd_buffer_ = nullptr;
+
+    struct ProfilingTimestamps {
+        uint64_t start;
+        uint64_t end;
+    };
+    Pal::IGpuMemory* profiling_timestamps_ = nullptr;
+    uint64_t timestamps_frequency_ = 0;
 
     std::atomic_flag locked_ = ATOMIC_FLAG_INIT;
 

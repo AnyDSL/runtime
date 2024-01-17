@@ -151,7 +151,7 @@ PALPlatform::PALPlatform(Runtime* runtime)
             }
         }
 
-        devices_.emplace_back(pal_devices[i]);
+        devices_.emplace_back(pal_devices[i], runtime);
     }
 }
 
