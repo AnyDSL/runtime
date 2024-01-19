@@ -62,7 +62,6 @@ protected:
     void* alloc(DeviceId dev, int64_t size) override;
     void* alloc_host(DeviceId dev, int64_t size) override;
     void* alloc_unified(DeviceId dev, int64_t size) override;
-    void* alloc_upload(DeviceId dev, int64_t size);
     void* get_device_ptr(DeviceId, void*) override { command_unavailable("get_device_ptr"); }
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId dev, void* ptr) override;

@@ -182,11 +182,6 @@ void* PALPlatform::alloc_unified(DeviceId dev, int64_t size) {
     return reinterpret_cast<void*>(device.allocate_shared_virtual_memory(size));
 }
 
-void* PALPlatform::alloc_upload(DeviceId dev, int64_t size) {
-    auto& device = devices_[dev];
-    return reinterpret_cast<void*>(device.allocate_gpu_memory(size, Pal::GpuHeap::GpuHeapLocal));
-}
-
 void PALPlatform::release(DeviceId dev, void* ptr) {
     auto& device = devices_[dev];
     device.release_gpu_memory(ptr);
@@ -248,49 +243,44 @@ void PALPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, De
 
 void PALPlatform::copy_from_host(
     const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
-    Pal::IGpuMemory* dst_memory = devices_[dev_dst].get_memory_object(dst);
+    auto& device = devices_[dev_dst];
+    Pal::IGpuMemory* dst_memory = device.get_memory_object(dst);
 
-    // Query if GPU memory is host visible.
-    const Pal::GpuMemoryDesc& dst_memory_desc = dst_memory->Desc();
-    for (Pal::uint32 i = 0; i < dst_memory_desc.heapCount; ++i) {
-        if (dst_memory_desc.heaps[i] == Pal::GpuHeap::GpuHeapInvisible) {
-            // Create a temporary CPU-visible buffer on the GPU.
-            // Upload the data from the host and then copy into the given GPU destination buffer.
-            void* virtual_gpu_address = alloc_upload(dev_dst, size);
-            Pal::IGpuMemory* intermediate_mem = devices_[dev_dst].get_memory_object(virtual_gpu_address);
-            pal_utils::write_to_memory(
-                intermediate_mem, 0, static_cast<const uint8_t*>(src) + offset_src, size);
+    if (!pal_utils::allocation_is_host_visible(dst_memory)) {
+        // Create a temporary CPU-visible buffer on the GPU.
+        // memcpy the data from the host space to the CPU-visible buffer
+        // and then copy into the given GPU destination buffer.
+        void* virtual_gpu_address = reinterpret_cast<void*>(device.allocate_gpu_memory(size, Pal::GpuHeap::GpuHeapLocal));
+        Pal::IGpuMemory* intermediate_mem = device.get_memory_object(virtual_gpu_address);
+        pal_utils::write_to_memory(
+            intermediate_mem, 0, static_cast<const uint8_t*>(src) + offset_src, size);
 
-            copy(dev_dst, virtual_gpu_address, 0, dev_dst, dst, offset_dst, size);
-            release(dev_dst, virtual_gpu_address);
-            return;
-        }
+        copy(dev_dst, virtual_gpu_address, 0, dev_dst, dst, offset_dst, size);
+        release(dev_dst, virtual_gpu_address);
+    } else {
+        // Map and memcpy directly to CPU-visible GPU allocation.
+        pal_utils::write_to_memory(dst_memory, offset_dst, static_cast<const uint8_t*>(src) + offset_src, size);
     }
-
-    pal_utils::write_to_memory(dst_memory, offset_dst, static_cast<const uint8_t*>(src) + offset_src, size);
 }
 
 void PALPlatform::copy_to_host(
     DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
-    Pal::IGpuMemory* src_memory = devices_[dev_src].get_memory_object(src);
+    auto& device = devices_[dev_src];
+    Pal::IGpuMemory* src_memory = device.get_memory_object(src);
 
-    // Query if GPU memory is host visible.
-    const Pal::GpuMemoryDesc& src_memory_desc = src_memory->Desc();
-    for (Pal::uint32 i = 0; i < src_memory_desc.heapCount; ++i) {
-        if (src_memory_desc.heaps[i] == Pal::GpuHeap::GpuHeapInvisible) {
-            // Create a temporary CPU-visible buffer on the GPU and copy the GPU only data into the
-            // CPU-visible buffer, then memcpy the data to the host destination space.
-            void* virtual_gpu_address = alloc_upload(dev_src, size);
-            copy(dev_src, src, offset_src, dev_src, virtual_gpu_address, 0, size);
+    if (!pal_utils::allocation_is_host_visible(src_memory)) {
+        // Create a temporary GPU-visible cached buffer on the CPU and copy into that
+        // CPU-visible buffer, then memcpy the data to the host destination space.
+        // Using a cached buffer seems to be crucial for performance!
+        void* virtual_gpu_address = reinterpret_cast<void*>(device.allocate_gpu_memory(size, Pal::GpuHeap::GpuHeapGartCacheable));
+        copy(dev_src, src, offset_src, dev_src, virtual_gpu_address, 0, size);
 
-            Pal::IGpuMemory* intermediate_mem = devices_[dev_src].get_memory_object(virtual_gpu_address);
-            pal_utils::read_from_memory(static_cast<uint8_t*>(dst) + offset_dst, intermediate_mem, 0, size);
-            release(dev_src, virtual_gpu_address);
-            return;
-        }
+        Pal::IGpuMemory* intermediate_mem = device.get_memory_object(virtual_gpu_address);
+        pal_utils::read_from_memory(static_cast<uint8_t*>(dst) + offset_dst, intermediate_mem, 0, size);
+        release(dev_src, virtual_gpu_address);
+    } else {
+        pal_utils::read_from_memory(static_cast<uint8_t*>(dst) + offset_dst, src_memory, offset_src, size);
     }
-
-    pal_utils::read_from_memory(static_cast<uint8_t*>(dst) + offset_dst, src_memory, offset_src, size);
 }
 
 Pal::IPipeline* PALPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {

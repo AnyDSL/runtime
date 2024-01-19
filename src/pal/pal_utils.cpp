@@ -363,6 +363,17 @@ Pal::GpuHeap find_gpu_local_heap(const Pal::IDevice* device, Pal::gpusize memory
     return Pal::GpuHeap::GpuHeapCount;
 }
 
+bool allocation_is_host_visible(Pal::IGpuMemory* gpu_allocation) {
+    const Pal::GpuMemoryDesc& memory_desc = gpu_allocation->Desc();
+    for (Pal::uint32 i = 0; i < memory_desc.heapCount; ++i) {
+        if (memory_desc.heaps[i] == Pal::GpuHeap::GpuHeapInvisible) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 ShaderSrc::ShaderSrc(const std::string& filename, const std::string& src_code, const std::string& kernelname)
     : kernelname(kernelname)
     , src_code(src_code)

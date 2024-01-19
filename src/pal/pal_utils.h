@@ -50,6 +50,8 @@ void read_from_memory(void* dst_buffer, Pal::IGpuMemory* src_memory, int64_t src
 // Returns Pal::GpuHeap::GpuHeapCount if no appropriate heap can be found.
 Pal::GpuHeap find_gpu_local_heap(const Pal::IDevice* device, Pal::gpusize memory_size);
 
+bool allocation_is_host_visible(Pal::IGpuMemory* gpu_allocation);
+
 llvm::MDNode* get_metadata_mdnode(const llvm::Function* func, const char* key, int index = 0);
 llvm::StringRef get_metadata_string(const llvm::Function* func, const char* key);
 uint64_t get_metadata_uint(const llvm::Function* func, const char* key, int index = 0);
