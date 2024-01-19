@@ -27,8 +27,12 @@ PalDevice::PalDevice(Pal::IDevice* base_device, Runtime* runtime)
     result = init_cmd_allocator();
     CHECK_PAL(result, "pal_init_cmd_allocator()");
 
-    result = init_queue_and_cmd_buffer(queue_and_cmd_buffer_type::Compute);
-    CHECK_PAL(result, "pal_init_queue_and_cmd_buffer()");
+    result = init_queue_and_cmd_buffer(queue_and_cmd_buffer_type::Compute, queue_, cmd_buffer_);
+    CHECK_PAL(result, "pal_init_queue_and_cmd_buffer(Compute)");
+
+    result = init_queue_and_cmd_buffer(queue_and_cmd_buffer_type::Dma, dma_queue_, dma_cmd_buffer_);
+    CHECK_PAL(result, "pal_init_queue_and_cmd_buffer(Dma)");
+
 
     Pal::DeviceProperties device_properties;
     CHECK_PAL(device_->GetProperties(&device_properties), "device->GetProperties()");
@@ -69,6 +73,11 @@ Pal::Result PalDevice::init() {
         return Pal::Result::Aborted;
     }
 
+    if (device_properties.engineProperties[Pal::QueueTypeDma].engineCount < 1) {
+        // AnyDSL assumes a copy engine is available.
+        return Pal::Result::ErrorUnavailable;
+    }
+
     // At this point, we could configure PAL's behavior for this device:
     // Pal::PalPublicSettings* const settings = device_->GetPublicSettings();
     // ... modify the settings
@@ -88,6 +97,9 @@ Pal::Result PalDevice::init() {
     // And request one compute queue.
     finalize_info.requestedEngineCounts[Pal::EngineTypeCompute].engines = 1;
 
+    // And a copy engine
+    finalize_info.requestedEngineCounts[Pal::EngineTypeDma].engines = 1;
+
     result = device_->Finalize(finalize_info);
     CHECK_PAL(result, "Finalize()");
 
@@ -105,6 +117,8 @@ PalDevice::~PalDevice() {
     // Destroy any IObject or IDestroyable objects and free their corresponding system memory.
     pal_destroy(cmd_buffer_);
     pal_destroy(queue_);
+    pal_destroy(dma_cmd_buffer_);
+    pal_destroy(dma_queue_);
     pal_destroy(cmd_allocator_);
     for (auto& [_, pipeline] : programs_) {
         pal_destroy(pipeline);
@@ -180,7 +194,7 @@ inline void ThrowIfFailed(Util::Result result, const std::string& message) {
     }
 }
 
-Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type) {
+Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type, Pal::IQueue*& queue, Pal::ICmdBuffer*& cmd_buffer) {
     // Choose queue and engine type corresponding to queue_and_cmd_buffer_type.
     Pal::QueueType queue_type;
     Pal::EngineType engine_type;
@@ -192,6 +206,10 @@ Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type)
         case queue_and_cmd_buffer_type::Universal:
             queue_type = Pal::QueueType::QueueTypeUniversal;
             engine_type = Pal::EngineType::EngineTypeUniversal;
+            break;
+        case queue_and_cmd_buffer_type::Dma:
+            queue_type = Pal::QueueType::QueueTypeDma;
+            engine_type = Pal::EngineType::EngineTypeDma;
             break;
         default:
             // Queue and cmd buffer type not implemented.
@@ -209,7 +227,7 @@ Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type)
     const size_t queue_size = device_->GetQueueSize(queue_create_info, &result);
     CHECK_PAL(result, "GetQueueSize()");
 
-    result = device_->CreateQueue(queue_create_info, malloc(queue_size), &queue_);
+    result = device_->CreateQueue(queue_create_info, malloc(queue_size), &queue);
     CHECK_PAL(result, "CreateQueue()");
 
     // Create the command buffer.
@@ -221,7 +239,7 @@ Pal::Result PalDevice::init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type)
     const size_t cmdBufSize = device_->GetCmdBufferSize(cmd_buffer_create_info, &result);
     CHECK_PAL(result, "GetCmdBufferSize()");
 
-    return device_->CreateCmdBuffer(cmd_buffer_create_info, malloc(cmdBufSize), &cmd_buffer_);
+    return device_->CreateCmdBuffer(cmd_buffer_create_info, malloc(cmdBufSize), &cmd_buffer);
 }
 
 PalDevice::GpuVirtAddr_t PalDevice::allocate_gpu_memory(Pal::gpusize size_in_bytes, Pal::GpuHeap heap) {
@@ -328,36 +346,36 @@ void PalDevice::copy_gpu_data(
     const GpuVirtAddr_t source, GpuVirtAddr_t destination, const Pal::MemoryCopyRegion& copy_region) {
     Pal::CmdBufferBuildInfo cmd_buffer_build_info = {};
     cmd_buffer_build_info.flags.optimizeExclusiveSubmit = 1;
-    Pal::Result result = cmd_buffer_->Begin(cmd_buffer_build_info);
-    CHECK_PAL(result, "cmd_buffer->Begin()");
+    Pal::Result result = dma_cmd_buffer_->Begin(cmd_buffer_build_info);
+    CHECK_PAL(result, "dma_cmd_buffer_->Begin()");
 
     // Add copy command to cmd buffer.
     const Pal::uint32 region_count = 1;
 
     const auto& src_memory = *get_memory_object(source);
     const auto& dst_memory = *get_memory_object(destination);
-    cmd_buffer_->CmdCopyMemory(src_memory, dst_memory, region_count, &copy_region);
+    dma_cmd_buffer_->CmdCopyMemory(src_memory, dst_memory, region_count, &copy_region);
 
-    result = cmd_buffer_->End();
-    CHECK_PAL(result, "cmd_buffer->End()");
+    result = dma_cmd_buffer_->End();
+    CHECK_PAL(result, "dma_cmd_buffer_->End()");
 
     // Submit cmd buffer to queue.
     Pal::PerSubQueueSubmitInfo per_sub_queue_submit_info = {};
     per_sub_queue_submit_info.cmdBufferCount = 1;
-    per_sub_queue_submit_info.ppCmdBuffers = &cmd_buffer_;
+    per_sub_queue_submit_info.ppCmdBuffers = &dma_cmd_buffer_;
     per_sub_queue_submit_info.pCmdBufInfoList = nullptr;
 
     Pal::SubmitInfo submit_info = {};
     submit_info.pPerSubQueueInfo = &per_sub_queue_submit_info;
     submit_info.perSubQueueInfoCount = 1;
 
-    result = queue_->Submit(submit_info);
-    CHECK_PAL(result, "queue->Submit()");
+    result = dma_queue_->Submit(submit_info);
+    CHECK_PAL(result, "dma_queue_->Submit()");
 
     // Wait for queue to complete commands.
     // TODO: Do we want this WaitIdle here?
-    result = queue_->WaitIdle();
-    CHECK_PAL(result, "queue->WaitIdle()");
+    result = dma_queue_->WaitIdle();
+    CHECK_PAL(result, "dma_queue_->WaitIdle()");
 }
 
 void PalDevice::dispatch(const Pal::CmdBufferBuildInfo& cmd_buffer_build_info,

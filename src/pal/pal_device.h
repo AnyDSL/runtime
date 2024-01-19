@@ -24,7 +24,7 @@ public:
     typedef Pal::gpusize GpuVirtAddr_t;
     typedef std::unordered_map<std::string, Pal::IPipeline*> KernelMap;
 
-    enum class queue_and_cmd_buffer_type { Compute, Universal };
+    enum class queue_and_cmd_buffer_type { Compute, Universal, Dma };
 
     PalDevice(){};
     PalDevice(Pal::IDevice* base_device, Runtime* runtime);
@@ -82,10 +82,8 @@ private:
 
     Pal::Result init();
 
-    // Creates a PAL queue object and corresponding command buffer object.
-    // Since AnyDSL only supports Compute dispatches, any kind of queue,
-    // except copy-only-queues, can be used.
-    Pal::Result init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type);
+    // Creates a PAL queue object and corresponding command buffer object into the given pointers.
+    Pal::Result init_queue_and_cmd_buffer(queue_and_cmd_buffer_type type, Pal::IQueue*& queue, Pal::ICmdBuffer*& cmd_buffer);
 
     // Creates a PAL command allocator which is needed to allocate memory for all
     // command buffer objects.
@@ -123,6 +121,9 @@ private:
     Pal::ICmdAllocator* cmd_allocator_ = nullptr;
     Pal::IQueue* queue_ = nullptr;
     Pal::ICmdBuffer* cmd_buffer_ = nullptr;
+
+    Pal::IQueue* dma_queue_ = nullptr;
+    Pal::ICmdBuffer* dma_cmd_buffer_ = nullptr;
 
     struct ProfilingTimestamps {
         uint64_t start;
