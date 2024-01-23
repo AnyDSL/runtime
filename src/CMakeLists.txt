@@ -132,8 +132,13 @@ if(pal_FOUND)
     target_link_libraries(runtime_pal PRIVATE runtime_base pal::pal)
     list(APPEND RUNTIME_PLATFORMS runtime_pal)
 
-    cmake_path(GET CMAKE_SOURCE_DIR PARENT_PATH AnyDSL_metaproject_PATH)
-    cmake_path(SET AnyDSL_runtime_PAL_BITCODE_PATH NORMALIZE "${AnyDSL_metaproject_PATH}/rocm-device-libs/build/amdgcn/bitcode")
+    find_file(AnyDSL_runtime_ROCM_OCML_LIB
+        NAMES ocml.bc
+        HINTS ${CMAKE_SOURCE_DIR}/../rocm-device-libs
+        PATH_SUFFIXES build/amdgcn/bitcode
+        REQUIRED)
+    get_filename_component(AnyDSL_runtime_PAL_BITCODE_PATH ${AnyDSL_runtime_ROCM_OCML_LIB} DIRECTORY)
+    get_filename_component(AnyDSL_runtime_PAL_BITCODE_SUFFIX ${AnyDSL_runtime_ROCM_OCML_LIB} EXT)
 endif()
 set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
 

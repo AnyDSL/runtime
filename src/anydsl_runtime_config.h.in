@@ -48,13 +48,14 @@
 #define AnyDSL_runtime_HSA_BITCODE_PATH     "@AnyDSL_runtime_HSA_BITCODE_PATH@/"
 #define AnyDSL_runtime_HSA_BITCODE_SUFFIX   "@AnyDSL_runtime_HSA_BITCODE_SUFFIX@"
 
-// jit support
-
-#define AnyDSL_runtime_SOURCE_DIR           "@CMAKE_CURRENT_SOURCE_DIR@"
-
 // PAL support
 
 #define AnyDSL_runtime_PAL_BITCODE_PATH     "@AnyDSL_runtime_PAL_BITCODE_PATH@/"
+#define AnyDSL_runtime_PAL_BITCODE_SUFFIX   "@AnyDSL_runtime_PAL_BITCODE_SUFFIX@"
+
+// jit support
+
+#define AnyDSL_runtime_SOURCE_DIR           "@CMAKE_CURRENT_SOURCE_DIR@"
 
 // debug output
 
