@@ -174,7 +174,7 @@ void* PALPlatform::alloc(DeviceId dev, int64_t size) {
 
 void* PALPlatform::alloc_host(DeviceId dev, int64_t size) {
     auto& device = devices_[dev];
-    return reinterpret_cast<void*>(device.allocate_gpu_memory(size, Pal::GpuHeap::GpuHeapGartUswc));
+    return reinterpret_cast<void*>(device.allocate_gpu_memory(size, Pal::GpuHeap::GpuHeapGartCacheable));
 }
 
 void* PALPlatform::alloc_unified(DeviceId dev, int64_t size) {
