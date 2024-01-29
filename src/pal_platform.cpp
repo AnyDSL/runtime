@@ -21,12 +21,14 @@
 
 #ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
 #include <lld/Common/Driver.h>
+#include <llvm/IR/DataLayout.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Pass.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/CommandLine.h>
@@ -43,6 +45,13 @@
 
 namespace llvm_utils {
 
+// Initializes llvm with amdgpu using the following commandline options:
+// ANYDSL_LLVM_ARGS="-<custom_llvm_args> -amdgpu-sroa -amdgpu-load-store-vectorizer
+// -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols
+// -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine
+// -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls
+// -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments
+// -amdgpu-atomic-optimizations -amdgpu-mode-register"
 void initialize_amdgpu(std::vector<std::string> custom_llvm_args) {
     const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
     if (env_var) {
@@ -86,6 +95,7 @@ void add_module_impl(std::unique_ptr<llvm::Module> module, const llvm::DataLayou
         error("Can't link '%' into module.", module_name);
 }
 
+// Creates a module, sets its data layout and links it to the base_module.
 void add_module(llvm::Linker& base_module, const std::string& module_file_path,
     const llvm::DataLayout& machine_data_layout, llvm::LLVMContext& llvm_context, llvm::Linker::Flags flags) {
     llvm::SMDiagnostic diagnostic_err;
@@ -93,6 +103,7 @@ void add_module(llvm::Linker& base_module, const std::string& module_file_path,
     add_module_impl(std::move(module), machine_data_layout, base_module, flags, diagnostic_err, module_file_path.c_str());
 }
 
+// Creates a module, sets its data layout and links it to the base_module.
 void add_module(llvm::Linker& base_module, const llvm::MemoryBufferRef& module_data_ref,
     const llvm::DataLayout& machine_data_layout, llvm::LLVMContext& llvm_context, llvm::Linker::Flags flags,
     const char* module_name) {

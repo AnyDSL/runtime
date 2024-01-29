@@ -39,8 +39,6 @@ const char* get_gfx_isa_id(const Pal::GfxIpLevel gfxip_level);
 
 bool isAMDGPUEntryFunctionCC(llvm::CallingConv::ID CC);
 
-void check_pal_error(Pal::Result err, const char* name, const char* file, const int line);
-
 void write_to_memory(
     Pal::IGpuMemory* dst_memory, int64_t dst_memory_offset, const void* src_data, int64_t size);
 void read_from_memory(void* dst_buffer, Pal::IGpuMemory* src_memory, int64_t src_memory_offset, int64_t size);
@@ -60,6 +58,6 @@ extern const char* ComputeShaderMainFnName;
 
 } // namespace pal_utils
 
-#define CHECK_PAL(err, name) pal_utils::check_pal_error(err, name, __FILE__, __LINE__)
+#define CHECK_PAL(err, name) { if (err != Pal::Result::Success) { error("PAL API function % [file %, line %]: %", name, __FILE__, __LINE__, static_cast<int32_t>(err)); } }
 
 #endif

@@ -7,12 +7,6 @@
 
 constexpr const PalDevice::GpuVirtAddr_t nulladdr = 0;
 
-inline void check_pal_error(Pal::Result err, const char* name, const char* file, const int line) {
-    if (err != Pal::Result::Success) {
-        error("PAL API function % [file %, line %]: %", name, file, line, static_cast<int32_t>(err));
-    }
-}
-
 void pal_destroy(Pal::IDestroyable* object) {
     assert(object != nullptr);
     object->Destroy();
@@ -276,9 +270,8 @@ Pal::Result PalDevice::allocate_memory(
     Pal::GpuMemoryRef mem_ref = {};
     mem_ref.pGpuMemory = *gpu_memory_pp;
 
-    // Make this allocation permanently resident. We might want to track  which allocations are actually being
-    // used and only make those resident but in AnyDSL usually the user takes care of releasing memory as soon
-    // as it's not used anymore.
+    // Make this allocation permanently resident. In AnyDSL usually the user takes care of
+    // releasing memory as soon as it's not used anymore.
     return device_->AddGpuMemoryReferences(1, &mem_ref, nullptr, Pal::GpuMemoryRefCantTrim);
 }
 
@@ -313,7 +306,7 @@ PalDevice::GpuVirtAddr_t PalDevice::track_memory(Pal::IGpuMemory* memory) {
 
 void PalDevice::forget_memory(GpuVirtAddr_t gpu_address) {
     assert(memory_objects_.find(gpu_address) != memory_objects_.end()
-           && "Virtual address is already in memory_objects map.");
+           && "Virtual address is not in memory_objects map.");
 
     memory_objects_.erase(gpu_address);
 }
