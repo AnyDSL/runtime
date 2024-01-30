@@ -45,21 +45,20 @@
 
 namespace llvm_utils {
 
-// Initializes llvm with amdgpu using the following commandline options:
-// ANYDSL_LLVM_ARGS="-<custom_llvm_args> -amdgpu-sroa -amdgpu-load-store-vectorizer
-// -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols
-// -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine
-// -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls
-// -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments
-// -amdgpu-atomic-optimizations -amdgpu-mode-register"
+// Initializes llvm with amdgpu using the passed in commandline options,
+// as well as any further options set through the ANYDSL_LLVM_ARGS env variable.
 void initialize_amdgpu(std::vector<std::string> custom_llvm_args) {
-    const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");
+    // Useful options: ANYDSL_LLVM_ARGS ="-amdgpu-sroa -amdgpu-load-store-vectorizer -amdgpu-scalarize-global-loads -amdgpu-internalize-symbols -amdgpu-early-inline-all -amdgpu-sdwa-peephole -amdgpu-dpp-combine -enable-amdgpu-aa -amdgpu-late-structurize=0 -amdgpu-function-calls -amdgpu-simplify-libcall -amdgpu-ir-lower-kernel-arguments -amdgpu-atomic-optimizations -amdgpu-mode-register"
+    // See: https://anydsl.github.io/Device-Code-Generation-and-Execution.html#amdgpu-code-generation-optimization
+    const char* env_var = std::getenv("ANYDSL_LLVM_ARGS");    
     if (env_var) {
-        std::vector<const char*> c_llvm_args;
         std::istringstream stream(env_var);
         std::string tmp;
         while (stream >> tmp)
             custom_llvm_args.push_back(tmp);
+    }
+    if (!custom_llvm_args.empty()) {
+        std::vector<const char*> c_llvm_args;
         for (auto& str : custom_llvm_args)
             c_llvm_args.push_back(str.c_str());
         llvm::cl::ParseCommandLineOptions(c_llvm_args.size(), c_llvm_args.data(), "AnyDSL gcn JIT compiler\n");
