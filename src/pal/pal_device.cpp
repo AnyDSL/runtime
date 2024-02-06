@@ -463,6 +463,11 @@ void PalDevice::dispatch(const Pal::CmdBufferBuildInfo& cmd_buffer_build_info,
     }
 }
 
+void PalDevice::WaitIdle() {
+    CHECK_PAL(queue_->WaitIdle(), "queue_->WaitIdle()");
+    CHECK_PAL(dma_queue_->WaitIdle(), "dma_queue_->WaitIdle()");
+}
+
 PalDevice::GpuVirtAddr_t PalDevice::write_data_to_gpu(
     Pal::gpusize byte_size, std::function<void(void*)> write_callback) {
     PalDevice::GpuVirtAddr_t gpu_only_buffer =

@@ -77,6 +77,8 @@ public:
         const Pal::PipelineBindParams& pipeline_bind_params, const Pal::BarrierInfo& barrier_info,
         const LaunchParams& launch_params);
 
+    void WaitIdle();
+
 private:
     friend PALPlatform;
 

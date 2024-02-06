@@ -231,8 +231,7 @@ void PALPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params)
 }
 
 void PALPlatform::synchronize(DeviceId dev) {
-    Pal::Result result = devices_[dev].queue_->WaitIdle();
-    CHECK_PAL(result, "WaitIdle()");
+    devices_[dev].WaitIdle();
 }
 
 void PALPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst,
