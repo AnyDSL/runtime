@@ -1,5 +1,3 @@
-// Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
-
 #ifndef PAL_PLATFORM_INSERT_HALT_PASS_H
 #define PAL_PLATFORM_INSERT_HALT_PASS_H
 

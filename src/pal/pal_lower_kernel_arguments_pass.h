@@ -1,5 +1,3 @@
-// Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
-
 #ifndef PAL_PLATFORM_LOWER_KERNEL_ARGUMENTS_H
 #define PAL_PLATFORM_LOWER_KERNEL_ARGUMENTS_H
 

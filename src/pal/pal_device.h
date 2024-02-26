@@ -1,5 +1,3 @@
-// Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
-
 #ifndef PAL_DEVICE_DATA_H
 #define PAL_DEVICE_DATA_H
 

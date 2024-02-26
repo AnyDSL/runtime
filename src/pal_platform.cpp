@@ -1,5 +1,3 @@
-// Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
-
 #include "pal_platform.h"
 #include "pal/pal_fix_calling_convention_pass.h"
 #include "pal/pal_insert_halt_pass.h"

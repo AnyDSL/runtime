@@ -1,5 +1,3 @@
-// Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
-
 #include "pal_lower_kernel_arguments_pass.h"
 #include "pal_utils.h"
 
