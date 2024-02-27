@@ -1,16 +1,5 @@
 # This is the official list of contributing authors in the AnyDSL runtime project for copyright purposes.
-#
-# Names should be added to this file as:
-#     Name, github handle(s) [, Email]
-# The github handle(s) are those under which the person contributed to this project.
-# The email address is not required.
-# 
-# If an organization is the copyright holder, authors of that organization must be listed with the organization association:
-#          Name, Organization, github handle(s) [, Email]
-#
-# Please keep the list sorted.
 
-
-Fabian Wildgrube, AMD, @FabianWildgrube, fabian.wildgrube@amd.com
-
-TODO: add other contributors from THI, Uni Saarland, etc.
+# Name, GitHub Handle, Affiliation
+Fabian Wildgrube, FabianWildgrube, Advanced Micro Devices Inc.
+# TODO: add other contributors from THI, Uni Saarland, etc.
