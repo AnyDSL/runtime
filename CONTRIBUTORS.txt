@@ -1,0 +1,5 @@
+# This is the official list of contributing authors in the AnyDSL runtime project for copyright purposes.
+
+# Name, GitHub Handle, Affiliation
+Fabian Wildgrube, FabianWildgrube, Advanced Micro Devices Inc.
+# TODO: add other contributors from THI, Uni Saarland, etc.

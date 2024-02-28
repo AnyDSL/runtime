@@ -9,8 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <hsa.h>
-#include <hsa_ext_amd.h>
+#include <hsa/hsa.h>
+#include <hsa/hsa_ext_amd.h>
 
 namespace llvm {
 class OptimizationLevel;

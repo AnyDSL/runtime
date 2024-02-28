@@ -9,6 +9,7 @@
 #cmakedefine AnyDSL_runtime_HAS_CUDA_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_OPENCL_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_HSA_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_PAL_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_TBB_SUPPORT
 
 
@@ -47,10 +48,14 @@
 #define AnyDSL_runtime_HSA_BITCODE_PATH     "@AnyDSL_runtime_HSA_BITCODE_PATH@/"
 #define AnyDSL_runtime_HSA_BITCODE_SUFFIX   "@AnyDSL_runtime_HSA_BITCODE_SUFFIX@"
 
+// PAL support
+
+#define AnyDSL_runtime_PAL_BITCODE_PATH     "@AnyDSL_runtime_PAL_BITCODE_PATH@/"
+#define AnyDSL_runtime_PAL_BITCODE_SUFFIX   "@AnyDSL_runtime_PAL_BITCODE_SUFFIX@"
+
 // jit support
 
 #define AnyDSL_runtime_SOURCE_DIR           "@CMAKE_CURRENT_SOURCE_DIR@"
-
 
 // debug output
 
