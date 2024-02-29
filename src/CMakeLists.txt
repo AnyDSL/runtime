@@ -111,6 +111,37 @@ if(hsa-runtime64_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
+# look for PAL
+find_package(pal)
+if(pal_FOUND)
+    add_library(runtime_pal STATIC 
+        pal_platform.h
+        pal_platform.cpp
+        pal/pal_lower_kernel_arguments_pass.h
+        pal/pal_lower_kernel_arguments_pass.cpp
+        pal/pal_fix_calling_convention_pass.h
+        pal/pal_fix_calling_convention_pass.cpp
+        pal/pal_lower_builtins_pass.h
+        pal/pal_lower_builtins_pass.cpp
+        pal/pal_insert_halt_pass.h
+        pal/pal_insert_halt_pass.cpp
+        pal/pal_utils.h
+        pal/pal_utils.cpp
+        pal/pal_device.h
+        pal/pal_device.cpp)
+    target_link_libraries(runtime_pal PRIVATE runtime_base pal::pal)
+    list(APPEND RUNTIME_PLATFORMS runtime_pal)
+
+    find_file(AnyDSL_runtime_ROCM_OCML_LIB
+        NAMES ocml.bc
+        HINTS ${CMAKE_SOURCE_DIR}/../rocm-device-libs
+        PATH_SUFFIXES build/amdgcn/bitcode
+        REQUIRED)
+    get_filename_component(AnyDSL_runtime_PAL_BITCODE_PATH ${AnyDSL_runtime_ROCM_OCML_LIB} DIRECTORY)
+    get_filename_component(AnyDSL_runtime_PAL_BITCODE_SUFFIX ${AnyDSL_runtime_ROCM_OCML_LIB} EXT)
+endif()
+set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
+
 # look for LLVM for nvptx and gcn
 find_package(LLVM)
 if(LLVM_FOUND)
@@ -121,12 +152,17 @@ if(LLVM_FOUND)
     endif()
     add_definitions(${LLVM_DEFINITIONS})
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-    set(AnyDSL_runtime_LLVM_COMPONENTS irreader support ${LLVM_TARGETS_TO_BUILD})
+    set(AnyDSL_runtime_LLVM_COMPONENTS irreader support passes ${LLVM_TARGETS_TO_BUILD})
     set(AnyDSL_runtime_JIT_LLVM_COMPONENTS ${AnyDSL_runtime_LLVM_COMPONENTS} mcjit)
     if(AnyDSL_runtime_HAS_HSA_SUPPORT AND RUNTIME_JIT)
         find_package(LLD REQUIRED)
         target_link_libraries(runtime_hsa PRIVATE lldELF lldCommon)
         llvm_config(runtime_hsa ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
+    endif()
+    if(AnyDSL_runtime_HAS_PAL_SUPPORT)
+        find_package(LLD REQUIRED)
+        target_link_libraries(runtime_pal PRIVATE lldELF lldCommon)
+        llvm_config(runtime_pal ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
     endif()
 endif()
 set(AnyDSL_runtime_HAS_LLVM_SUPPORT ${LLVM_FOUND} CACHE INTERNAL "enables nvptx / gcn support")
