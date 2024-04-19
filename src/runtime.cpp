@@ -24,7 +24,9 @@ void register_pal_platform(Runtime* runtime) { runtime->register_platform<DummyP
 Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)
     , cache_dir_("")
-{}
+{
+    cache_disabled_ = std::getenv("ANYDSL_DISABLE_RUNTIME_CACHE") != nullptr;
+}
 
 void Runtime::display_info() const {
     info("Available platforms:");
@@ -229,6 +231,9 @@ void Runtime::store_file(const std::string& filename, const std::byte* data, siz
 }
 
 std::string Runtime::load_from_cache(const std::string& key, const std::string& ext) const {
+    if (cache_disabled_)
+        return std::string();
+
     std::string filename = get_cached_filename(key, ext);
     std::ifstream src_file(filename, std::ifstream::binary);
     if (!src_file.is_open())
@@ -247,6 +252,9 @@ std::string Runtime::load_from_cache(const std::string& key, const std::string& 
 }
 
 void Runtime::store_to_cache(const std::string& key, const std::string& str, const std::string ext) const {
+    if (cache_disabled_)
+        return;
+
     std::string filename = get_cached_filename(key, ext);
     create_directory(get_cache_directory().c_str());
     debug("Storing to cache: %", filename);

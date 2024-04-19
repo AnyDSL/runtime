@@ -110,6 +110,7 @@ private:
     std::atomic<uint64_t> kernel_time_;
     std::vector<std::unique_ptr<Platform>> platforms_;
     std::unordered_map<std::string, std::string> files_;
+    bool cache_disabled_;
     std::string cache_dir_;
 };
 
