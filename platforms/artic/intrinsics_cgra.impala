@@ -366,7 +366,6 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 //TODO: to support buffers we need to add aie::begin_vector and aie::end_vector. they return a vector iterator type which should be implemented in the backend
 
-//TODO aie::sliding_mul
 // aie::sliding_mul_xy_ops<...>::mul(....)
 #[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul")] fn cgra_sliding_mul_xy_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
 // aie::sliding_mul_xy_ops<...>::mac(....)
@@ -468,9 +467,7 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 
 //TODO: FFT both with lib and stage APIs (function template category but we need complex data type support)
-
 // Either via a type or just using the function name or even maybe both
-//TODO: apply all changes for runtime abstractions, look at iteration example
 
 
 //TODO: Proper way of implementing mmul is possible via a new intrinsic and transformation
@@ -550,8 +547,6 @@ struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
 #[import(cc = "device", name = "readincr_v")] fn cgra_readincr_v[T](u32, &mut channel[T]) -> T;
 #[import(cc = "device", name = "writeincr_v")] fn cgra_readincr_i32(u32, &mut channel_i32, i32) -> i32;
 #[import(cc = "device", name = "writeincr_v")] fn cgra_readincr[T](u32, &mut channel[T], T) -> ();
-
-
 
 
 fn @cgra_accelerator(dev: i32, runtime_ratio: f32, location: (i32 ,i32), vector_size: i32) = Accelerator {
