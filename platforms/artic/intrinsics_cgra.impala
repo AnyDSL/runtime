@@ -564,13 +564,14 @@ fn @cgra_accelerator(dev: i32, runtime_ratio: f32, location: (i32 ,i32), vector_
             gdimx = @|| 1, gdimy = @|| 1, gdimz = @|| 1,
             nblkx = @|| 1, nblky = @|| 1, nblkz = @|| 1
         };
-        hls(dev, || @body(work_item));
+        cgra(dev, runtime_ratio, location, vector_size, || @body(work_item));
     },
     sync          = @|| synchronize_cgra(dev),
     alloc         = @|size| alloc_cgra(dev, size),
     alloc_unified = @|size| alloc_cgra_unified(dev, size),
     barrier       = @|| ()
 };
+
 
 static cgra_intrinsics = Intrinsics {
     expf        = cgra_expf,
