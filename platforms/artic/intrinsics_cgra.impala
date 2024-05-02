@@ -323,11 +323,13 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 #[import(cc = "device", name = "aie::store")] fn cgra_store_f32(&mut addrspace(1)f32, f32) -> ();
 
 // shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
+// instead of a non-static to_vector<...>(...) API we use low-level srs(...) inrinsic
 #[import(cc = "device", name = "srs")] fn cgra_to_vector[T](i64, u32) -> T;
 #[import(cc = "device", name = "srs")] fn cgra_to_vector_u16(i64, u32) -> u16;
 #[import(cc = "device", name = "srs")] fn cgra_to_vector_i32(i64, u32) -> i32;
 #[import(cc = "device", name = "srs")] fn cgra_to_vector_f32(i64, u32) -> f32;
 //upshift intrinsic to move a value from a vector register to an accumulator register with any required shifting
+// instead of a non-static to_accum<...>(...) API we use low-level ups(...) inrinsic
 #[import(cc = "device", name = "ups")] fn cgra_to_accum[T](T, u32) -> i64;
 #[import(cc = "device", name = "ups")] fn cgra_to_accum_u16(u16, u32) -> i64;
 #[import(cc = "device", name = "ups")] fn cgra_to_accum_i32(i32, u32) -> i64;
