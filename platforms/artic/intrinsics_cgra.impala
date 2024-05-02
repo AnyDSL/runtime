@@ -1,62 +1,512 @@
 // no declarations are emitted for "device" functions
-#[import(cc = "C", name = "exp")]      fn cgra_expf(f32) -> f32;
-#[import(cc = "C", name = "exp2")]     fn cgra_exp2f(f32) -> f32;
-#[import(cc = "C", name = "log")]      fn cgra_logf(f32) -> f32;
-#[import(cc = "C", name = "log2")]     fn cgra_log2f(f32) -> f32;
-#[import(cc = "C", name = "pow")]      fn cgra_powf(f32, f32) -> f32;
-#[import(cc = "C", name = "rsqrt")]    fn cgra_rsqrtf(f32) -> f32;
-#[import(cc = "C", name = "sqrt")]     fn cgra_sqrtf(f32) -> f32;
-#[import(cc = "C", name = "fabs")]     fn cgra_fabsf(f32) -> f32;
-#[import(cc = "C", name = "sin")]      fn cgra_sinf(f32) -> f32;
-#[import(cc = "C", name = "cos")]      fn cgra_cosf(f32) -> f32;
-#[import(cc = "C", name = "tan")]      fn cgra_tanf(f32) -> f32;
-#[import(cc = "C", name = "asin")]     fn cgra_asinf(f32) -> f32;
-#[import(cc = "C", name = "acos")]     fn cgra_acosf(f32) -> f32;
-#[import(cc = "C", name = "atan")]     fn cgra_atanf(f32) -> f32;
-#[import(cc = "C", name = "erf")]      fn cgra_erff(f32) -> f32;
-#[import(cc = "C", name = "atan2")]    fn cgra_atan2f(f32, f32) -> f32;
-#[import(cc = "C", name = "fmod")]     fn cgra_fmodf(f32, f32) -> f32;
-#[import(cc = "C", name = "floor")]    fn cgra_floorf(f32) -> f32;
-#[import(cc = "C", name = "isinf")]    fn cgra_isinff(f32) -> i32;
-#[import(cc = "C", name = "isnan")]    fn cgra_isnanf(f32) -> i32;
-#[import(cc = "C", name = "isfinite")] fn cgra_isfinitef(f32) -> i32;
-#[import(cc = "C", name = "fma")]      fn cgra_fmaf(f32, f32, f32) -> f32;
-#[import(cc = "C", name = "mad")]      fn cgra_madf(f32, f32, f32) -> f32;
-#[import(cc = "C", name = "copysign")] fn cgra_copysignf(f32, f32) -> f32;
-#[import(cc = "C", name = "exp")]      fn cgra_exp(f64) -> f64;
-#[import(cc = "C", name = "exp2")]     fn cgra_exp2(f64) -> f64;
-#[import(cc = "C", name = "log")]      fn cgra_log(f64) -> f64;
-#[import(cc = "C", name = "log2")]     fn cgra_log2(f64) -> f64;
-#[import(cc = "C", name = "pow")]      fn cgra_pow(f64, f64) -> f64;
-#[import(cc = "C", name = "rsqrt")]    fn cgra_rsqrt(f64) -> f64;
-#[import(cc = "C", name = "sqrt")]     fn cgra_sqrt(f64) -> f64;
-#[import(cc = "C", name = "fabs")]     fn cgra_fabs(f64) -> f64;
-#[import(cc = "C", name = "sin")]      fn cgra_sin(f64) -> f64;
-#[import(cc = "C", name = "cos")]      fn cgra_cos(f64) -> f64;
-#[import(cc = "C", name = "tan")]      fn cgra_tan(f64) -> f64;
-#[import(cc = "C", name = "asin")]     fn cgra_asin(f64) -> f64;
-#[import(cc = "C", name = "acos")]     fn cgra_acos(f64) -> f64;
-#[import(cc = "C", name = "atan")]     fn cgra_atan(f64) -> f64;
-#[import(cc = "C", name = "erf")]      fn cgra_erf(f64) -> f64;
-#[import(cc = "C", name = "atan2")]    fn cgra_atan2(f64, f64) -> f64;
-#[import(cc = "C", name = "fmod")]     fn cgra_fmod(f64, f64) -> f64;
-#[import(cc = "C", name = "floor")]    fn cgra_floor(f64) -> f64;
-#[import(cc = "C", name = "isinf")]    fn cgra_isinf(f64) -> i32;
-#[import(cc = "C", name = "isnan")]    fn cgra_isnan(f64) -> i32;
-#[import(cc = "C", name = "isfinite")] fn cgra_isfinite(f64) -> i32;
-#[import(cc = "C", name = "fma")]      fn cgra_fma(f64, f64, f64) -> f64;
-#[import(cc = "C", name = "mad")]      fn cgra_mad(f64, f64, f64) -> f64;
-#[import(cc = "C", name = "copysign")] fn cgra_copysign(f64, f64) -> f64;
-#[import(cc = "C", name = "fmin")]     fn cgra_fminf(f32, f32) -> f32;
-#[import(cc = "C", name = "fmax")]     fn cgra_fmaxf(f32, f32) -> f32;
-#[import(cc = "C", name = "fmin")]     fn cgra_fmin(f64, f64) -> f64;
-#[import(cc = "C", name = "fmax")]     fn cgra_fmax(f64, f64) -> f64;
-#[import(cc = "C", name = "min")]      fn cgra_min(i32, i32) -> i32;
-#[import(cc = "C", name = "max")]      fn cgra_max(i32, i32) -> i32;
+#[import(cc = "device", name = "exp")]      fn cgra_expf(f32) -> f32;
+#[import(cc = "device", name = "exp2")]     fn cgra_exp2f(f32) -> f32;
+#[import(cc = "device", name = "log")]      fn cgra_logf(f32) -> f32;
+#[import(cc = "device", name = "aie::detail::utilis::log2")]     fn cgra_log2f(f32) -> f32;
+#[import(cc = "device", name = "pow")]      fn cgra_powf(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::invsqrt")]    fn cgra_rsqrtf(f32) -> f32;
+#[import(cc = "device", name = "aie::sqrt")]     fn cgra_sqrtf(f32) -> f32;
+#[import(cc = "device", name = "aie::abs")]     fn cgra_fabsf(f32) -> f32;
+#[import(cc = "device", name = "aie::sin")]      fn cgra_sinf(f32) -> f32;
+#[import(cc = "device", name = "aie::cos")]      fn cgra_cosf(f32) -> f32;
+fn @cgra_tanf(s: f32) -> f32 = cgra_sinf(s) / cgra_cosf(s);
+#[import(cc = "device", name = "asin")]     fn cgra_asinf(f32) -> f32;
+#[import(cc = "device", name = "acos")]     fn cgra_acosf(f32) -> f32;
+#[import(cc = "device", name = "atan")]     fn cgra_atanf(f32) -> f32;
+#[import(cc = "device", name = "erf")]      fn cgra_erff(f32) -> f32;
+#[import(cc = "device", name = "atan2")]    fn cgra_atan2f(f32, f32) -> f32;
+#[import(cc = "device", name = "fmod")]     fn cgra_fmodf(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::detail::floor")]    fn cgra_floorf(f32) -> f32;
+#[import(cc = "device", name = "isinf")]    fn cgra_isinff(f32) -> i32;
+#[import(cc = "device", name = "isnan")]    fn cgra_isnanf(f32) -> i32;
+#[import(cc = "device", name = "isfinite")] fn cgra_isfinitef(f32) -> i32;
+#[import(cc = "device", name = "fma")]      fn cgra_fmaf(f32, f32, f32) -> f32; // replace with mac chenge acc pos
+#[import(cc = "device", name = "mad")]      fn cgra_madf(f32, f32, f32) -> f32;
+#[import(cc = "device", name = "copysign")] fn cgra_copysignf(f32, f32) -> f32;
+#[import(cc = "device", name = "exp")]      fn cgra_exp(f64) -> f64;
+#[import(cc = "device", name = "exp2")]     fn cgra_exp2(f64) -> f64;
+#[import(cc = "device", name = "log")]      fn cgra_log(f64) -> f64;
+#[import(cc = "device", name = "aie::detail::utils::log2")]     fn cgra_log2(f64) -> f64;
+#[import(cc = "device", name = "aie::pow")]      fn cgra_pow(f64, f64) -> f64;
+#[import(cc = "device", name = "aie::invsqrt")]    fn cgra_rsqrt(f64) -> f64;
+#[import(cc = "device", name = "aie::sqrt")]     fn cgra_sqrt(f64) -> f64;
+#[import(cc = "device", name = "aie::abs")]     fn cgra_fabs(f64) -> f64;
+#[import(cc = "device", name = "aie::sin")]      fn cgra_sin(f64) -> f64;
+#[import(cc = "device", name = "aie::cos")]      fn cgra_cos(f64) -> f64;
+fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
+#[import(cc = "device", name = "asin")]     fn cgra_asin(f64) -> f64;
+#[import(cc = "device", name = "acos")]     fn cgra_acos(f64) -> f64;
+#[import(cc = "device", name = "atan")]     fn cgra_atan(f64) -> f64;
+#[import(cc = "device", name = "erf")]      fn cgra_erf(f64) -> f64;
+#[import(cc = "device", name = "atan2")]    fn cgra_atan2(f64, f64) -> f64;
+#[import(cc = "device", name = "fmod")]     fn cgra_fmod(f64, f64) -> f64;
+#[import(cc = "device", name = "aie::detail::floor")]    fn cgra_floor(f64) -> f64;
+#[import(cc = "device", name = "isinf")]    fn cgra_isinf(f64) -> i32;
+#[import(cc = "device", name = "isnan")]    fn cgra_isnan(f64) -> i32;
+#[import(cc = "device", name = "isfinite")] fn cgra_isfinite(f64) -> i32;
+#[import(cc = "device", name = "fma")]      fn cgra_fma(f64, f64, f64) -> f64; // replace with mac chenge acc pos
+#[import(cc = "device", name = "mad")]      fn cgra_mad(f64, f64, f64) -> f64;
+#[import(cc = "device", name = "copysign")] fn cgra_copysign(f64, f64) -> f64;
+#[import(cc = "device", name = "aie::fmin")]     fn cgra_fminf(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::fmax")]     fn cgra_fmaxf(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::fmin")]     fn cgra_fmin(f64, f64) -> f64;
+#[import(cc = "device", name = "aie::fmax")]     fn cgra_fmax(f64, f64) -> f64;
+#[import(cc = "device", name = "aie::min")]      fn cgra_min(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::max")]      fn cgra_max(i32, i32) -> i32;
+
+//  MAC and MUL intrinsic need accumulator regsiter
+
+// Arithmetic
+#[import(cc = "device", name = "aie::add")]      fn cgra_add[T](T, T) -> T;
+#[import(cc = "device", name = "aie::add")]      fn cgra_add_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::add")]      fn cgra_add_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::add")]      fn cgra_add_f32(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::add")]      fn cgra_add_i64(i64, i64) -> i64;
+
+#[import(cc = "device", name = "aie::sub")]      fn cgra_sub[T](T, T) -> T;
+#[import(cc = "device", name = "aie::sub")]      fn cgra_sub_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::sub")]      fn cgra_sub_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::sub")]      fn cgra_sub_f32(f32, f32) -> f32;
+#[import(cc = "device", name = "aie::sub")]      fn cgra_sub_i64(i64, i64) -> i64;
+
+// vector MUL always returns an accumulator type (i64) and needs to be casted to the correct type
+#[import(cc = "device", name = "aie::mul")]      fn cgra_mul[T](T, T) -> i64;
+#[import(cc = "device", name = "aie::mul")]      fn cgra_mul_u16(u16, u16) -> i64;
+#[import(cc = "device", name = "aie::mul")]      fn cgra_mul_i32(i32, i32) -> i64;
+#[import(cc = "device", name = "aie::mul")]      fn cgra_mul_f32(f32, f32) -> i64;
+#[import(cc = "device", name = "aie::mul")]      fn cgra_mul_i64(i64, i64) -> i64;
+
+//Division
+#[import(cc = "device", name = "aie::div")]      fn cgra_div[T](T, T) -> T;
+#[import(cc = "device", name = "aie::div")]      fn cgra_div_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::div")]      fn cgra_div_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::div")]      fn cgra_div_f32(f32, f32) -> f32;
+
+// multiply-add
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac[T](T, T, T) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_u16(u16, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_i32(i32, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_f32(f32, f32, f32) -> i64;
+
+
+// mac-square
+#[import(cc = "device", name = "aie::mac_square")]      fn cgra_mac_square[T](i64, T) -> i64;
+#[import(cc = "device", name = "aie::mac_square")]      fn cgra_mac_square_u16(i64, u16) -> i64;
+#[import(cc = "device", name = "aie::mac_square")]      fn cgra_mac_square_i32(i64, i32) -> i64;
+#[import(cc = "device", name = "aie::mac_square")]      fn cgra_mac_square_f32(i64, f32) -> i64;
+
+//msc, returns an accumulator with the element-wise multiply-add of the two input vectors and accumulator.
+#[import(cc = "device", name = "aie::msc")]      fn cgra_msc[T](i64, T, T) -> i64;
+#[import(cc = "device", name = "aie::msc")]      fn cgra_msc_u16(i64, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::msc")]      fn cgra_msc_i32(i64, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::msc")]      fn cgra_msc_f32(i64, f32, f32) -> i64;
+
+//msc_square, returns an accumulator with the subtraction of the given accumulator and the element-wise square of the input vector.
+#[import(cc = "device", name = "aie::msc_square")]      fn cgra_msc_square[T](i64, T) -> i64;
+#[import(cc = "device", name = "aie::msc_square")]      fn cgra_msc_square_u16(i64, u16) -> i64;
+#[import(cc = "device", name = "aie::msc_square")]      fn cgra_msc_square_i32(i64, i32) -> i64;
+#[import(cc = "device", name = "aie::msc_square")]      fn cgra_msc_square_f32(i64, f32) -> i64;
+
+
+//negmul, returns an accumulator with the negate of the element-wise multiplication of the two input vectors.
+#[import(cc = "device", name = "aie::negmul")]      fn cgra_negmul[T](T, T) -> i64;
+#[import(cc = "device", name = "aie::negmul")]      fn cgra_negmul_u16(u16, u16) -> i64;
+#[import(cc = "device", name = "aie::negmul")]      fn cgra_negmul_i32(i32, i32) -> i64;
+#[import(cc = "device", name = "aie::negmul")]      fn cgra_negmul_f32(f32, f32) -> i64;
+
+
+//  Returns the sums of the elements in the input vectors.
+#[import(cc = "device", name = "aie::reduce_add_v")]      fn cgra_sum[T](T, T) -> T;
+#[import(cc = "device", name = "aie::reduce_add_v")]      fn cgra_sum_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::reduce_add_v")]      fn cgra_sum_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::reduce_add_v")]      fn cgra_sum_f32(f32, f32) -> f32;
+
+//negate
+#[import(cc = "device", name = "aie::neg")]      fn cgra_neg[T](T) -> T;
+#[import(cc = "device", name = "aie::neg")]      fn cgra_neg_u16(u16) -> u16;
+#[import(cc = "device", name = "aie::neg")]      fn cgra_neg_i32(i32) -> i32;
+#[import(cc = "device", name = "aie::neg")]      fn cgra_neg_f32(f32) -> f32;
+
+
+//initialization
+// Returns a vector whose elements are initialized to the given value.
+// cgra_broadcast[type](vector_size, value) => aie::broadcast<type, vector_size>(value)
+#[import(cc = "device", name = "aie::broadcast")] fn cgra_broadcast[T](i32, T) -> T;
+#[import(cc = "device", name = "aie::broadcast")] fn cgra_broadcast_u16(i32, u16) -> u16;
+#[import(cc = "device", name = "aie::broadcast")] fn cgra_broadcast_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::broadcast")] fn cgra_broadcast_f32(i32, f32) -> f32;
+
+//Zeros
+// Returns a vector whose elements are initialized to zero.
+// cgra_zero[type](vector_size) => aie::zero<type, vector_size>()
+#[import(cc = "device", name = "aie::zeros")] fn cgra_zeros[T](i32) -> T;
+#[import(cc = "device", name = "aie::zeros")] fn cgra_zeros_u16(i32) -> u16;
+#[import(cc = "device", name = "aie::zeros")] fn cgra_zeros_i32(i32) -> i32;
+#[import(cc = "device", name = "aie::zeros")] fn cgra_zeros_f32(i32) -> f32;
+
+
+//cast
+// cgra_vector_cast[des_type, src_type](vector) => aie::vector_cast<des_type>(vector)
+#[import(cc = "device", name = "aie::vector_cast")] fn cgra_vector_cast[T,U](U) -> T;
+// only for i32
+#[import(cc = "device", name = "aie::vector_cast")] fn cgra_vector_cast_u16(i32) -> u16;
+#[import(cc = "device", name = "aie::vector_cast")] fn cgra_vector_cast_i32(i32) -> i32;
+#[import(cc = "device", name = "aie::vector_cast")] fn cgra_vector_cast_f32(i32) -> f32;
+
+//Bits
+#[import(cc = "device", name = "aie::bit_and")] fn cgra_bit_and[T](T, T) -> T;
+#[import(cc = "device", name = "aie::bit_and")] fn cgra_bit_and_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::bit_and")] fn cgra_bit_and_i32(i32, i32) -> i32;
+
+#[import(cc = "device", name = "aie::bit_or")] fn cgra_bit_or[T](T, T) -> T;
+#[import(cc = "device", name = "aie::bit_or")] fn cgra_bit_or_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::bit_or")] fn cgra_bit_or_i32(i32, i32) -> i32;
+
+#[import(cc = "device", name = "aie::bit_xor")] fn cgra_bit_xor[T](T, T) -> T;
+#[import(cc = "device", name = "aie::bit_xor")] fn cgra_bit_xor_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::bit_xor")] fn cgra_bit_xor_i32(i32, i32) -> i32;
+
+#[import(cc = "device", name = "aie::bit_not")] fn cgra_bit_not[T](T) -> T;
+#[import(cc = "device", name = "aie::bit_not")] fn cgra_bit_not_u16(u16) -> u16;
+#[import(cc = "device", name = "aie::bit_not")] fn cgra_bit_not_i32(i32) -> i32;
+
+#[import(cc = "device", name = "aie::downshift")] fn cgra_downshift[T](T, T) -> T;
+#[import(cc = "device", name = "aie::downshift")] fn cgra_downshift_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::downshift")] fn cgra_downshift_i32(i32, u16) -> i32;
+
+#[import(cc = "device", name = "aie::upshift")] fn cgra_upshift[T](T, T) -> T;
+#[import(cc = "device", name = "aie::upshift")] fn cgra_upshift_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::upshift")] fn cgra_upshift_i32(i32, u16) -> i32;
+
+#[import(cc = "device", name = "aie::logical_downshift")] fn cgra_logical_downshift[T](T, T) -> T;
+#[import(cc = "device", name = "aie::logical_downshift")] fn cgra_logical_downshift_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::logical_downshift")] fn cgra_logical_downshift_i32(i32, u16) -> i32;
+
+// comparison
+#[import(cc = "device", name = "aie::eq")] fn cgra_eq[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::eq")] fn cgra_eq_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::eq")] fn cgra_eq_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::eq")] fn cgra_eq_f32(f32, f32) -> bool;
+
+#[import(cc = "device", name = "aie::neq")] fn cgra_neq[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::neq")] fn cgra_neq_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::neq")] fn cgra_neq_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::neq")] fn cgra_neq_f32(f32, f32) -> bool;
+
+#[import(cc = "device", name = "aie::lt")] fn cgra_lt[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::lt")] fn cgra_lt_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::lt")] fn cgra_lt_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::lt")] fn cgra_lt_f32(f32, f32) -> bool;
+
+#[import(cc = "device", name = "aie::gt")] fn cgra_gt[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::gt")] fn cgra_gt_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::gt")] fn cgra_gt_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::gt")] fn cgra_gt_f32(f32, f32) -> bool;
+
+#[import(cc = "device", name = "aie::le")] fn cgra_le[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::le")] fn cgra_le_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::le")] fn cgra_le_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::le")] fn cgra_le_f32(f32, f32) -> bool;
+
+#[import(cc = "device", name = "aie::ge")] fn cgra_ge[T](T, T) -> bool;
+#[import(cc = "device", name = "aie::ge")] fn cgra_ge_u16(u16, u16) -> bool;
+#[import(cc = "device", name = "aie::ge")] fn cgra_ge_i32(i32, i32) -> bool;
+#[import(cc = "device", name = "aie::ge")] fn cgra_ge_f32(f32, f32) -> bool;
+
+// Compares the elements of the two input vectors and returns a vector whose values are their difference
+// if it is positive, or zero otherwise.
+#[import(cc = "device", name = "aie::maxdiff")] fn cgra_maxdiff[T](T, T) -> T;
+#[import(cc = "device", name = "aie::maxdiff")] fn cgra_maxdiff_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::maxdiff")] fn cgra_maxdiff_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::maxdiff")] fn cgra_maxdiff_f32(f32, f32) -> f32;
+
+// Reduction (not fully supoorted in the backend yet, as return type is scalar)
+#[import(cc = "device", name = "aie::reduce_add")] fn cgra_reduce_add[T](T, T) -> T;
+#[import(cc = "device", name = "aie::reduce_add")] fn cgra_reduce_add_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::reduce_add")] fn cgra_reduce_add_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::reduce_add")] fn cgra_reduce_add_f32(f32, f32) -> f32;
+
+#[import(cc = "device", name = "aie::reduce_mux")] fn cgra_reduce_mux[T](T, T) -> T;
+#[import(cc = "device", name = "aie::reduce_mux")] fn cgra_reduce_mux_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::reduce_mux")] fn cgra_reduce_mux_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::reduce_mux")] fn cgra_reduce_mux_f32(f32, f32) -> f32;
+
+#[import(cc = "device", name = "aie::reduce_min")] fn cgra_reduce_min[T](T, T) -> T;
+#[import(cc = "device", name = "aie::reduce_min")] fn cgra_reduce_min_u16(u16, u16) -> u16;
+#[import(cc = "device", name = "aie::reduce_min")] fn cgra_reduce_min_i32(i32, i32) -> i32;
+#[import(cc = "device", name = "aie::reduce_min")] fn cgra_reduce_min_f32(f32, f32) -> f32;
+
+//Reshaping
+#[import(cc = "device", name = "aie::interleave_unzip")] fn cgra_interleave_unzip[T](T, T, u32) -> (T, T);
+#[import(cc = "device", name = "aie::interleave_unzip")] fn cgra_interleave_unzip_u16(u16, u16, u32) -> (u16, u16);
+#[import(cc = "device", name = "aie::interleave_unzip")] fn cgra_interleave_unzip_i32(i32, i32, u32) -> (i32, i32);
+#[import(cc = "device", name = "aie::interleave_unzip")] fn cgra_interleave_unzip_f32(f32, f32, u32) -> (f32, f32);
+
+#[import(cc = "device", name = "aie::interleave_zip")] fn cgra_interleave_zip[T](T, T, u32) -> T;
+#[import(cc = "device", name = "aie::interleave_zip")] fn cgra_interleave_zip_u16(u16, u16, u32) -> u16;
+#[import(cc = "device", name = "aie::interleave_zip")] fn cgra_interleave_zip_i32(i32, i32, u32) -> i32;
+#[import(cc = "device", name = "aie::interleave_zip")] fn cgra_interleave_zip_f32(f32, f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::reverse")] fn cgra_reverse[T](T) -> T;
+#[import(cc = "device", name = "aie::reverse")] fn cgra_reverse_u16(u16) -> u16;
+#[import(cc = "device", name = "aie::reverse")] fn cgra_reverse_i32(i32) -> i32;
+#[import(cc = "device", name = "aie::reverse")] fn cgra_reverse_f32(f32) -> f32;
+
+//shuffle
+#[import(cc = "device", name = "aie::shuffle_down")] fn cgra_shuffle_down[T](T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_down")] fn cgra_shuffle_down_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_down")] fn cgra_shuffle_down_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_down")] fn cgra_shuffle_down_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_down_fill")] fn cgra_shuffle_down_fill[T](T, T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_down_fill")] fn cgra_shuffle_down_fill_u16(u16, u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_down_fill")] fn cgra_shuffle_down_fill_i32(i32, i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_down_fill")] fn cgra_shuffle_down_fill_f32(f32, f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_down_replicate")] fn cgra_shuffle_down_replicate[T](T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_down_replicate")] fn cgra_shuffle_down_replicate_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_down_replicate")] fn cgra_shuffle_down_replicate_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_down_replicate")] fn cgra_shuffle_down_replicate_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_down_rotate")] fn cgra_shuffle_down_rotate[T](T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_down_rotate")] fn cgra_shuffle_down_rotate_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_down_rotate")] fn cgra_shuffle_down_rotate_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_down_rotate")] fn cgra_shuffle_down_rotate_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_up")] fn cgra_shuffle_up[T](T, T) -> T;
+#[import(cc = "device", name = "aie::shuffle_up")] fn cgra_shuffle_up_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_up")] fn cgra_shuffle_up_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_up")] fn cgra_shuffle_up_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_up_fill")] fn cgra_shuffle_up_fill[T](T, T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_up_fill")] fn cgra_shuffle_up_fill_u16(u16, u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_up_fill")] fn cgra_shuffle_up_fill_i32(i32, i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_up_fill")] fn cgra_shuffle_up_fill_f32(f32, f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_up_replicate")] fn cgra_shuffle_up_replicate[T](T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_up_replicate")] fn cgra_shuffle_up_replicate_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_up_replicate")] fn cgra_shuffle_up_replicate_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_up_replicate")] fn cgra_shuffle_up_replicate_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::shuffle_up_rotate")] fn cgra_shuffle_up_rotate[T](T, u32) -> T;
+#[import(cc = "device", name = "aie::shuffle_up_rotate")] fn cgra_shuffle_up_rotate_u16(u16, u32) -> u16;
+#[import(cc = "device", name = "aie::shuffle_up_rotate")] fn cgra_shuffle_up_rotate_i32(i32, u32) -> i32;
+#[import(cc = "device", name = "aie::shuffle_up_rotate")] fn cgra_shuffle_up_rotate_f32(f32, u32) -> f32;
+
+#[import(cc = "device", name = "aie::transpose")] fn cgra_transpose[T](T, u32, u32) -> T;
+#[import(cc = "device", name = "aie::transpose")] fn cgra_transpose_u16(u16, u32, u32) -> u16;
+#[import(cc = "device", name = "aie::transpose")] fn cgra_transpose_i32(i32, u32, u32) -> i32;
+#[import(cc = "device", name = "aie::transpose")] fn cgra_transpose_f32(f32, u32, u32) -> f32;
+
+
+// load & store (at the moment only to be used with arrays)
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v[T](u32, &mut addrspace(1) T) -> T;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_u16(u32, &mut addrspace(1)u16) -> u16;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_i32(u32, &mut addrspace(1)i32) -> i32;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_f32(u32, &mut addrspace(1)f32) -> f32;
+
+#[import(cc = "device", name = "aie::load")] fn cgra_load[T](&mut addrspace(1) T) -> T;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_u16(&mut addrspace(1)u16) -> u16;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_i32(&mut addrspace(1)i32) -> i32;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_f32(&mut addrspace(1)f32) -> f32;
+
+
+#[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_[T](u32, &mut addrspace(1) T, T) -> ();
+#[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_u16(u32, &mut addrspace(1)u16, u16) -> ();
+#[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_i32(u32, &mut addrspace(1)i32, i32) -> ();
+#[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_f32(u32, &mut addrspace(1)f32, f32) -> ();
+
+
+#[import(cc = "device", name = "aie::store")] fn cgra_store_[T](&mut addrspace(1) T, T) -> ();
+#[import(cc = "device", name = "aie::store")] fn cgra_store_u16(&mut addrspace(1)u16, u16) -> ();
+#[import(cc = "device", name = "aie::store")] fn cgra_store_i32(&mut addrspace(1)i32, i32) -> ();
+#[import(cc = "device", name = "aie::store")] fn cgra_store_f32(&mut addrspace(1)f32, f32) -> ();
+
+// shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
+#[import(cc = "device", name = "srs")] fn cgra_to_vector[T](i64, u32) -> T;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_u16(i64, u32) -> u16;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_i32(i64, u32) -> i32;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_f32(i64, u32) -> f32;
+//upshift intrinsic to move a value from a vector register to an accumulator register with any required shifting
+#[import(cc = "device", name = "ups")] fn cgra_to_accum[T](T, u32) -> i64;
+#[import(cc = "device", name = "ups")] fn cgra_to_accum_u16(u16, u32) -> i64;
+#[import(cc = "device", name = "ups")] fn cgra_to_accum_i32(i32, u32) -> i64;
+#[import(cc = "device", name = "ups")] fn cgra_to_accum_f32(f32, u32) -> i64;
+
+//select
+#[import(cc = "device", name = "aie::select")] fn cgra_select[T](T, T, bool) -> T;
+#[import(cc = "device", name = "aie::select")] fn cgra_select_u16(u16, u16, bool) -> u16;
+#[import(cc = "device", name = "aie::select")] fn cgra_select_i32(i32, i32, bool) -> i32;
+#[import(cc = "device", name = "aie::select")] fn cgra_select_f32(f32, f32, bool) -> f32;
+
+//TODO://accumulate
+//out = acc + \sum_{i=1}^{C} \alpha_{i + start} * d_i
+// 3rd param is first element from the coeff vector and should be passed as a scalar constant as it is the only non-vectored parameter
+// for one data vector
+// acc = aie::accumulate(acc, coeffs, 0, data0, data1);
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate[T](i64, T, T, T, T) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_u16(i64, u16, u16, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_i32(i64, i32, i32, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_f32(i64, f32, f32, f32, f32) -> i64;
+
+// for two data vector
+//acc = aie::accumulate(acc, coeffs, 0, data0, data1, data2);
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate[T](i64, T, T, T, T, T) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_u16(i64, u16, u16, u16, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_i32(i64, i32, i32, i32, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_f32(i64, f32, f32, f32, f32, f32) -> i64;
+
+//print
+//TODO: set two last params in abstraction in runtime file
+#[import(cc = "device", name = "aie::print")] fn cgra_print[T](T, bool, &[u8]) -> ();
+#[import(cc = "device", name = "aie::print")] fn cgra_print_u16(u16, bool, &[u8]) -> ();
+#[import(cc = "device", name = "aie::print")] fn cgra_print_i32(i32, bool, &[u8]) -> ();
+#[import(cc = "device", name = "aie::print")] fn cgra_print_f32(f32, bool, &[u8]) -> ();
+
+
+//TODO: to support buffers we need to add aie::begin_vector and aie::end_vector. they return a vector iterator type which should be implemented in the backend
+
+//TODO aie::sliding_mul
+// aie::sliding_mul_xy_ops<...>::mul(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul")] fn cgra_sliding_mul_xy_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_xy_ops<...>::mac(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mac")] fn cgra_sliding_mul_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_xy_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_common")] fn cgra_sliding_mul_xy_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_xy_ops<...>::negmul(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::negmul")] fn cgra_sliding_mul_xy_ops_negmul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+// aie::sliding_mul_x_ops<...>::mul(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::mul")] fn cgra_sliding_mul_x_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_x_ops<...>::mac(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::mac")] fn cgra_sliding_mul_x_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_x_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::mul_common")] fn cgra_sliding_mul_x_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_x_ops<...>::negmul(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::negmul")] fn cgra_sliding_mul_x_ops_negmul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+
+// aie::sliding_mul_y_ops<...>::mul(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::mul")] fn cgra_sliding_mul_y_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_y_ops<...>::mac(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::mac")] fn cgra_sliding_mul_y_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_y_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::mul_common")] fn cgra_sliding_mul_y_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_y_ops<...>::negmul(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::negmul")] fn cgra_sliding_mul_y_ops_negmul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+
+// aie::sliding_mul_sym_x_ops<...>::mac_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac")] fn cgra_sliding_mul_sym_x_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_x_ops<...>::mac_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac")] fn cgra_sliding_mul_sym_x_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_x_ops<...>::mul_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::mul_antisym")] fn cgra_sliding_mul_x_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_x_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mul_common")] fn cgra_sliding_mul_sym_x_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_sym_x_ops<...>::mul_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_x_ops::mul_sym")] fn cgra_sliding_mul_x_ops_mul_sym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+
+// aie::sliding_mul_sym_y_ops<...>::mac_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac")] fn cgra_sliding_mul_sym_y_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_y_ops<...>::mac_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac")] fn cgra_sliding_mul_sym_y_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_y_ops<...>::mul_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::mul_antisym")] fn cgra_sliding_mul_y_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_y_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mul_common")] fn cgra_sliding_mul_sym_y_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_sym_y_ops<...>::mul_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_y_ops::mul_sym")] fn cgra_sliding_mul_y_ops_mul_sym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+
+// aie::sliding_mul_sym_xy_ops<...>::mac_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac")] fn cgra_sliding_mul_sym_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_xy_ops<...>::mac_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac")] fn cgra_sliding_mul_sym_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_xy_ops<...>::mul_antisym(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_antisym")] fn cgra_sliding_mul_xy_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+// aie::sliding_mul_sym_xy_ops<...>::mul_common(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mul_common")] fn cgra_sliding_mul_sym_xy_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+// aie::sliding_mul_sym_xy_ops<...>::mul_sym(....)
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_sym")] fn cgra_sliding_mul_xy_ops_mul_sym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+
+
+// aie::sliding_mul_sym_uct_ops<...>::mac_antisym_uct(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_uct_ops::mac_antisym_uct")] fn cgra_sliding_mul_sym_uct_ops_mac_antisym_uct[T, U](u32, u32, i32, i32, i64, T, u32, U, u32, u32) -> i64;
+// aie::sliding_mul_sym_uct_ops<...>::mac_sym_uct(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_uct_ops::mac_sym_uct")] fn cgra_sliding_mul_sym_uct_ops_mac_sym_uct[T, U](u32, u32, i32, i32, i64, T, u32, U, u32, u32) -> i64;
+// aie::sliding_mul_sym_uct_ops<...>::mul_antisym_uct(....)
+#[import(cc = "device", name = "aie::sliding_mul_uct_ops::mul_antisym_uct")] fn cgra_sliding_mul_uct_ops_mul_antisym_uct[T, U](u32, u32, i32, i32,  T, u32, U, u32, u32) -> i64;
+// aie::sliding_mul_sym_uct_ops<...>::mul_common_uct(....)
+#[import(cc = "device", name = "aie::sliding_mul_sym_uct_ops::mul_common")] fn cgra_sliding_mul_sym_uct_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, u32, i64) -> i64;
+// aie::sliding_mul_sym_uct_ops<...>::mul_sym_uct(....)
+#[import(cc = "device", name = "aie::sliding_mul_uct_ops::mul_sym")] fn cgra_sliding_mul_uct_ops_mul_sym[T, U](u32, u32, i32, i32,  T, u32, U, u32, u32) -> i64;
+
+
+// Helpers made for previous APIs
+//aie::sliding_mul<Lanes, Points>(...)
+#[import(cc = "device", name = "aie::sliding_mul")] fn cgra_sliding_mul[T, U](u32, u32, T, u32, U, u32) -> i64;
+//aie::sliding_mac<...>(...)
+#[import(cc = "device", name = "aie::sliding_mac")] fn cgra_sliding_mac[T, U](u32, u32, i64, T, u32, U, u32) -> i64;
+//aie::sliding_mul_sym<...>(...)
+#[import(cc = "device", name = "aie::sliding_mul_sym")] fn cgra_sliding_mul_sym[T, U](u32, u32, T, U, u32) -> i64;
+//aie::sliding_mac_sym<...>(...)
+#[import(cc = "device", name = "aie::sliding_mac_sym")] fn cgra_sliding_mac_sym[T, U](u32, u32, i64, T, u32, U, u32) -> i64;
+//aie::sliding_mul_antisym<...>(...)
+#[import(cc = "device", name = "aie::sliding_mul_antisym")] fn cgra_sliding_mul_antisym[T, U](u32, u32, T, U, u32) -> i64;
+//aie::sliding_mac_antisym<...>(...)
+#[import(cc = "device", name = "aie::sliding_mac_antisym")] fn cgra_sliding_mac_antisym[T, U](u32, u32, i64, T, u32, U, u32) -> i64;
+//aie::sliding_mul_sym_uct<...>(...)
+#[import(cc = "device", name = "aie::sliding_mul_sym_uct")] fn cgra_sliding_mul_sym_uct[T, U](u32, u32, T, u32, U, u32, u32) -> i64;
+//aie::sliding_mac_sym_uct<...>(...)
+#[import(cc = "device", name = "aie::sliding_mac_sym_uct")] fn cgra_sliding_mac_sym_uct[T, U](u32, u32, i64, T, u32, U, u32, u32) -> i64;
+//aie::sliding_mul_antisym_uct<...>(...)
+#[import(cc = "device", name = "aie::sliding_mul_antisym_uct")] fn cgra_sliding_mul_antisym_uct[T, U](u32, u32, T, u32, U, u32, u32) -> i64;
+//aie::sliding_mac_antisym_uct<...>(...)
+#[import(cc = "device", name = "aie::sliding_mac_antisym_uct")] fn cgra_sliding_mac_antisym_uct[T, U](u32, u32, i64, T, u32, U, u32, u32) -> i64;
+
+
+//TODO: FFT both with lib and stage APIs (function template category but we need complex data type support)
+
+// Either via a type or just using the function name or even maybe both
+//TODO: apply all changes for runtime abstractions, look at iteration example
+
+
+//TODO: Proper way of implementing mmul is possible via a new intrinsic and transformation
+// for the moment we apply some ad-hoc changes on the C backend, making special cases for mmul struct type
+// Matrix multiplication
+struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
+#[import(cc = "device", name = "aie::mmul::mul")] fn cgra_matmul_mul[T](&mut mmul[T], T, T) -> ();
+#[import(cc = "device", name = "aie::mmul::mac")] fn cgra_matmul_mac[T](&mut mmul[T], T, T) -> ();
+
+
+#[import(cc = "device", name = "aie::to_vector")] fn cgra_to_vector[T](i64, i32) -> T;
+#[import(cc = "device", name = "aie::from_vector")] fn cgra_from_vector[T](T, i32) -> i64;
+#[import(cc = "device", name = "aie::vector::insert")] fn cgra_insert[T](T, u32, T) -> ();
+
+
+
+#[import(cc = "device", name = "aie::set_saturation(aie::saturation_mode::saturate)")] fn cgra_set_saturation() -> ();
+#[import(cc = "device", name = "aie::set_saturation(aie::saturation_mode::truncate)")] fn cgra_set_saturation_truncate() -> ();
+#[import(cc = "device", name = "aie::set_saturation(aie::saturation_mode::symmetric)")] fn cgra_set_saturation_symmetric() -> ();
+#[import(cc = "device", name = "aie::set_saturation(aie::saturation_mode::none)")] fn cgra_unset_saturation() -> ();
+#[import(cc = "device", name = "aie::set_rounding(aie::rounding_mode::ceil)")] fn cgra_set_rounding_ceil() -> ();
+#[import(cc = "device", name = "aie::set_rounding(aie::rounding_mode::floor)")] fn cgra_set_rounding_floor() -> ();
+
+
+//TODO: corect array implementation for vector and accum in C backend
+
+// intrinsics for accumulators
+#[import(cc = "device", name = "set_sat")] fn cgra_set_sat() -> ();
+#[import(cc = "device", name = "set_rnd")] fn cgra_set_rnd() -> ();
+#[import(cc = "device", name = "clear_sat")] fn cgra_clear_sat() -> ();
+#[import(cc = "device", name = "clear_rnd")] fn cgra_clear_rnd() -> ();
+
 
 //#[import(cc = "device")] fn print_pragma(&[u8]) -> ();
 
-//// channel scalar types
+// channel scalar types
 //struct channel[T] { data : T }
 //// channel array types
 //struct channel1[T]   { data : [T * 1  ] }
@@ -67,17 +517,17 @@
 //struct channel32[T]  { data : [T * 32 ] }
 //struct channel64[T]  { data : [T * 64 ] }
 //struct channel128[T] { data : [T * 128] }
-//
-//// read and write on scalar channels
+
+// read and write on scalar channels
 //#[import(cc = "device", name = "read_channel")] fn read_channel[T]  (&mut channel[T]) ->  T;
 //#[import(cc = "device", name = "write_channel")] fn write_channel[T] (&mut channel[T],  T ) -> ();
-//
-//// read and write on array channels
+
+//// read and write on array channels (for vectorization)
 //#[import(cc = "device", name = "read_channel")] fn read_channel1[T] ( &mut channel1[T] ) -> [T * 1 ];
 //#[import(cc = "device", name = "read_channel")] fn read_channel2[T] ( &mut channel2[T] ) -> [T * 2 ];
 //#[import(cc = "device", name = "read_channel")] fn read_channel4[T] ( &mut channel4[T] ) -> [T * 4 ];
 //#[import(cc = "device", name = "read_channel")] fn read_channel8[T] ( &mut channel8[T] ) -> [T * 8 ];
-//#[import(cc = "device", name = "read_channel")] fn read_channel16[T]( &mut channel16[T]) -> [T * 16];
+//#[import(cc = "device", name = "read_channel")] fn read_channel17[T]( &mut channel16[T]) -> [T * 16];
 //#[import(cc = "device", name = "read_channel")] fn read_channel32[T]( &mut channel32[T]) -> [T * 32];
 //
 //#[import(cc = "device", name = "write_channel")] fn write_channel1[T] ( &mut channel1[T],  [T * 1 ]) -> ();
@@ -88,7 +538,23 @@
 //#[import(cc = "device", name = "write_channel")] fn write_channel32[T]( &mut channel32[T], [T * 32]) -> ();
 //#[import(cc = "device", name = " ")]             fn bitcast_channel[T]( &mut channel1[T]) -> [T * 2];
 
-fn @cgra_accelerator(dev: i32) = Accelerator {
+
+// Window
+#[import(cc = "device", name = "window_readincr_v")] fn cgra_window_readincr_v_i32(u32, &mut channel_i32) -> i32;
+#[import(cc = "device", name = "window_readincr_v")] fn cgra_window_readincr_v[T](u32, &mut channel[T]) -> T;
+#[import(cc = "device", name = "window_writeincr")] fn cgra_window_readincr_i32(&mut channel_i32, i32) -> i32;
+#[import(cc = "device", name = "window_readincr")] fn cgra_window_readincr[T](&mut channel[T], T) -> ();
+
+// Stream
+#[import(cc = "device", name = "readincr_v")] fn cgra_readincr_v_i32(u32, &mut channel_i32) -> i32;
+#[import(cc = "device", name = "readincr_v")] fn cgra_readincr_v[T](u32, &mut channel[T]) -> T;
+#[import(cc = "device", name = "writeincr_v")] fn cgra_readincr_i32(u32, &mut channel_i32, i32) -> i32;
+#[import(cc = "device", name = "writeincr_v")] fn cgra_readincr[T](u32, &mut channel[T], T) -> ();
+
+
+
+
+fn @cgra_accelerator(dev: i32, runtime_ratio: f32, location: (i32 ,i32), vector_size: i32) = Accelerator {
     exec = @|body| |_grid, _block| {
         let work_item = WorkItem {
             tidx  = @|| 0, tidy  = @|| 0, tidz  = @|| 0,
