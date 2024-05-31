@@ -324,10 +324,11 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 // shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
 // instead of a non-static to_vector<...>(...) API we use low-level srs(...) inrinsic
-#[import(cc = "device", name = "srs")] fn cgra_to_vector[T](i64, u32) -> T;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_u16(i64, u32) -> u16;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_i32(i64, u32) -> i32;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_f32(i64, u32) -> f32;
+// also a dummy lane size is added as the first parameter, so that the backend can infer the correct vector size
+#[import(cc = "device", name = "srs")] fn cgra_to_vector[T](u32, i64, u32) -> T;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_u16(u32, i64, u32) -> u16;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_i32(u32, i64, u32) -> i32;
+#[import(cc = "device", name = "srs")] fn cgra_to_vector_f32(u32, i64, u32) -> f32;
 //upshift intrinsic to move a value from a vector register to an accumulator register with any required shifting
 // instead of a non-static to_accum<...>(...) API we use low-level ups(...) inrinsic
 #[import(cc = "device", name = "ups")] fn cgra_to_accum[T](T, u32) -> i64;
@@ -336,6 +337,7 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 #[import(cc = "device", name = "ups")] fn cgra_to_accum_f32(f32, u32) -> i64;
 
 //select
+// TODO: can be better implemented using thorin select PrimOp (builtin), needs to be implemented in the c backend for cgra
 #[import(cc = "device", name = "aie::select")] fn cgra_select[T](T, T, bool) -> T;
 #[import(cc = "device", name = "aie::select")] fn cgra_select_u16(u16, u16, bool) -> u16;
 #[import(cc = "device", name = "aie::select")] fn cgra_select_i32(i32, i32, bool) -> i32;
@@ -483,6 +485,7 @@ struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
 
 #[import(cc = "device", name = "aie::to_vector")] fn cgra_to_vector[T](i64, i32) -> T;
 #[import(cc = "device", name = "aie::from_vector")] fn cgra_from_vector[T](T, i32) -> i64;
+// TODO: can be better implemented using thorin insert PrimOp (builtin), needs support in c backend for cgra
 #[import(cc = "device", name = "aie::vector::insert")] fn cgra_insert[T](T, u32, T) -> ();
 #[import(cc = "device", name = "aie::vector::extract<32>")] fn cgra_extract_32[T](T, u32) -> T; // return type should be a vector type with smaller size
 
