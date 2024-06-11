@@ -445,17 +445,18 @@ static std::string emit_nvptx(const std::string& program, const std::string& cpu
 
     return outstr.c_str();
 }
-#else
-static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) {
-    error("Recompile runtime with LLVM enabled for nvptx support.");
-}
-#endif
 
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     debug("Compiling NVVM to PTX using NVPTX for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(devices_[dev].compute_capability);
     return emit_nvptx(program_string, cpu, filename, llvm::OptimizationLevel::O3);
 }
+#else
+std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+    error("Recompile runtime with LLVM enabled for nvptx support.");
+    return std::string{};
+}
+#endif
 
 std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     nvvmProgram program;
