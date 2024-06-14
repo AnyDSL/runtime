@@ -16,7 +16,7 @@ else()
 endif()
 
 set(AnyDSL_runtime_CONFIG_FILE ${CMAKE_BINARY_DIR}/include/anydsl_runtime_config.h)
-add_library(runtime_base STATIC
+add_library(${AnyDSL_runtime_TARGET_NAME}_base STATIC
     ${AnyDSL_runtime_CONFIG_FILE}
     runtime.cpp
     runtime.h
@@ -39,10 +39,10 @@ if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
         find_library(CUDA_LIBRARY cuda
             HINTS ${CUDA_TOOLKIT_ROOT_DIR}
             PATH_SUFFIXES lib lib64 lib/x64)
-        add_library(runtime_cuda STATIC cuda_platform.cpp cuda_platform.h)
-        target_include_directories(runtime_cuda PRIVATE ${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
-        target_link_libraries(runtime_cuda PRIVATE runtime_base ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
-        list(APPEND RUNTIME_PLATFORMS runtime_cuda)
+        add_library(${AnyDSL_runtime_TARGET_NAME}_cuda STATIC cuda_platform.cpp cuda_platform.h)
+        target_include_directories(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${CUDA_INCLUDE_DIRS} "${CUDA_TOOLKIT_ROOT_DIR}/nvvm/include")
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base ${CUDA_LIBRARY} ${CUDA_NVVM_LIBRARY} ${CUDA_NVRTC_LIBRARY})
+        list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_cuda)
         # TODO: would be nice to reference directly the file
         find_file(AnyDSL_runtime_LIBDEVICE_LIB
             NAMES libdevice.10.bc
@@ -62,10 +62,10 @@ else()
         find_library(CUDAToolkit_NVVM_LIBRARY nvvm
             HINTS ${CUDAToolkit_LIBRARY_ROOT}/nvvm
             PATH_SUFFIXES lib lib64 lib/x64)
-        add_library(runtime_cuda STATIC cuda_platform.cpp cuda_platform.h)
-        target_include_directories(runtime_cuda PRIVATE "${CUDAToolkit_LIBRARY_ROOT}/nvvm/include")
-        target_link_libraries(runtime_cuda PRIVATE runtime_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
-        list(APPEND RUNTIME_PLATFORMS runtime_cuda)
+        add_library(${AnyDSL_runtime_TARGET_NAME}_cuda STATIC cuda_platform.cpp cuda_platform.h)
+        target_include_directories(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE "${CUDAToolkit_LIBRARY_ROOT}/nvvm/include")
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
+        list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_cuda)
         # TODO: would be nice to reference directly the file
         find_file(AnyDSL_runtime_LIBDEVICE_LIB
             NAMES libdevice.10.bc
@@ -85,14 +85,14 @@ endif()
 # look for OpenCL
 find_package(OpenCL)
 if(OpenCL_FOUND)
-    add_library(runtime_opencl STATIC opencl_platform.cpp opencl_platform.h)
-    target_link_libraries(runtime_opencl PRIVATE runtime_base OpenCL::OpenCL)
-    list(APPEND RUNTIME_PLATFORMS runtime_opencl)
+    add_library(${AnyDSL_runtime_TARGET_NAME}_opencl STATIC opencl_platform.cpp opencl_platform.h)
+    target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_opencl PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base OpenCL::OpenCL)
+    list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_opencl)
 
     # look for Xilinx-HLS
     find_package(XHLS)
     #if(XHLS_FOUND)
-    #    target_include_directories(runtime_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
+    #    target_include_directories(${AnyDSL_runtime_TARGET_NAME}_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
     #endif()
 endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
@@ -100,9 +100,9 @@ set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables Op
 # look for HSA
 find_package(hsa-runtime64 PATHS /opt/rocm)
 if(hsa-runtime64_FOUND)
-    add_library(runtime_hsa STATIC hsa_platform.cpp hsa_platform.h)
-    target_link_libraries(runtime_hsa PRIVATE runtime_base hsa-runtime64::hsa-runtime64)
-    list(APPEND RUNTIME_PLATFORMS runtime_hsa)
+    add_library(${AnyDSL_runtime_TARGET_NAME}_hsa STATIC hsa_platform.cpp hsa_platform.h)
+    target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_hsa PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base hsa-runtime64::hsa-runtime64)
+    list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_hsa)
 
     find_package(AMDDeviceLibs PATHS /opt/rocm)
     get_target_property(ocml_LOCATION ocml LOCATION)
@@ -114,7 +114,7 @@ set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enable
 # look for PAL
 find_package(pal)
 if(pal_FOUND)
-    add_library(runtime_pal STATIC 
+    add_library(${AnyDSL_runtime_TARGET_NAME}_pal STATIC 
         pal_platform.h
         pal_platform.cpp
         pal/pal_lower_kernel_arguments_pass.h
@@ -129,8 +129,8 @@ if(pal_FOUND)
         pal/pal_utils.cpp
         pal/pal_device.h
         pal/pal_device.cpp)
-    target_link_libraries(runtime_pal PRIVATE runtime_base pal::pal)
-    list(APPEND RUNTIME_PLATFORMS runtime_pal)
+    target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_pal PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base pal::pal)
+    list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_pal)
 
     find_file(AnyDSL_runtime_ROCM_OCML_LIB
         NAMES ocml.bc
@@ -156,13 +156,13 @@ if(LLVM_FOUND)
     set(AnyDSL_runtime_JIT_LLVM_COMPONENTS ${AnyDSL_runtime_LLVM_COMPONENTS} mcjit)
     if(AnyDSL_runtime_HAS_HSA_SUPPORT AND RUNTIME_JIT)
         find_package(LLD REQUIRED)
-        target_link_libraries(runtime_hsa PRIVATE lldELF lldCommon)
-        llvm_config(runtime_hsa ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_hsa PRIVATE lldELF lldCommon)
+        llvm_config(${AnyDSL_runtime_TARGET_NAME}_hsa ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
     endif()
     if(AnyDSL_runtime_HAS_PAL_SUPPORT)
         find_package(LLD REQUIRED)
-        target_link_libraries(runtime_pal PRIVATE lldELF lldCommon)
-        llvm_config(runtime_pal ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_pal PRIVATE lldELF lldCommon)
+        llvm_config(${AnyDSL_runtime_TARGET_NAME}_pal ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
     endif()
 endif()
 set(AnyDSL_runtime_HAS_LLVM_SUPPORT ${LLVM_FOUND} CACHE INTERNAL "enables nvptx / gcn support")
@@ -196,9 +196,9 @@ if(RUNTIME_JIT)
             COMMAND ${Python3_EXECUTABLE} extract_runtime_srcs.py ${RUNTIME_FRONTEND_SRCS} > ${RUNTIME_SOURCES_FRONTEND_INC_FILE}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             DEPENDS extract_runtime_srcs.py ${RUNTIME_FRONTEND_SRCS})
-        add_library(runtime_jit_${frontend} ${AnyDSL_runtime_BUILD} ${RUNTIME_JIT_SRC} ${RUNTIME_SOURCES_FRONTEND_INC_FILE})
-        target_include_directories(runtime_jit_${frontend} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${frontend} ${Thorin_INCLUDE_DIRS})
-        set_target_properties(runtime_jit_${frontend} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        add_library(${AnyDSL_runtime_TARGET_NAME}_jit_${frontend} ${AnyDSL_runtime_BUILD} ${RUNTIME_JIT_SRC} ${RUNTIME_SOURCES_FRONTEND_INC_FILE})
+        target_include_directories(${AnyDSL_runtime_TARGET_NAME}_jit_${frontend} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${frontend} ${Thorin_INCLUDE_DIRS})
+        set_target_properties(${AnyDSL_runtime_TARGET_NAME}_jit_${frontend} PROPERTIES CXX_VISIBILITY_PRESET hidden)
         set_source_files_properties(${RUNTIME_SOURCES_FRONTEND_INC_FILE} PROPERTIES GENERATED TRUE)
     endfunction()
 
@@ -220,16 +220,16 @@ if(RUNTIME_JIT)
     if(Artic_FOUND)
         message(STATUS "Found Artic: ${Artic_DIR}")
         add_runtime_jit(artic)
-        list(APPEND RUNTIME_JIT_LIBRARIES runtime_jit_artic)
-        target_link_libraries(runtime_jit_artic PRIVATE ${Thorin_LIBRARIES} ${Artic_LIBRARY})
-        llvm_config(runtime_jit_artic ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_JIT_LLVM_COMPONENTS})
+        list(APPEND RUNTIME_JIT_LIBRARIES ${AnyDSL_runtime_TARGET_NAME}_jit_artic)
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_jit_artic PRIVATE ${Thorin_LIBRARIES} ${Artic_LIBRARY})
+        llvm_config(${AnyDSL_runtime_TARGET_NAME}_jit_artic ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_JIT_LLVM_COMPONENTS})
     endif()
     if(Impala_FOUND)
         message(STATUS "Found Impala: ${Impala_DIR}")
         add_runtime_jit(impala)
-        list(APPEND RUNTIME_JIT_LIBRARIES runtime_jit_impala)
-        target_link_libraries(runtime_jit_impala PRIVATE ${Thorin_LIBRARIES} ${Impala_LIBRARY})
-        llvm_config(runtime_jit_impala ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_JIT_LLVM_COMPONENTS})
+        list(APPEND RUNTIME_JIT_LIBRARIES ${AnyDSL_runtime_TARGET_NAME}_jit_impala)
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_jit_impala PRIVATE ${Thorin_LIBRARIES} ${Impala_LIBRARY})
+        llvm_config(${AnyDSL_runtime_TARGET_NAME}_jit_impala ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_JIT_LLVM_COMPONENTS})
     endif()
 endif()
 set(AnyDSL_runtime_HAS_JIT_SUPPORT ${RUNTIME_JIT_LIBRARIES} CACHE INTERNAL "enables anydsl_compile() API")
@@ -238,7 +238,7 @@ include_directories(${CMAKE_BINARY_DIR}/include)
 configure_file(anydsl_runtime_config.h.in ${AnyDSL_runtime_CONFIG_FILE} @ONLY)
 set_source_files_properties(${AnyDSL_runtime_CONFIG_FILE} PROPERTIES GENERATED TRUE)
 
-add_library(runtime
+add_library(${AnyDSL_runtime_TARGET_NAME}
     ${AnyDSL_runtime_BUILD}
     ${AnyDSL_runtime_CONFIG_FILE}
     anydsl_runtime.cpp
@@ -247,33 +247,33 @@ add_library(runtime
 
 # System threads are required to use either TBB or C++11 threads
 find_package(Threads REQUIRED)
-target_link_libraries(runtime PRIVATE Threads::Threads)
+target_link_libraries(${AnyDSL_runtime_TARGET_NAME} PRIVATE Threads::Threads)
 
 # TBB is optional, C++11 threads are used when it is not available
 find_package(TBB QUIET)
 if(TBB_FOUND)
     message(STATUS "Found TBB in ${TBB_DIR}")
-    target_link_libraries(runtime PRIVATE TBB::tbb)
+    target_link_libraries(${AnyDSL_runtime_TARGET_NAME} PRIVATE TBB::tbb)
 endif()
 set(AnyDSL_runtime_HAS_TBB_SUPPORT ${TBB_FOUND} CACHE INTERNAL "enables parallel using TBB")
 
 # If the runtime is built as a shared library, individual
 # dependencies must be built with position independent code.
 if(AnyDSL_runtime_BUILD_SHARED)
-    set_property(TARGET runtime_base ${RUNTIME_PLATFORMS} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    set_property(TARGET ${AnyDSL_runtime_TARGET_NAME}_base ${RUNTIME_PLATFORMS} PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
 
-target_link_libraries(runtime PRIVATE runtime_base ${RUNTIME_PLATFORMS})
-set_target_properties(runtime PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
-set_target_properties(runtime PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_link_libraries(${AnyDSL_runtime_TARGET_NAME} PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base ${RUNTIME_PLATFORMS})
+set_target_properties(${AnyDSL_runtime_TARGET_NAME} PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_EXPORTS")
+set_target_properties(${AnyDSL_runtime_TARGET_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 foreach(jit_lib ${AnyDSL_runtime_HAS_JIT_SUPPORT})
-    target_link_libraries(${jit_lib} PRIVATE runtime runtime_base)
+    target_link_libraries(${jit_lib} PRIVATE ${AnyDSL_runtime_TARGET_NAME} ${AnyDSL_runtime_TARGET_NAME}_base)
     set_target_properties(${jit_lib} PROPERTIES DEFINE_SYMBOL "AnyDSL_runtime_jit_EXPORTS")
 endforeach()
 
 if(LLVM_FOUND)
-    llvm_config(runtime ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
+    llvm_config(${AnyDSL_runtime_TARGET_NAME} ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
-set(RUNTIME_LIBRARIES runtime ${RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)
+set(RUNTIME_LIBRARIES ${AnyDSL_runtime_TARGET_NAME} ${RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)
