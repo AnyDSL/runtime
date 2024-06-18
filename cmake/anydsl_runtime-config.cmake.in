@@ -156,6 +156,7 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 #   [IMPALA_FLAGS [args2...]]
 #   [CLANG_FLAGS [args6...]]
 #   [HLS_FLAGS [args7...]]
+#   [PLUGINS [files...]]
 #   [FILES [files...]]
 # )
 
@@ -193,12 +194,36 @@ function(anydsl_runtime_wrap outfiles)
         "PARGS"
         "EMIT_C"
         "FRONTEND;INTERFACE;NAME"
-        "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
+        "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
 
     set(_additional_platform_files)
+    set(_plugin_flags)
+
+    foreach (_plugin_file ${PARGS_PLUGINS})
+        get_filename_component(_plugin_basename ${_plugin_file} NAME_WE)
+        set(_plugin_target ${_plugin_basename}_TARGET) #TODO: This fails if the same filename is used in different subfolders!
+
+        #message(WARNING "plugin is ${_plugin_file}")
+        #message(WARNING "target is ${_plugin_target}")
+
+        #_plugin_file is a full path here.
+        if (NOT TARGET ${_plugin_target})
+            add_library(${_plugin_target} SHARED ${_plugin_file})
+
+            set_target_properties(${_plugin_target} PROPERTIES PREFIX "" CXX_STANDARD 17)
+
+            target_link_libraries(${_plugin_target} PUBLIC ${Thorin_LIBRARIES})
+            target_include_directories(${_plugin_target} PUBLIC ${Thorin_INCLUDE_DIRS})
+        endif()
+
+        list(APPEND _plugin_flags --plugin $<TARGET_FILE:${_plugin_target}>)
+
+        unset(_plugin_basename)
+        unset(_plugin_target)
+    endforeach()
 
     if(NOT PARGS_FRONTEND)
         set(_frontend "impala")
@@ -211,7 +236,7 @@ function(anydsl_runtime_wrap outfiles)
         if(NOT Artic_BIN)
             message(FATAL_ERROR "Could not find artic binary, please set Artic_DIR or Artic_BIN respectively")
         endif()
-        set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${OPT_FLAGS})
+        set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${OPT_FLAGS} ${_plugin_flags})
         set(_frontend_bin ${Artic_BIN})
         list(APPEND _additional_platform_files "${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_math.impala")
     endif()
@@ -221,7 +246,7 @@ function(anydsl_runtime_wrap outfiles)
         if(NOT Impala_BIN)
             message(FATAL_ERROR "Could not find impala binary, please set Impala_DIR or Impala_BIN respectively")
         endif()
-        set(_frontend_flags ${PARGS_IMPALA_FLAGS} ${OPT_FLAGS})
+        set(_frontend_flags ${PARGS_IMPALA_FLAGS} ${OPT_FLAGS} ${_plugin_flags})
         set(_frontend_bin ${Impala_BIN})
     endif()
 
