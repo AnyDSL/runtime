@@ -277,3 +277,8 @@ if(LLVM_FOUND)
 endif()
 
 set(RUNTIME_LIBRARIES runtime ${RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)
+# If the runtime is built as a static library, individual
+# dependencies must be exported via CMake packaging
+if(NOT AnyDSL_runtime_BUILD_SHARED)
+	set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} runtime_base ${RUNTIME_PLATFORMS} PARENT_SCOPE)
+endif()
