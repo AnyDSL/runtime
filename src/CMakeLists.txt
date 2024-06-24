@@ -83,7 +83,7 @@ if(AnyDSL_runtime_HAS_CUDA_SUPPORT)
 endif()
 
 # look for OpenCL
-find_package(OpenCL)
+find_package(OpenCL QUIET)
 if(OpenCL_FOUND)
     add_library(runtime_opencl STATIC opencl_platform.cpp opencl_platform.h)
     target_link_libraries(runtime_opencl PRIVATE runtime_base OpenCL::OpenCL)
@@ -98,7 +98,7 @@ endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 
 # look for HSA
-find_package(hsa-runtime64 PATHS /opt/rocm)
+find_package(hsa-runtime64 PATHS /opt/rocm QUIET)
 if(hsa-runtime64_FOUND)
     add_library(runtime_hsa STATIC hsa_platform.cpp hsa_platform.h)
     target_link_libraries(runtime_hsa PRIVATE runtime_base hsa-runtime64::hsa-runtime64)
@@ -112,7 +112,7 @@ endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
 # look for PAL
-find_package(pal)
+find_package(pal QUIET)
 if(pal_FOUND)
     add_library(runtime_pal STATIC 
         pal_platform.h
@@ -143,7 +143,7 @@ endif()
 set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
 
 # look for LLVM for nvptx and gcn
-find_package(LLVM)
+find_package(LLVM QUIET)
 if(LLVM_FOUND)
     if(NOT DEFINED AnyDSL_LLVM_LINK_SHARED)
         if(LLVM_LINK_LLVM_DYLIB)
