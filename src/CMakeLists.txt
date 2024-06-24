@@ -53,7 +53,7 @@ endif()
 set(AnyDSL_runtime_HAS_CUDA_SUPPORT ${CUDAToolkit_FOUND} CACHE INTERNAL "enables CUDA/NVVM support")
 
 # look for OpenCL
-find_package(OpenCL)
+find_package(OpenCL QUIET)
 if(OpenCL_FOUND)
     add_library(${AnyDSL_runtime_TARGET_NAME}_opencl STATIC opencl_platform.cpp opencl_platform.h)
     target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_opencl PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base OpenCL::OpenCL)
@@ -77,7 +77,7 @@ endif()
 set(AnyDSL_runtime_HAS_LEVELZERO_SUPPORT ${LevelZero_FOUND} CACHE INTERNAL "enables Level Zero support")
 
 # look for HSA
-find_package(hsa-runtime64 PATHS /opt/rocm)
+find_package(hsa-runtime64 PATHS /opt/rocm QUIET)
 if(hsa-runtime64_FOUND)
     add_library(${AnyDSL_runtime_TARGET_NAME}_hsa STATIC hsa_platform.cpp hsa_platform.h)
     target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_hsa PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base hsa-runtime64::hsa-runtime64)
@@ -91,7 +91,7 @@ endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
 # look for PAL
-find_package(pal CONFIG)
+find_package(pal CONFIG QUIET)
 if(pal_FOUND)
     add_library(${AnyDSL_runtime_TARGET_NAME}_pal STATIC
         pal_platform.h
