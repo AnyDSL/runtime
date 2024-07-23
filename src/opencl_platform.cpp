@@ -515,6 +515,17 @@ cl_program OpenCLPlatform::load_program_binary(DeviceId dev, const std::string& 
     return program;
 }
 
+cl_program OpenCLPlatform::load_program_il(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+    const size_t program_length = program_string.length();
+    const char* program_c_str = program_string.c_str();
+    cl_int err = CL_SUCCESS;
+    cl_program program = clCreateProgramWithIL(devices_[dev].ctx, (const void*)program_c_str, program_length, &err);
+    CHECK_OPENCL(err, "clCreateProgramWithIL()");
+    debug("Loading IL '%' for OpenCL device %", filename, dev);
+
+    return program;
+}
+
 cl_program OpenCLPlatform::load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     const size_t program_length = program_string.length();
     const char* program_c_str = program_string.c_str();
@@ -589,25 +600,28 @@ cl_kernel OpenCLPlatform::load_kernel(DeviceId dev, const std::string& filename,
     if (prog_it == prog_cache.end()) {
         opencl_dev.unlock();
 
-        if (canonical.extension() != ".cl")
-            error("Incorrect extension for kernel file '%' (should be '.cl')", canonical.string());
-
         // load file from disk or cache
         auto src_path = canonical;
         if (opencl_dev.is_intel_fpga)
             src_path.replace_extension(".aocx");
         std::string src_code = runtime_->load_file(src_path.string());
 
-        // compile src or load from cache
-        std::string bin = opencl_dev.is_intel_fpga ? src_code : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
-        if (bin.empty()) {
-            program = load_program_source(dev, src_path.string(), src_code);
+        if (canonical.extension() == ".spv") {
+            program = load_program_il(dev, src_path.string(), src_code);
             program = compile_program(dev, program, src_path.string());
-            runtime_->store_to_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code, program_as_string(program));
-        } else {
-            program = load_program_binary(dev, src_path.string(), bin);
-            program = compile_program(dev, program, src_path.string());
-        }
+        } else if (canonical.extension() == ".cl") {
+            // compile src or load from cache
+            std::string bin = opencl_dev.is_intel_fpga ? src_code : runtime_->load_from_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code);
+            if (bin.empty()) {
+                program = load_program_source(dev, src_path.string(), src_code);
+                program = compile_program(dev, program, src_path.string());
+                runtime_->store_to_cache(devices_[dev].platform_name + devices_[dev].device_name + src_code, program_as_string(program));
+            } else {
+                program = load_program_binary(dev, src_path.string(), bin);
+                program = compile_program(dev, program, src_path.string());
+            }
+        } else
+            error("Incorrect extension for kernel file '%' (should be '.cl' or .'spv')", canonical.string());
 
         opencl_dev.lock();
         prog_cache[canonical.string()] = program;
