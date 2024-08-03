@@ -10,6 +10,11 @@ set(Xilinx_PLATFORM_INFO    @Xilinx_PLATFORM_INFO@)
 set(Xilinx_KERNEL_INFO      @Xilinx_KERNEL_INFO@)
 set(Xilinx_EMU_CONFIG       @Xilinx_EMU_CONFIG@)
 
+set(Xilinx_AIE_COMPILER      @Xilinx_AIE_COMPILER@)
+set(Xilinx_AIE_SIMULATOR     @Xilinx_AIE_SIMULATOR@)
+set(Xilinx_AIE_X86SIMULATOR  @Xilinx_AIE_X86SIMULATOR@)
+set(Xilinx_AIE_INCLUDE_DIRS  @Xilinx_AIE_INCLUDE_DIRS@)
+                             
 string(REPLACE "," ";" HLS_FLAGS_LIST "${HLS_FLAGS}")
 list(GET HLS_FLAGS_LIST 0 SOC)
 list(GET HLS_FLAGS_LIST 1 SYNTHESIS)
@@ -17,6 +22,7 @@ list(GET HLS_FLAGS_LIST 2 FPGA_PART)
 list(GET HLS_FLAGS_LIST 3 PROFILER)
 list(GET HLS_FLAGS_LIST 4 HW_EMULATION)
 list(GET HLS_FLAGS_LIST 5 GMEM_BANKS_OPT)
+list(GET HLS_FLAGS_LIST 6 AI_ENGINE)
 
 # Extracting FPGA platform and Board PART from FPGA_PART macro
 if(Xilinx_PLATFORM_INFO)
