@@ -4,17 +4,23 @@ if(NOT WIN32)
   set(BoldWhite   "${Esc}[1;37m")
 endif()
 
+# Vitis info
+set(VITIS_MAJOR_VERSION  @VITIS_MAJOR_VERSION@)
+set(VITIS_MINOR_VERSION  @VITIS_MINOR_VERSION@)
+
+# HLS tools
 set(Xilinx_HLS              @Xilinx_HLS@)
 set(Xilinx_VPP              @Xilinx_VPP@)
 set(Xilinx_PLATFORM_INFO    @Xilinx_PLATFORM_INFO@)
 set(Xilinx_KERNEL_INFO      @Xilinx_KERNEL_INFO@)
 set(Xilinx_EMU_CONFIG       @Xilinx_EMU_CONFIG@)
 
+# AIE tools
 set(Xilinx_AIE_COMPILER      @Xilinx_AIE_COMPILER@)
 set(Xilinx_AIE_SIMULATOR     @Xilinx_AIE_SIMULATOR@)
 set(Xilinx_AIE_X86SIMULATOR  @Xilinx_AIE_X86SIMULATOR@)
 set(Xilinx_AIE_INCLUDE_DIRS  @Xilinx_AIE_INCLUDE_DIRS@)
-                             
+
 string(REPLACE "," ";" HLS_FLAGS_LIST "${HLS_FLAGS}")
 list(GET HLS_FLAGS_LIST 0 SOC)
 list(GET HLS_FLAGS_LIST 1 SYNTHESIS)
@@ -23,6 +29,7 @@ list(GET HLS_FLAGS_LIST 3 PROFILER)
 list(GET HLS_FLAGS_LIST 4 HW_EMULATION)
 list(GET HLS_FLAGS_LIST 5 GMEM_BANKS_OPT)
 list(GET HLS_FLAGS_LIST 6 AI_ENGINE)
+
 
 # Extracting FPGA platform and Board PART from FPGA_PART macro
 if(Xilinx_PLATFORM_INFO)
@@ -133,6 +140,8 @@ if(EXISTS ${_basename}.hls)
     set(VPP_input "--input_files")
     set(VPP_config "--config")
     set(VPP_debug "-g")
+    set(VPP_package "--package")
+    set(VPP_mode "--mode")
     set(SAVE_REPORTS "--save-temps")
 
     string(TOLOWER ${HW_EMULATION} HW_EMULATION)
@@ -148,7 +157,7 @@ if(EXISTS ${_basename}.hls)
 
     file(WRITE ${kernel_workspace}/config_profile.cfg "[profile]")
     if(PROFILER)
-        # Runime profiling configuration file
+        # Generating a runime profiling configuration file
         string(CONCAT XRT_INI "[Debug]\n"
         "opencl_summary=true\n"
         "opencl_trace=true\n"
@@ -156,7 +165,7 @@ if(EXISTS ${_basename}.hls)
         "data_transfer_trace=coarse\n")
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini ${XRT_INI})
 
-        # Compile-time profiling configuration file
+        # Generating a compile-time profiling configuration file
         string(CONCAT CONFIG_PROFILE "\n"
         "data=all:all:all\n"
         "memory=all\n"
@@ -168,16 +177,19 @@ if(EXISTS ${_basename}.hls)
         "param=compiler.deadlockDetection=1\n")
         file(APPEND ${kernel_workspace}/config_profile.cfg ${CONFIG_PROFILE})
 
+	# HPC Compile with profiling
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_config} ${kernel_workspace}/config_profile.cfg)
     elseif(NOT SOC)
+	# HPC compile without profiling
         execute_process(COMMAND ${Xilinx_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo)
     else()
         execute_process(COMMAND echo "${tcl_script}" OUTPUT_FILE ${_basename}_${kernel}.tcl)
         # Compiling with vivado/Vitis HLS (only when synthesis is enabled and no profiling is requested)
+	# The script also supports HPC compilation but currently it is triggered only for SoC compilation.
         # TCL script skips any compilation withous synthesis
         execute_process(COMMAND ${Xilinx_HLS} -f ${_basename}_${kernel}.tcl)
     endif()
