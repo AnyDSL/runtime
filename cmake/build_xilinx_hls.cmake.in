@@ -4,22 +4,6 @@ if(NOT WIN32)
   set(BoldWhite   "${Esc}[1;37m")
 endif()
 
-# Vitis info
-set(VITIS_MAJOR_VERSION  @VITIS_MAJOR_VERSION@)
-set(VITIS_MINOR_VERSION  @VITIS_MINOR_VERSION@)
-
-# HLS tools
-set(Xilinx_HLS              @Xilinx_HLS@)
-set(Xilinx_VPP              @Xilinx_VPP@)
-set(Xilinx_PLATFORM_INFO    @Xilinx_PLATFORM_INFO@)
-set(Xilinx_KERNEL_INFO      @Xilinx_KERNEL_INFO@)
-set(Xilinx_EMU_CONFIG       @Xilinx_EMU_CONFIG@)
-
-# AIE tools
-set(Xilinx_AIE_COMPILER      @Xilinx_AIE_COMPILER@)
-set(Xilinx_AIE_SIMULATOR     @Xilinx_AIE_SIMULATOR@)
-set(Xilinx_AIE_X86SIMULATOR  @Xilinx_AIE_X86SIMULATOR@)
-set(Xilinx_AIE_INCLUDE_DIRS  @Xilinx_AIE_INCLUDE_DIRS@)
 
 string(REPLACE "," ";" HLS_FLAGS_LIST "${HLS_FLAGS}")
 list(GET HLS_FLAGS_LIST 0 SOC)
@@ -31,9 +15,27 @@ list(GET HLS_FLAGS_LIST 5 GMEM_BANKS_OPT)
 list(GET HLS_FLAGS_LIST 6 AI_ENGINE)
 
 
+# Vitis info
+set(VITIS_MAJOR_VERSION  @VITIS_MAJOR_VERSION@)
+set(VITIS_MINOR_VERSION  @VITIS_MINOR_VERSION@)
+
+# HLS tools
+set(AMD_HLS              @Xilinx_HLS@)
+set(AMD_VPP              @Xilinx_VPP@)
+set(AMD_PLATFORM_INFO    @Xilinx_PLATFORM_INFO@)
+set(AMD_KERNEL_INFO      @Xilinx_KERNEL_INFO@)
+set(AMD_EMU_CONFIG       @Xilinx_EMU_CONFIG@)
+
+# AIE tools
+set(AMD_AIE_COMPILER      @Xilinx_AIE_COMPILER@)
+set(AMD_AIE_SIMULATOR     @Xilinx_AIE_SIMULATOR@)
+set(AMD_AIE_X86SIMULATOR  @Xilinx_AIE_X86SIMULATOR@)
+set(AMD_AIE_INCLUDE_DIRS  @Xilinx_AIE_INCLUDE_DIRS@)
+
+
 # Extracting FPGA platform and Board PART from FPGA_PART macro
-if(Xilinx_PLATFORM_INFO)
-    execute_process(COMMAND ${Xilinx_PLATFORM_INFO} --list OUTPUT_VARIABLE PLATFORM_LIST)
+if(AMD_PLATFORM_INFO)
+	execute_process(COMMAND ${AMD_PLATFORM_INFO} --list OUTPUT_VARIABLE PLATFORM_LIST)
     string(REGEX MATCHALL "\"baseName\": [^, \t]+" matches "${PLATFORM_LIST}")
     string(REGEX REPLACE "\"baseName\": |[\"]" "" PLATFORMS_ "${matches}")
     string(TOLOWER ${FPGA_PART} FPGA_PART)
@@ -42,7 +44,7 @@ if(Xilinx_PLATFORM_INFO)
     foreach(PLATFORM_ ${PLATFORMS_})
         if(${PLATFORM_} MATCHES ${FPGA_PART})
             message(STATUS "Platform ${PLATFORM_} found for ${FPGA_PART}.")
-            execute_process(COMMAND ${Xilinx_PLATFORM_INFO} --json=hardwarePlatform.board.part --platform ${PLATFORM_} OUTPUT_VARIABLE BOARD_PART)
+	    execute_process(COMMAND ${AMD_PLATFORM_INFO} --json=hardwarePlatform.board.part --platform ${PLATFORM_} OUTPUT_VARIABLE BOARD_PART)
             string(REPLACE "\n" "" BOARD_PART ${BOARD_PART})
             set(FPGA_PART ${BOARD_PART})
             set(PLATFORM_NAME ${PLATFORM_})
@@ -57,8 +59,50 @@ if(Xilinx_PLATFORM_INFO)
     endif()
 endif()
 
-set(PROJECT_NAME "anydsl_fpga")
 
+# VPP configs
+
+set(VPP_opt "-O3")
+set(VPP_kernel "-k")
+set(VPP_platform "-f")
+set(VPP_target "-t")
+set(VPP_link "--link")
+set(VPP_out "-o")
+set(VPP_compile "-c")
+set(VPP_input "--input_files")
+set(VPP_config "--config")
+set(VPP_debug "-g")
+set(VPP_package "--package")
+set(VPP_mode "--mode")
+set(SAVE_REPORTS "--save-temps")
+
+string(TOLOWER ${HW_EMULATION} HW_EMULATION)
+if(${SYNTHESIS} STREQUAL "on")
+    if(${HW_EMULATION} STREQUAL "on")
+        string(APPEND VPP_target "hw_emu")
+    else()
+        string(APPEND VPP_target "hw")
+    endif()
+else()
+    if(AI_ENGINE)
+        string(APPEND VPP_target "x86sim")
+    endif()
+    string(APPEND VPP_target "sw_emu")
+endif()
+
+
+# AIE compiler config
+if(AI_ENGINE)
+    if((VITIS_MAJOR_VERSION EQUAL 2023 AND VITIS_MINOR_VERSION EQUAL 2) OR (VITIS_MAJOR_VERSION GREATER 2023))
+        set(AIE_CC ${AMD_VPP})
+    else()
+        set(AIE_CC ${AMD_AIE_COMPILER})
+    endif() 
+endif()
+
+
+set(kernel_workspace "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${_basename}_${kernel}/xoFlow")
+set(PROJECT_NAME "anydsl_fpga")
 # ${_basename}.hls -> ${_basename}_hls.cpp
 if(EXISTS ${_basename}.hls)
     execute_process(COMMAND cp ${_basename}.hls ${_basename}_hls.cpp)
@@ -128,32 +172,7 @@ if(EXISTS ${_basename}.hls)
                             "    exit\n"
                             "}\n")
 
-    set(kernel_workspace "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${_basename}_${kernel}/xoFlow")
 
-    set(VPP_opt "-O3")
-    set(VPP_kernel "-k")
-    set(VPP_platform "-f")
-    set(VPP_target "-t")
-    set(VPP_link "--link")
-    set(VPP_out "-o")
-    set(VPP_compile "-c")
-    set(VPP_input "--input_files")
-    set(VPP_config "--config")
-    set(VPP_debug "-g")
-    set(VPP_package "--package")
-    set(VPP_mode "--mode")
-    set(SAVE_REPORTS "--save-temps")
-
-    string(TOLOWER ${HW_EMULATION} HW_EMULATION)
-    if(${SYNTHESIS} STREQUAL "on")
-        if(${HW_EMULATION} STREQUAL "on")
-            string(APPEND VPP_target "hw_emu")
-        else()
-            string(APPEND VPP_target "hw")
-        endif()
-    else()
-        string(APPEND VPP_target "sw_emu")
-    endif()
 
     file(WRITE ${kernel_workspace}/config_profile.cfg "[profile]")
     if(PROFILER)
@@ -178,23 +197,23 @@ if(EXISTS ${_basename}.hls)
         file(APPEND ${kernel_workspace}/config_profile.cfg ${CONFIG_PROFILE})
 
 	# HPC Compile with profiling
-        execute_process(COMMAND ${Xilinx_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
+	execute_process(COMMAND ${AMD_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo ${VPP_config} ${kernel_workspace}/config_profile.cfg)
     elseif(NOT SOC)
 	# HPC compile without profiling
-        execute_process(COMMAND ${Xilinx_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${PLATFORM_NAME}
+	execute_process(COMMAND ${AMD_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${PLATFORM_NAME}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo)
     else()
         execute_process(COMMAND echo "${tcl_script}" OUTPUT_FILE ${_basename}_${kernel}.tcl)
         # Compiling with vivado/Vitis HLS (only when synthesis is enabled and no profiling is requested)
-	# The script also supports HPC compilation but currently it is triggered only for SoC compilation.
+	# The script also supports HPC compilation but currently it is triggered only for a SoC flow.
         # TCL script skips any compilation withous synthesis
-        execute_process(COMMAND ${Xilinx_HLS} -f ${_basename}_${kernel}.tcl)
+	execute_process(COMMAND ${AMD_HLS} -f ${_basename}_${kernel}.tcl)
     endif()
-    if(Xilinx_KERNEL_INFO)
-        execute_process(COMMAND ${Xilinx_KERNEL_INFO} ${kernel_workspace}/${kernel}.xo OUTPUT_VARIABLE KERNEL_INFO)
+    if(AMD_KERNEL_INFO)
+	    execute_process(COMMAND ${AMD_KERNEL_INFO} ${kernel_workspace}/${kernel}.xo OUTPUT_VARIABLE KERNEL_INFO)
         string(REGEX MATCHALL "${kernel}_[0-9]+" arg_matches "${KERNEL_INFO}")
     endif()
 
@@ -210,6 +229,7 @@ if(EXISTS ${_basename}.hls)
                 math(EXPR arg_num "${arg_num}+1")
             endforeach()
         endif()
+
         set(EM_CONFIG_FILE "")
 
         if(NOT PROFILER)
@@ -217,30 +237,40 @@ if(EXISTS ${_basename}.hls)
         endif()
 
         if(${SYNTHESIS} STREQUAL "on")
+
+            set(out_ext ".xclbin")
+            if (AI_ENGINE)
+	        set(out_ext ".xsa") # Since linking is not the last stage of building for AIE, it continues to packaging stage
+	    endif()
+
             if(${HW_EMULATION} STREQUAL "on")
-                execute_process(COMMAND ${Xilinx_EMU_CONFIG} --platform ${PLATFORM_NAME})
+		execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
                 set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
-                string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw_emu.xclbin")
+                string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw_emu${out_ext}")
             elseif((${HW_EMULATION} STREQUAL "off"))
-                string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw.xclbin")
+                string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw${out_ext}")
             endif()
         elseif(${SYNTHESIS} STREQUAL "off")
-            execute_process(COMMAND ${Xilinx_EMU_CONFIG} --platform ${PLATFORM_NAME})
+            execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
             set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
             string(APPEND VPP_out "${kernel_workspace}/${kernel}.xo")
             set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_out})
             # Vitis compiling (just for software emulation)
-            execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
+	    execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
                                     ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config_connectivity.cfg)
             set(VPP_out "-o${kernel_workspace}/${kernel}_sw_emu.xclbin")
         endif()
 
         # Vitis linking
         set(VPP_flags ${VPP_target} ${VPP_opt} ${VPP_platform} ${VPP_out})
-        execute_process(COMMAND ${Xilinx_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${kernel_workspace}/${kernel}.xo
+	execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${kernel_workspace}/${kernel}.xo
                                 ${VPP_kernel} ${kernel}
                                 ${VPP_config} ${kernel_workspace}/config_connectivity.cfg
                                 ${VPP_config} ${kernel_workspace}/config_profile.cfg)
+	# packaging for AI Engine
+	if (AI_Engine)
+	    message(STATUS "packaging for AI Engine")
+	endif()
 
         # copy generated xclbin to application directory
         file(MAKE_DIRECTORY "${kernel}_xlbin")
