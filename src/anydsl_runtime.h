@@ -17,7 +17,8 @@ enum {
     ANYDSL_CUDA = 1,
     ANYDSL_OPENCL = 2,
     ANYDSL_HSA = 3,
-    ANYDSL_PAL = 4
+    ANYDSL_PAL = 4,
+    ANYDSL_LEVELZERO = 5
 };
 
 AnyDSL_runtime_API void anydsl_info(void);

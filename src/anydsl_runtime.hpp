@@ -12,7 +12,8 @@ enum class Platform : int32_t {
     Cuda = ANYDSL_CUDA,
     OpenCL = ANYDSL_OPENCL,
     HSA = ANYDSL_HSA,
-    PAL = ANYDSL_PAL
+    PAL = ANYDSL_PAL,
+    LevelZero = ANYDSL_LEVELZERO
 };
 
 struct Device {
