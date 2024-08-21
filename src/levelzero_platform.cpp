@@ -213,6 +213,7 @@ void* LevelZeroPlatform::alloc(DeviceId dev, int64_t size) {
 
     ze_device_mem_alloc_desc_t device_desc;
     device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+    device_desc.pNext = nullptr;
     device_desc.ordinal = 0;
 
     const size_t alignment = 64;
@@ -231,6 +232,7 @@ void* LevelZeroPlatform::alloc_host(DeviceId dev, int64_t size) {
 
     ze_host_mem_alloc_desc_t host_desc;
     host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+    host_desc.pNext = nullptr;
 
     const size_t alignment = 64;
     void* mem = nullptr;
@@ -248,6 +250,7 @@ void* LevelZeroPlatform::alloc_unified(DeviceId dev, int64_t size) {
 
     ze_device_mem_alloc_desc_t device_desc;
     device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+    device_desc.pNext = nullptr;
     device_desc.ordinal = 0;
     ze_host_mem_alloc_desc_t host_desc;
     host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
@@ -267,6 +270,7 @@ void LevelZeroPlatform::release(DeviceId dev, void* ptr) {
 #ifndef NDEBUG
     ze_memory_allocation_properties_t props;
     props.stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES;
+    props.pNext = nullptr;
     WRAP_LEVEL_ZERO(zeMemGetAllocProperties(devices_[dev].ctx, ptr, &props, &devices_[dev].device));
     assert(props.type == ZE_MEMORY_TYPE_DEVICE || props.type == ZE_MEMORY_TYPE_SHARED);
 #endif // !NDEBUG
@@ -277,6 +281,7 @@ void LevelZeroPlatform::release_host(DeviceId dev, void* ptr) {
 #ifndef NDEBUG
     ze_memory_allocation_properties_t props;
     props.stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES;
+    props.pNext = nullptr;
     WRAP_LEVEL_ZERO(zeMemGetAllocProperties(devices_[dev].ctx, ptr, &props, &devices_[dev].device));
     assert(props.type == ZE_MEMORY_TYPE_HOST);
 #endif // !NDEBUG
