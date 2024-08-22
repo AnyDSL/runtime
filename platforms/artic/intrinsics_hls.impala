@@ -57,7 +57,8 @@
 #[import(cc = "device")] fn print_pragma(&[u8]) -> ();
 
 // channel scalar types
-struct channel[T] { data : T }
+struct channel[T]  { data : T   }
+struct channel_i32 { data : i32 }
 // channel array types
 struct channel1[T]   { data : [T * 1  ] }
 struct channel2[T]   { data : [T * 2  ] }

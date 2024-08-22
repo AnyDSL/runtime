@@ -325,10 +325,10 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 // shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
 // instead of a non-static to_vector<...>(...) API we use low-level srs(...) inrinsic
 // also a dummy lane size is added as the first parameter, so that the backend can infer the correct vector size
-#[import(cc = "device", name = "srs")] fn cgra_to_vector[T](u32, i64, u32) -> T;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_u16(u32, i64, u32) -> u16;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_i32(u32, i64, u32) -> i32;
-#[import(cc = "device", name = "srs")] fn cgra_to_vector_f32(u32, i64, u32) -> f32;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T](u32, i64, u32) -> T;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_u16(u32, i64, u32) -> u16;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_i32(u32, i64, u32) -> i32;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_f32(u32, i64, u32) -> f32;
 //upshift intrinsic to move a value from a vector register to an accumulator register with any required shifting
 // instead of a non-static to_accum<...>(...) API we use low-level ups(...) inrinsic
 #[import(cc = "device", name = "ups")] fn cgra_to_accum[T](T, u32) -> i64;
@@ -355,10 +355,10 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 // for two data vector
 //acc = aie::accumulate(acc, coeffs, 0, data0, data1, data2);
-#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate[T](i64, T, T, T, T, T) -> i64;
-#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_u16(i64, u16, u16, u16, u16, u16) -> i64;
-#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_i32(i64, i32, i32, i32, i32, i32) -> i64;
-#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_f32(i64, f32, f32, f32, f32, f32) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_2vec[T](i64, T, T, T, T, T) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_2vec_u16(i64, u16, u16, u16, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_2vec_i32(i64, i32, i32, i32, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::accumulate")] fn cgra_accumulate_2vec_f32(i64, f32, f32, f32, f32, f32) -> i64;
 
 //print
 //TODO: set two last params in abstraction in runtime file
@@ -401,9 +401,9 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 
 // aie::sliding_mul_sym_x_ops<...>::mac_antisym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac")] fn cgra_sliding_mul_sym_x_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac_antisym")] fn cgra_sliding_mul_sym_x_ops_mac_antisym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_x_ops<...>::mac_sym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac")] fn cgra_sliding_mul_sym_x_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_x_ops::mac_sym")] fn cgra_sliding_mul_sym_x_ops_mac_sym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_x_ops<...>::mul_antisym(....)
 #[import(cc = "device", name = "aie::sliding_mul_x_ops::mul_antisym")] fn cgra_sliding_mul_x_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_x_ops<...>::mul_common(....)
@@ -413,9 +413,9 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 
 // aie::sliding_mul_sym_y_ops<...>::mac_antisym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac")] fn cgra_sliding_mul_sym_y_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac_antisym")] fn cgra_sliding_mul_sym_y_ops_mac_antisym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_y_ops<...>::mac_sym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac")] fn cgra_sliding_mul_sym_y_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_y_ops::mac_sym")] fn cgra_sliding_mul_sym_y_ops_mac_sym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_y_ops<...>::mul_antisym(....)
 #[import(cc = "device", name = "aie::sliding_mul_y_ops::mul_antisym")] fn cgra_sliding_mul_y_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_y_ops<...>::mul_common(....)
@@ -425,9 +425,9 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 
 // aie::sliding_mul_sym_xy_ops<...>::mac_antisym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac")] fn cgra_sliding_mul_sym_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac_antisym")] fn cgra_sliding_mul_sym_xy_ops_mac_antisym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_xy_ops<...>::mac_sym(....)
-#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac")] fn cgra_sliding_mul_sym_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_sym_xy_ops::mac_sym")] fn cgra_sliding_mul_sym_xy_ops_mac_sym[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_xy_ops<...>::mul_antisym(....)
 #[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_antisym")] fn cgra_sliding_mul_xy_ops_mul_antisym[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
 // aie::sliding_mul_sym_xy_ops<...>::mul_common(....)
