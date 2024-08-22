@@ -20,7 +20,7 @@ set(VITIS_MINOR_VERSION ${VITIS_MINOR_VERSION} CACHE INTERNAL "")
 
 find_program(Xilinx_HLS NAMES vitis_hls PATHS ${VITIS_ROOT_DIR}/../../Vitis_HLS/${VITIS_VERSION}/bin ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 
-find_path(Xilinx_HLS_INCLUDE_DIR hls_stream.h PATHS ${VITIS_ROOT_DIR}/include NO_DEFAULT_PATH)
+find_path(Xilinx_HLS_INCLUDE_DIR hls_stream.h PATHS ${VITIS_ROOT_DIR}/../../Vitis_HLS/${VITIS_VERSION}/include NO_DEFAULT_PATH)
 
 find_path(XRT_SEARCH_PATH libxilinxopencl.so PATHS /opt/xilinx/xrt ENV XILINX_XRT PATH_SUFFIXES lib)
 get_filename_component(XILINX_RUNTIME_DIR ${XRT_SEARCH_PATH} DIRECTORY)
