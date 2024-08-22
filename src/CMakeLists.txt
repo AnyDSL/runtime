@@ -91,6 +91,7 @@ if(OpenCL_FOUND)
 
     # look for Xilinx-HLS
     find_package(XHLS)
+    find_package(AIE)
     #if(XHLS_FOUND)
     #    target_include_directories(runtime_opencl PRIVATE ${Xilinx_INCLUDE_DIRS})
     #endif()

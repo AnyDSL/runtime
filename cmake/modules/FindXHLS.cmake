@@ -7,9 +7,6 @@ find_program(Xilinx_VPP v++ PATHS ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_PLATFORM_INFO platforminfo PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_KERNEL_INFO kernelinfo PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
 find_program(Xilinx_EMU_CONFIG emconfigutil PATH ${VITIS_ROOT_DIR}/bin NO_DEFAULT_PATH)
-find_program(Xilinx_AIE_COMPILER aiecompiler PATH ${VITIS_ROOT_DIR}/aietools/bin NO_DEFAULT_PATH)
-find_program(Xilinx_AIE_SIMULATOR aiesimulator PATH ${VITIS_ROOT_DIR}/aietools/bin NO_DEFAULT_PATH)
-find_program(Xilinx_AIE_X86SIMULATOR x86simulator PATH ${VITIS_ROOT_DIR}/aietools/bin NO_DEFAULT_PATH)
 
 get_filename_component(VITIS_VERSION "${VITIS_ROOT_DIR}" NAME)
 string(REGEX REPLACE "([0-9]+)\\.[0-9]+" "\\1" VITIS_MAJOR_VERSION "${VITIS_VERSION}")
@@ -31,9 +28,6 @@ get_filename_component(Xilinx_OPENCL_EXTENSIONS_INCLUDE_DIR ${Xilinx_OPENCL_EXTE
 set(Xilinx_INCLUDE_DIRS ${Xilinx_HLS_INCLUDE_DIR} ${Xilinx_OPENCL_EXTENSIONS_INCLUDE_DIR})
 
 
-find_path(Xilinx_AIE_INCLUDE_DIRS adf.h PATHS ${VITIS_ROOT_DIR}/aietools/include NO_DEFAULT_PATH)
-set(Xilinx_AIE_INCLUDE_DIRS ${Xilinx_AIE_INCLUDE_DIRS})
-
 mark_as_advanced(
     XRT_SEARCH_PATH
     XILINX_RUNTIME_DIR
@@ -45,10 +39,6 @@ mark_as_advanced(
     Xilinx_PLATFORM_INFO
     Xilinx_KERNEL_INFO
     Xilinx_EMU_CONFIG
-    Xilinx_AIE_COMPILER
-    Xilinx_AIE_SIMULATOR
-    Xilinx_AIE_X86SIMULATOR
-    Xilinx_AIE_INCLUDE_DIRS
     Xilinx_LIBRARIES
     Xilinx_INCLUDE_DIRS)
 
@@ -61,11 +51,4 @@ find_package_handle_standard_args(XHLS DEFAULT_MSG
     Xilinx_PLATFORM_INFO
     Xilinx_KERNEL_INFO
     Xilinx_EMU_CONFIG
-)
-
-find_package_handle_standard_args(AIE DEFAULT_MSG
-    Xilinx_AIE_COMPILER
-    Xilinx_AIE_SIMULATOR
-    Xilinx_AIE_X86SIMULATOR
-    Xilinx_AIE_INCLUDE_DIRS
 )
