@@ -18,7 +18,13 @@
 #[import(cc = "thorin")] fn amdgpu(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn reserve_shared[T](_size: i32) -> &mut addrspace(3)[T];
 #[import(cc = "thorin")] fn hls(_dev: i32, _body: fn() -> ()) -> ();
-#[import(cc = "thorin", interface = "stream")] fn cgra(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn cgra(_dev: i32, _runtime_ratio: f32, _location: (i32, i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+#[import(cc = "thorin", name = "cgra", interface = "stream")] fn cgra_stream(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+#[import(cc = "thorin", name = "cgra", interface = "window", size = 1024)] fn cgra_window(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+//#[import(cc = "thorin", name = "cgra", interface = "async")] fn cgra_async(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+//#[import(cc = "thorin", name = "cgra", interface = "free_running")] fn cgra_free_running(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+//#[import(cc = "thorin", interface = "buffer")] fn cgra_buffer(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+//#[import(cc = "thorin", name = "cgra", interface = "circular_buffer")] fn cgra_circular_buffer(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "pipeline")] fn thorin_pipeline(_initiation_interval: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> (); // only for HLS/OpenCL backend
 #[import(cc = "thorin", name = "parallel")] fn thorin_parallel(_num_threads: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> ();
 #[import(cc = "thorin", name = "spawn")] fn thorin_spawn(_body: fn() -> ()) -> i32;
