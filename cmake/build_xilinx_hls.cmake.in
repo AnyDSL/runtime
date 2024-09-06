@@ -297,7 +297,6 @@ if(EXISTS ${_basename}.hls)
     if(NOT SOC AND BOARD_PART AND (${kernel} STREQUAL "hls_top"))
         message(STATUS "Integrating ${kernel} into ${PLATFORM_NAME}")
 
-        #string(APPEND VPP_platform "${PLATFORM_NAME}")
         file(WRITE ${kernel_workspace}/config_connectivity.cfg "[connectivity]\n")
         if(GMEM_BANKS_OPT)
             set(arg_num 0)
@@ -332,12 +331,12 @@ if(EXISTS ${_basename}.hls)
             execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
             set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
             string(APPEND VPP_out "${kernel_workspace}/${kernel}.xo")
-            set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_out})
+            set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform}${PLATFORM_NAME} ${VPP_out})
 
             # Compiling (just for software emulation)
             message(STATUS "Compiling for sw_emu")
             execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
-                                    ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config_connectivity.cfg
+                                    ${VPP_input} ${_basename}_hls.cpp ${VPP_config}${kernel_workspace}/config_connectivity.cfg
                                     COMMAND_ECHO STDOUT)
             set(VPP_out "-o${kernel_workspace}/${kernel}_sw_emu.xsa")
         endif()
