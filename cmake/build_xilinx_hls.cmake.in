@@ -44,10 +44,10 @@ if(AMD_PLATFORM_INFO)
     foreach(PLATFORM_ ${PLATFORMS_})
         if(${PLATFORM_} MATCHES ${FPGA_PART})
             message(STATUS "Platform ${PLATFORM_} found for ${FPGA_PART}.")
-	    execute_process(COMMAND ${AMD_PLATFORM_INFO} --json=hardwarePlatform.board.part --platform ${PLATFORM_} OUTPUT_VARIABLE BOARD_PART)
-	    execute_process(COMMAND ${AMD_PLATFORM_INFO} --json=file --platform ${PLATFORM_} OUTPUT_VARIABLE PLATFORM_XPFM_ADDR)
+            execute_process(COMMAND ${AMD_PLATFORM_INFO} --json=hardwarePlatform.board.part --platform ${PLATFORM_} OUTPUT_VARIABLE BOARD_PART)
+            execute_process(COMMAND ${AMD_PLATFORM_INFO} --json=file --platform ${PLATFORM_} OUTPUT_VARIABLE PLATFORM_XPFM_ADDR)
             string(REPLACE "\n" "" BOARD_PART ${BOARD_PART})
-	    string(REPLACE "\n" "" PLATFORM_XPFM_ADDR ${PLATFORM_XPFM_ADDR})
+            string(REPLACE "\n" "" PLATFORM_XPFM_ADDR ${PLATFORM_XPFM_ADDR})
             set(FPGA_PART ${BOARD_PART})
             set(PLATFORM_NAME ${PLATFORM_})
             break()
@@ -61,9 +61,7 @@ if(AMD_PLATFORM_INFO)
     endif()
 endif()
 
-
 # VPP configs
-
 set(VPP_opt "-O3")
 set(VPP_kernel "-k")
 set(VPP_platform "--platform=")
@@ -89,9 +87,6 @@ if(SYNTHESIS STREQUAL "on")
         string(APPEND VPP_target "hw")
     endif()
 else()
-	#if(AI_ENGINE)
-	#string(APPEND VPP_target "x86sim")
-	#endif()
     string(APPEND VPP_target "sw_emu")
 endif()
 
@@ -110,38 +105,33 @@ if(AI_ENGINE)
     set(AIE_XPREPROC   "--Xpreproc=")
     set(AIE_TARGET "${VPP_target}")
 
-    #
     string(REPLACE "sw_emu" "x86sim" AIE_TARGET "${AIE_TARGET}")
     # on aiecompiler for emulating we actually need to build for hardware
     string(REPLACE "hw_emu" "hw" AIE_TARGET "${AIE_TARGET}")
     string(REPLACE "-t" "--target=" AIE_TARGET "${AIE_TARGET}")
-
-
 
     # Adjusting AIE compiler flags according to Vitis version
     set(AIE_VAR_FLAGS ${AIE_XCHESS} ${AIE_STACK_SIZE} ${AIE_HEAP_SIZE} ${AIE_XPREPROC})
     if((VITIS_MAJOR_VERSION EQUAL 2023 AND VITIS_MINOR_VERSION EQUAL 2) OR (VITIS_MAJOR_VERSION GREATER 2023))
         set(AIE_CC "${AMD_VPP} --mode aie")
 
-	foreach(flag IN LIST ${AIE_VAR_FLAGS})
+        foreach(flag IN LIST ${AIE_VAR_FLAGS})
             string(REPLACE "--" "--aie." flag "${flag}")
-	endforeach()
+        endforeach()
 
-	list(GET AIE_VAR_FLAGS 0 AIE_XCHESS)
-	list(GET AIE_VAR_FLAGS 1 AIE_STACK_SIZE)
-	list(GET AIE_VAR_FLAGS 2 AIE_HEAP_SIZE)
-	list(GET AIE_VAR_FLAGS 3 AIE_XPREPROC)
+        list(GET AIE_VAR_FLAGS 0 AIE_XCHESS)
+        list(GET AIE_VAR_FLAGS 1 AIE_STACK_SIZE)
+        list(GET AIE_VAR_FLAGS 2 AIE_HEAP_SIZE)
+        list(GET AIE_VAR_FLAGS 3 AIE_XPREPROC)
 
-	if(AIE_TARGET STREQUAL "sw_emu")
+        if(AIE_TARGET STREQUAL "sw_emu")
             set(AIE_TARGET "x86")
-	endif()
-
-	# correct the flag
-	if(HW_EMULATION STREQUAL "on")
-	    string(REPLACE "hw" "hw_emu" AIE_TARGET "${AIE_TARGET}")
         endif()
 
-
+        # correct the flag
+        if(HW_EMULATION STREQUAL "on")
+            string(REPLACE "hw" "hw_emu" AIE_TARGET "${AIE_TARGET}")
+        endif()
     endif()
 
     set(AIE_WORK_DIR_VAL   "./Work")
@@ -156,19 +146,20 @@ if(AI_ENGINE)
     # flags and their values must be cleared when they are not used
     if(NOT PROFILER)
         set(PROFILING_FLAGS "")
-	set(APPEND AIE_XPREPROC "")
+        set(APPEND AIE_XPREPROC "")
     endif()
 
     if((SYNTHESIS) OR (HW_EMULATION))
         set(AIE_XPREPROC "")
     endif()
+
     set(AIE_PLATFORM "${VPP_platform}${PLATFORM_XPFM_ADDR}")
     # cxx -> libadf.a 
     execute_process(COMMAND ${AIE_CC} ${AIE_INPUT_FILES} ${AIE_TARGET} ${AIE_PLATFORM} 
-        --include=${AMD_AIE_INCLUDE_DIRS} ${AIE_STACK_SIZE} ${AIE_HEAP_SIZE} ${PROFILING_FLAGS}
-	--workdir=${AIE_WORK_DIR_VAL}
-	${AIE_XPREPROC}
-	COMMAND_ECHO STDOUT)
+                            --include=${AMD_AIE_INCLUDE_DIRS} ${AIE_STACK_SIZE} ${AIE_HEAP_SIZE} ${PROFILING_FLAGS}
+                            --workdir=${AIE_WORK_DIR_VAL}
+                            ${AIE_XPREPROC}
+                            COMMAND_ECHO STDOUT)
 endif()
 
 
@@ -271,42 +262,42 @@ if(EXISTS ${_basename}.hls)
         string(APPEND VPP_platform "${PLATFORM_NAME}")
 
         set(COMPILING_PROFILE_CONFIG ${VPP_config}${kernel_workspace}/config_profile.cfg)
-	# Compiling for HPC with profiling
-	# cpp -> xo
-	message(STATUS "Compiling for profiling")
-	execute_process(COMMAND ${AMD_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform}
-		                ${VPP_comp_jobs}
+        # Compiling for HPC with profiling
+        # cpp -> xo
+        message(STATUS "Compiling for profiling")
+        execute_process(COMMAND ${AMD_VPP} ${VPP_debug} ${SAVE_REPORTS} ${VPP_target} ${VPP_opt} ${VPP_platform} ${VPP_comp_jobs}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
-				${VPP_out} ${kernel_workspace}/${kernel}.xo ${COMPILING_PROFILE_CONFIG}
-				COMMAND_ECHO STDOUT)
+                                ${VPP_out} ${kernel_workspace}/${kernel}.xo ${COMPILING_PROFILE_CONFIG}
+                                COMMAND_ECHO STDOUT)
+
     elseif((NOT SOC) AND (NOT PROFILER) AND (SYNTHESIS STREQUAL "on"))
         string(APPEND VPP_platform "${PLATFORM_NAME}")
-	# Compiling for HPC without profiling
-	# cpp -> xo
-	message(STATUS "Compiling")
-	execute_process(COMMAND ${AMD_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform}
-		                ${VPP_comp_jobs}
+        # Compiling for HPC without profiling
+        # cpp -> xo
+        message(STATUS "Compiling")
+        execute_process(COMMAND ${AMD_VPP} ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_comp_jobs}
                                 ${VPP_compile} ${VPP_kernel} ${kernel} ${VPP_input} ${_basename}_hls.cpp
                                 ${VPP_out} ${kernel_workspace}/${kernel}.xo
-				COMMAND_ECHO STDOUT)
+                                COMMAND_ECHO STDOUT)
+
     elseif(SOC AND (NOT PROFILER))
         execute_process(COMMAND echo "${tcl_script}" OUTPUT_FILE ${_basename}_${kernel}.tcl)
         # Compiling with vivado/Vitis_HLS
-	# The script also supports HPC compilation but currently it is triggered only for a SoC flow.
+        # The script also supports HPC compilation but currently it is triggered only for a SoC flow.
         # TCL script skips any compilation withous synthesis
-	message(STATUS "Executing the TCL script")
-	execute_process(COMMAND ${AMD_HLS} -f ${_basename}_${kernel}.tcl)
+        message(STATUS "Executing the TCL script")
+        execute_process(COMMAND ${AMD_HLS} -f ${_basename}_${kernel}.tcl)
     endif()
 
     if(AMD_KERNEL_INFO AND (SYNTHESIS STREQUAL "on"))
-	execute_process(COMMAND ${AMD_KERNEL_INFO} ${kernel_workspace}/${kernel}.xo OUTPUT_VARIABLE KERNEL_INFO)
+        execute_process(COMMAND ${AMD_KERNEL_INFO} ${kernel_workspace}/${kernel}.xo OUTPUT_VARIABLE KERNEL_INFO)
         string(REGEX MATCHALL "${kernel}_[0-9]+" arg_matches "${KERNEL_INFO}")
     endif()
 
     if(NOT SOC AND BOARD_PART AND (${kernel} STREQUAL "hls_top"))
         message(STATUS "Integrating ${kernel} into ${PLATFORM_NAME}")
 
-	#string(APPEND VPP_platform "${PLATFORM_NAME}")
+        #string(APPEND VPP_platform "${PLATFORM_NAME}")
         file(WRITE ${kernel_workspace}/config_connectivity.cfg "[connectivity]\n")
         if(GMEM_BANKS_OPT)
             set(arg_num 0)
@@ -324,76 +315,76 @@ if(EXISTS ${_basename}.hls)
 
         if(SYNTHESIS STREQUAL "on")
 
-	    set(AIE_LIB_ADF "")
+            set(AIE_LIB_ADF "")
             if(AI_ENGINE)
-	        set(AIE_LIB_ADF "./libadf.a")
-	    endif()
+                set(AIE_LIB_ADF "./libadf.a")
+            endif()
 
             if(HW_EMULATION STREQUAL "on")
-		execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
+                execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
                 set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
                 string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw_emu.xsa")
             elseif(HW_EMULATION STREQUAL "off")
                 string(APPEND VPP_out "${kernel_workspace}/${kernel}_hw.xsa")
             endif()
+
         elseif(SYNTHESIS STREQUAL "off")
             execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
             set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
             string(APPEND VPP_out "${kernel_workspace}/${kernel}.xo")
             set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_out})
 
-	    # Compiling (just for software emulation)
-	    message(STATUS "Compiling for sw_emu")
-	    execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
+            # Compiling (just for software emulation)
+            message(STATUS "Compiling for sw_emu")
+            execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_compile} -DNO_SYNTH ${VPP_kernel} ${kernel}
                                     ${VPP_input} ${_basename}_hls.cpp ${VPP_config} ${kernel_workspace}/config_connectivity.cfg
-		                    COMMAND_ECHO STDOUT)
+                                    COMMAND_ECHO STDOUT)
             set(VPP_out "-o${kernel_workspace}/${kernel}_sw_emu.xsa")
         endif()
 
-	# Adjust linking flags
-	string(APPEND VPP_link_synth_jobs "=${COMPILATION_JOBS}")
+        # Adjust linking flags
+        string(APPEND VPP_link_synth_jobs "=${COMPILATION_JOBS}")
         string(APPEND VPP_link_impl_jobs "=${COMPILATION_JOBS}")
 
-	if(PROFILER)
+        if(PROFILER)
             set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_link_synth_jobs} ${VPP_link_impl_jobs} ${VPP_platform} ${VPP_out})
             file(READ "${kernel_workspace}/config_profile.cfg" CONFIG_PROFILE_CONTENT)
             string(REPLACE "param=compiler.deadlockDetection=1" "param=compiler.systemDeadlockDetection=enable"
-                   CONFIG_PROFILE_CONTENT "${CONFIG_PROFILE_CONTENT}")
+                            CONFIG_PROFILE_CONTENT "${CONFIG_PROFILE_CONTENT}")
             file(WRITE ${kernel_workspace}/linking_config_profile.cfg ${CONFIG_PROFILE_CONTENT})
             set(LINKING_PROFILE_CONFIG ${VPP_config}${kernel_workspace}/linking_config_profile.cfg)
-	else()
+        else()
             set(VPP_flags ${VPP_target} ${VPP_opt} ${VPP_link_synth_jobs} ${VPP_link_impl_jobs} ${VPP_platform} ${VPP_out})
             set(LINKING_PROFILE_CONFIG "")
-	endif()
-
-	set(LINKING_AIE_PL_CONFIG ${VPP_config}${CMAKE_CURRENT_BINARY_DIR}/${_basename}.cfg)
-	set(CONNECTIVITY_CONFIG ${VPP_config}${kernel_workspace}/config_connectivity.cfg)
-	if(NOT AI_ENGINE)
-	    set(LINKING_AIE_PL_CONFIG "")
-	    set(TOP_KERNEL_NAME ${VPP_kernel} ${kernel}) 
-        else()
-	    set(TOP_KERNEL_NAME "")
         endif()
 
-	set(OBJ_ARCHIVE ${kernel_workspace}/${kernel}.xo ${AIE_LIB_ADF})
-	# Linking (.xo -> .xsa)
-	message(STATUS "Linking")
-	execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${OBJ_ARCHIVE}
-		                ${TOP_KERNEL_NAME}
+        set(LINKING_AIE_PL_CONFIG ${VPP_config}${CMAKE_CURRENT_BINARY_DIR}/${_basename}.cfg)
+        set(CONNECTIVITY_CONFIG ${VPP_config}${kernel_workspace}/config_connectivity.cfg)
+        if(NOT AI_ENGINE)
+            set(LINKING_AIE_PL_CONFIG "")
+            set(TOP_KERNEL_NAME ${VPP_kernel} ${kernel})
+        else()
+            set(TOP_KERNEL_NAME "")
+        endif()
+
+        set(OBJ_ARCHIVE ${kernel_workspace}/${kernel}.xo ${AIE_LIB_ADF})
+        # Linking (.xo -> .xsa)
+        message(STATUS "Linking")
+        execute_process(COMMAND ${AMD_VPP} ${VPP_flags} ${VPP_debug} ${VPP_link} ${OBJ_ARCHIVE} ${TOP_KERNEL_NAME}
                                 ${LINKING_AIE_PL_CONFIG}
-				${LINKING_PROFILE_CONFIG}
+                                ${LINKING_PROFILE_CONFIG}
                                 ${CONNECTIVITY_CONFIG}
-				COMMAND_ECHO STDOUT)
+                                COMMAND_ECHO STDOUT)
 
-	# Packaging (.xsa & libadf.a -> .xclbin)
+        # Packaging (.xsa & libadf.a -> .xclbin)
         message(STATUS "Packaging")
-	string(REPLACE "-t" "" target "${VPP_target}")
-	set(OBJ_ARCHIVE ${kernel_workspace}/${kernel}_${target}.xsa ${AIE_LIB_ADF})
-	string(REPLACE ".xsa" ".xclbin" VPP_out "${VPP_out}")
-	execute_process(COMMAND ${AMD_VPP} ${VPP_package} ${VPP_target} ${VPP_platform} ${OBJ_ARCHIVE} ${VPP_out} --package.boot_mode=ospi
-		        COMMAND_ECHO STDOUT)
+        string(REPLACE "-t" "" target "${VPP_target}")
+        set(OBJ_ARCHIVE ${kernel_workspace}/${kernel}_${target}.xsa ${AIE_LIB_ADF})
+        string(REPLACE ".xsa" ".xclbin" VPP_out "${VPP_out}")
+        execute_process(COMMAND ${AMD_VPP} ${VPP_package} ${VPP_target} ${VPP_platform} ${OBJ_ARCHIVE} ${VPP_out} --package.boot_mode=ospi
+                                COMMAND_ECHO STDOUT)
 
-	# Copy generated xclbin to application directory
+        # Copy generated xclbin to application directory
         file(MAKE_DIRECTORY "${kernel}_xlbin")
         file(GLOB XCLBIN_FILE ${kernel_workspace}/${kernel}_*.xclbin)
         file(COPY ${EM_CONFIG_FILE} ${XCLBIN_FILE} DESTINATION "${kernel}_xlbin")
