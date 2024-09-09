@@ -35,7 +35,7 @@ set(AMD_AIE_INCLUDE_DIRS  @Xilinx_AIE_INCLUDE_DIRS@)
 
 # Extracting FPGA platform and Board PART from FPGA_PART macro
 if(AMD_PLATFORM_INFO)
-	execute_process(COMMAND ${AMD_PLATFORM_INFO} --list OUTPUT_VARIABLE PLATFORM_LIST)
+    execute_process(COMMAND ${AMD_PLATFORM_INFO} --list OUTPUT_VARIABLE PLATFORM_LIST)
     string(REGEX MATCHALL "\"baseName\": [^, \t]+" matches "${PLATFORM_LIST}")
     string(REGEX REPLACE "\"baseName\": |[\"]" "" PLATFORMS_ "${matches}")
     string(TOLOWER ${FPGA_PART} FPGA_PART)
@@ -238,6 +238,8 @@ if(EXISTS ${_basename}.hls)
 
     string(APPEND VPP_comp_jobs "=${COMPILATION_JOBS}")
     file(WRITE ${kernel_workspace}/config_profile.cfg "[profile]")
+
+    string(APPEND VPP_platform "${PLATFORM_NAME}")
     if(PROFILER AND (SYNTHESIS STREQUAL "on"))
         # Generating a runime profiling configuration file
         string(CONCAT XRT_INI "[Debug]\n"
@@ -259,7 +261,6 @@ if(EXISTS ${_basename}.hls)
         "param=compiler.deadlockDetection=1\n")
         file(APPEND ${kernel_workspace}/config_profile.cfg ${CONFIG_PROFILE})
 
-        string(APPEND VPP_platform "${PLATFORM_NAME}")
 
         set(COMPILING_PROFILE_CONFIG ${VPP_config}${kernel_workspace}/config_profile.cfg)
         # Compiling for HPC with profiling
@@ -271,7 +272,6 @@ if(EXISTS ${_basename}.hls)
                                 COMMAND_ECHO STDOUT)
 
     elseif((NOT SOC) AND (NOT PROFILER) AND (SYNTHESIS STREQUAL "on"))
-        string(APPEND VPP_platform "${PLATFORM_NAME}")
         # Compiling for HPC without profiling
         # cpp -> xo
         message(STATUS "Compiling")
@@ -331,7 +331,7 @@ if(EXISTS ${_basename}.hls)
             execute_process(COMMAND ${AMD_EMU_CONFIG} --platform ${PLATFORM_NAME})
             set(EM_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/emconfig.json)
             string(APPEND VPP_out "${kernel_workspace}/${kernel}.xo")
-            set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform}${PLATFORM_NAME} ${VPP_out})
+            set(VPP_flags ${VPP_target} ${VPP_opt} ${SAVE_REPORTS} ${VPP_platform} ${VPP_out})
 
             # Compiling (just for software emulation)
             message(STATUS "Compiling for sw_emu")
