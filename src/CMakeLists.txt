@@ -121,7 +121,7 @@ endif()
 set(AnyDSL_runtime_HAS_HSA_SUPPORT ${hsa-runtime64_FOUND} CACHE INTERNAL "enables HSA support")
 
 # look for PAL
-find_package(pal)
+find_package(pal CONFIG)
 if(pal_FOUND)
     add_library(runtime_pal STATIC 
         pal_platform.h
@@ -152,7 +152,7 @@ endif()
 set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
 
 # look for LLVM for nvptx and gcn
-find_package(LLVM)
+find_package(LLVM CONFIG)
 if(LLVM_FOUND)
     if(NOT DEFINED AnyDSL_LLVM_LINK_SHARED)
         if(LLVM_LINK_LLVM_DYLIB)
