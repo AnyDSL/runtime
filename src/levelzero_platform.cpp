@@ -45,7 +45,8 @@ static std::string get_ze_error_code_str(int error) {
 }
 
 #define CHECK_LEVEL_ZERO(err, name)  check_ze_error(err, name, __FILE__, __LINE__)
-#define WRAP_LEVEL_ZERO(FUNC) do { ze_result_t err = FUNC; check_ze_error(err, #FUNC, __FILE__, __LINE__); } while(false)
+#define WRAP_LEVEL_ZERO_HANDLER(FUNC, HANDLER) do { ze_result_t err = FUNC; { HANDLER } check_ze_error(err, #FUNC, __FILE__, __LINE__); } while(false)
+#define WRAP_LEVEL_ZERO(FUNC) WRAP_LEVEL_ZERO_HANDLER(FUNC, if (false) {})
 
 inline void check_ze_error(ze_result_t err, const char* name, const char* file, const int line) {
     if (err != ZE_RESULT_SUCCESS)
@@ -373,15 +374,17 @@ ze_kernel_handle_t LevelZeroPlatform::load_kernel(DeviceId dev, const std::strin
 
         ze_module_build_log_handle_t hBuildLog;
 
-        WRAP_LEVEL_ZERO(zeModuleCreate(ze_dev.ctx, ze_dev.device, &mod_desc, &hModule, &hBuildLog));
-        if (hModule == nullptr) {
-            size_t blSize;
-            std::string buildlog;
-            WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, nullptr));
-            buildlog.resize(blSize);
-            WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, buildlog.data()));
-            debug("Build log if Level Zero module %\n%", filename, buildlog);
-        }
+        WRAP_LEVEL_ZERO_HANDLER(
+            zeModuleCreate(ze_dev.ctx, ze_dev.device, &mod_desc, &hModule, &hBuildLog),
+            if (err == ZE_RESULT_ERROR_MODULE_BUILD_FAILURE) {
+                size_t blSize;
+                std::string buildlog;
+                WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, nullptr));
+                buildlog.resize(blSize);
+                WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, buildlog.data()));
+                debug("Build log of Level Zero module %\n%", filename, buildlog);
+            }
+        );
         WRAP_LEVEL_ZERO(zeModuleBuildLogDestroy(hBuildLog));
 
         module_cache[canonical.string()] = hModule;
