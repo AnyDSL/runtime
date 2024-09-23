@@ -110,8 +110,8 @@ CudaPlatform::CudaPlatform(Runtime* runtime)
         devices_[i].compute_capability = (CUjit_target)(major * 10 + minor);
         debug("  (%) %, Compute capability: %.%", i, name, major, minor);
 
-        err = cuCtxCreate(&devices_[i].ctx, CU_CTX_MAP_HOST, devices_[i].dev);
-        CHECK_CUDA(err, "cuCtxCreate()");
+        err = cuDevicePrimaryCtxRetain(&devices_[i].ctx, devices_[i].dev);
+        CHECK_CUDA(err, "cuDevicePrimaryCtxRetain()");
     }
 }
 
@@ -139,7 +139,7 @@ void CudaPlatform::erase_profiles(bool erase_all) {
 CudaPlatform::~CudaPlatform() {
     erase_profiles(true);
     for (size_t i = 0; i < devices_.size(); i++)
-        cuCtxDestroy(devices_[i].ctx);
+        cuDevicePrimaryCtxRelease(devices_[i].dev);
 }
 
 void* CudaPlatform::alloc(DeviceId dev, int64_t size) {
@@ -217,7 +217,9 @@ void CudaPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params
         launch_params.grid[1] / launch_params.block[1],
         launch_params.grid[2] / launch_params.block[2],
         launch_params.block[0], launch_params.block[1], launch_params.block[2],
-        0, nullptr, launch_params.args.data, nullptr);
+        launch_params.lmem,
+        nullptr,
+        launch_params.args.data, nullptr);
     CHECK_CUDA(err, "cuLaunchKernel()");
 
     if (runtime_->profiling_enabled()) {
