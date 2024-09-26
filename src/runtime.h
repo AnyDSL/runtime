@@ -35,6 +35,7 @@ struct LaunchParams {
     const char* kernel_name;
     const uint32_t* grid;
     const uint32_t* block;
+    uint32_t lmem;
     ParamsArgs args;
     uint32_t num_args;
 };

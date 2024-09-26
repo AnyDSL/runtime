@@ -10,10 +10,12 @@ extern "thorin" {
     fn insert[T, U](T, i32, U) -> T;
     //fn shuffle[T](T, T, T) -> T;
 
-    fn cuda(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
-    fn nvvm(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
-    fn opencl(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
-    fn amdgpu(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
+    fn "cuda" cuda_with_lmem(i32, (i32, i32, i32), (i32, i32, i32), i32, fn() -> ()) -> ();
+    fn "nvvm" nvvm_with_lmem(i32, (i32, i32, i32), (i32, i32, i32), i32, fn() -> ()) -> ();
+    fn "opencl" opencl_with_lmem(i32, (i32, i32, i32), (i32, i32, i32), i32, fn() -> ()) -> ();
+    fn "amdgpu_hsa" amdgpu_hsa_with_lmem(i32, (i32, i32, i32), (i32, i32, i32), i32, fn() -> ()) -> ();
+    fn "amdgpu_pal" amdgpu_pal_with_lmem(i32, (i32, i32, i32), (i32, i32, i32), i32, fn() -> ()) -> ();
+    fn local_memory_base() -> &mut[3][u8];
     fn reserve_shared[T](i32) -> &mut[3][T];
 
     fn hls(dev: i32, body: fn() -> ()) -> ();
@@ -42,3 +44,9 @@ extern "thorin" {
 
     fn vectorize(vector_length: i32, body: fn(i32) -> ()) -> ();
 }
+
+fn @cuda(dev: i32, grid: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) { cuda_with_lmem(dev, grid, block, 0, body) }
+fn @nvvm(dev: i32, grid: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) { nvvm_with_lmem(dev, grid, block, 0, body) }
+fn @opencl(dev: i32, grid: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) { opencl_with_lmem(dev, grid, block, 0, body) }
+fn @amdgpu_hsa(dev: i32, grid: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) { amdgpu_hsa_with_lmem(dev, grid, block, 0, body) }
+fn @amdgpu_pal(dev: i32, grid: (i32, i32, i32), block: (i32, i32, i32), body: fn() -> ()) { amdgpu_pal_with_lmem(dev, grid, block, 0, body) }

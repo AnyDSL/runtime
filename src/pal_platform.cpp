@@ -215,6 +215,7 @@ void PALPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params)
     Pal::PipelineBindParams params = {};
     params.pipelineBindPoint = Pal::PipelineBindPoint::Compute;
     params.pPipeline = pipeline;
+    params.cs.ldsBytesPerTg = launch_params.lmem;  // TODO: add static LDS size
 
     constexpr Pal::HwPipePoint pipe_point = Pal::HwPipePostCs;
     Pal::BarrierInfo barrier_info = {};
