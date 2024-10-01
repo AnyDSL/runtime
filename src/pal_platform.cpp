@@ -37,7 +37,6 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/GlobalDCE.h>
-#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #endif
 
@@ -77,7 +76,7 @@ std::unique_ptr<llvm::TargetMachine> create_target_machine(
     options.NoTrappingFPMath = true;
     std::string attrs = "-trap-handler";
     return std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(target_triple, cpu, attrs,
-        options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive));
+        options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOptLevel::Aggressive));
 }
 
 void add_module_impl(std::unique_ptr<llvm::Module> module, const llvm::DataLayout& machine_data_layout,

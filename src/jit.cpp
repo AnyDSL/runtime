@@ -8,7 +8,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Support/Host.h>
+#include <llvm/TargetParser/Host.h>
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
@@ -116,10 +116,10 @@ struct JIT {
             .setEngineKind(llvm::EngineKind::JIT)
             .setMCPU(llvm::sys::getHostCPUName())
             .setTargetOptions(options)
-            .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
-                            opt == 1  ? llvm::CodeGenOpt::Less    :
-                            opt == 2  ? llvm::CodeGenOpt::Default :
-                        /* opt == 3 */ llvm::CodeGenOpt::Aggressive)
+            .setOptLevel(   opt == 0  ? llvm::CodeGenOptLevel::None    :
+                            opt == 1  ? llvm::CodeGenOptLevel::Less    :
+                            opt == 2  ? llvm::CodeGenOptLevel::Default :
+                        /* opt == 3 */ llvm::CodeGenOptLevel::Aggressive)
             .create();
         if (!engine)
             return -1;
