@@ -104,6 +104,15 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+    bool is_top_channel(const LaunchParams& launch_params, const uint8_t idx) {
+	    auto arg_type = launch_params.args.types[idx];
+	    assert((arg_type == KernelArgType::Struct) && "top channel must be an structure");
+	    auto arg_data = launch_params.args.data[idx];
+	    auto arg_size = launch_params.args.sizes[idx];
+            struct top_channel { bool flag;};
+	    auto channel_ptr = static_cast<top_channel*>(arg_data);
+	    return (sizeof(*channel_ptr) == sizeof(top_channel)) && (channel_ptr->flag == true) && (sizeof(*channel_ptr) == arg_size);
+    }
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
     cl_program load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const;

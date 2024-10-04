@@ -369,6 +369,11 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     std::vector<cl_mem> kernel_structs(launch_params.num_args);
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
         if (launch_params.args.types[i] == KernelArgType::Struct) {
+            // set hls_top to cgra channels to null
+	    if (is_top_channel(launch_params, i) && devices_[dev].is_xilinx_fpga) {
+                clSetKernelArg(kernel, i, sizeof(cl_mem), NULL);
+	        continue;
+	    }
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
@@ -423,6 +428,10 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     // release temporary buffers for struct arguments
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
         if (launch_params.args.types[i] == KernelArgType::Struct) {
+
+	    if (is_top_channel(launch_params, i) && devices_[dev].is_xilinx_fpga)
+	        continue;
+
             cl_int err = clReleaseMemObject(kernel_structs[i]);
             CHECK_OPENCL(err, "clReleaseMemObject()");
         }
