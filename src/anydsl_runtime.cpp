@@ -36,6 +36,7 @@ struct RuntimeSingleton {
         register_opencl_platform(&runtime);
         register_hsa_platform(&runtime);
         register_pal_platform(&runtime);
+        register_levelzero_platform(&runtime);
     }
 
     static std::pair<ProfileLevel, ProfileLevel> detect_profile_level() {
