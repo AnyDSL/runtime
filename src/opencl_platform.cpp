@@ -357,6 +357,17 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
 
+
+bool OpenCLPlatform::is_top_channel(const LaunchParams& launch_params, const uint8_t idx) {
+        auto arg_type = launch_params.args.types[idx];
+        assert((arg_type == KernelArgType::Struct) && "top channel must be a structure");
+        auto arg_data = launch_params.args.data[idx];
+        auto arg_size = launch_params.args.sizes[idx];
+        struct top_channel {bool flag;};
+        auto channel_ptr = static_cast<top_channel*>(arg_data);
+	    return (sizeof(*channel_ptr) == sizeof(top_channel)) && (channel_ptr->flag == true) && (sizeof(*channel_ptr) == arg_size);
+    }
+
 void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
     if (devices_[dev].is_intel_fpga && launch_params.num_args == 0) {
         debug("processing by autorun kernel");
@@ -370,10 +381,10 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
         if (launch_params.args.types[i] == KernelArgType::Struct) {
             // set hls_top to cgra channels to null
-	    if (is_top_channel(launch_params, i) && devices_[dev].is_xilinx_fpga) {
+            if (is_top_channel(launch_params, i) && devices_[dev].is_xilinx_fpga) {
                 clSetKernelArg(kernel, i, sizeof(cl_mem), NULL);
-	        continue;
-	    }
+                continue;
+            }
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
