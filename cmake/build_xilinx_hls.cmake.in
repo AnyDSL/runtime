@@ -243,10 +243,15 @@ if(EXISTS ${_basename}.hls)
     if(PROFILER AND (SYNTHESIS STREQUAL "on"))
         # Generating a runime profiling configuration file
         string(CONCAT XRT_INI "[Debug]\n"
-        "opencl_summary=true\n"
-        "opencl_trace=true\n"
-        "power_profile=true\n"
-        "data_transfer_trace=coarse\n")
+            "opencl_summary=true\n"
+            "opencl_trace=true\n"
+            "power_profile=true\n"
+            "data_transfer_trace=coarse\n")
+        if(AI_ENGINE)
+            string(APPEND XRT_INI
+                "aie_profile=true\n"
+                "aie_trace=true\n")
+        endif()
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini ${XRT_INI})
 
         # Generating a compile-time profiling configuration file
