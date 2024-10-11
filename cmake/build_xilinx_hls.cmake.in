@@ -249,7 +249,7 @@ if(EXISTS ${_basename}.hls)
             "data_transfer_trace=coarse\n")
         if(AI_ENGINE)
             string(APPEND XRT_INI
-                "aie_profile=true\n"
+                "aie_profile=false #not supported on DFX platforms\n"
                 "aie_trace=true\n")
         endif()
         file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/xrt.ini ${XRT_INI})
