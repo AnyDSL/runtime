@@ -300,15 +300,16 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 
 
 // load & store (at the moment only to be used with arrays)
-#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v[T](u32, &mut addrspace(1) T) -> T;
-#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_u16(u32, &mut addrspace(1)u16) -> u16;
-#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_i32(u32, &mut addrspace(1)i32) -> i32;
-#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_f32(u32, &mut addrspace(1)f32) -> f32;
+// TODO: check for the addrspace(1)
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v[T](u32, &T) -> T;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_u16(u32, &u16) -> u16;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_i32(u32, &i32) -> i32;
+#[import(cc = "device", name = "aie::load_v")] fn cgra_load_v_f32(u32, &f32) -> f32;
 
-#[import(cc = "device", name = "aie::load")] fn cgra_load[T](&mut addrspace(1) T) -> T;
-#[import(cc = "device", name = "aie::load")] fn cgra_load_u16(&mut addrspace(1)u16) -> u16;
-#[import(cc = "device", name = "aie::load")] fn cgra_load_i32(&mut addrspace(1)i32) -> i32;
-#[import(cc = "device", name = "aie::load")] fn cgra_load_f32(&mut addrspace(1)f32) -> f32;
+#[import(cc = "device", name = "aie::load")] fn cgra_load[T](&T) -> T;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_u16(&u16) -> u16;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_i32(&i32) -> i32;
+#[import(cc = "device", name = "aie::load")] fn cgra_load_f32(&f32) -> f32;
 
 
 #[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_[T](u32, &mut addrspace(1) T, T) -> ();
@@ -325,10 +326,12 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 // shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
 // instead of a non-static to_vector<...>(...) API we use low-level srs(...) inrinsic
 // also a dummy lane size is added as the first parameter, so that the backend can infer the correct vector size
-#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T](u32, i64, u32) -> T;
-#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_u16(u32, i64, u32) -> u16;
-#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_i32(u32, i64, u32) -> i32;
-#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_f32(u32, i64, u32) -> f32;
+// TODO: the second parameter can be a u64 or i64 for acc80 and acc46 respectively
+// to make it more generic we can reimplment this API with a generic type or we can make  a different API for each type
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T](u32, u64, u32) -> T;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_u16(u32, u64, u32) -> u16;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_i32(u32, u64, u32) -> i32;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_f32(u32, u64, u32) -> f32;
 //upshift intrinsic to move a value from a vector register to an accumulator register with any required shifting
 // instead of a non-static to_accum<...>(...) API we use low-level ups(...) inrinsic
 #[import(cc = "device", name = "ups")] fn cgra_to_accum[T](T, u32) -> i64;
@@ -371,14 +374,15 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 //TODO: to support buffers we need to add aie::begin_vector and aie::end_vector. they return a vector iterator type which should be implemented in the backend
 
 //TODO: 32b x 32b multiplications like (i32 * i32) needs acc80 as return type, it is mapped to u64 internally in the backend
+//TODO :We can make a more generic implementation for these APIs using a generic type like (V) for the return type
 // aie::sliding_mul_xy_ops<...>::mul(....)
-#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul")] fn cgra_sliding_mul_xy_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul")] fn cgra_sliding_mul_xy_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> u64;
 // aie::sliding_mul_xy_ops<...>::mac(....)
-#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mac")] fn cgra_sliding_mul_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mac")] fn cgra_sliding_mul_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> u64;
 // aie::sliding_mul_xy_ops<...>::mul_common(....)
-#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_common")] fn cgra_sliding_mul_xy_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_common")] fn cgra_sliding_mul_xy_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> u64;
 // aie::sliding_mul_xy_ops<...>::negmul(....)
-#[import(cc = "device", name = "aie::sliding_mul_xy_ops::negmul")] fn cgra_sliding_mul_xy_ops_negmul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::negmul")] fn cgra_sliding_mul_xy_ops_negmul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> u64;
 
 // aie::sliding_mul_x_ops<...>::mul(....)
 #[import(cc = "device", name = "aie::sliding_mul_x_ops::mul")] fn cgra_sliding_mul_x_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> i64;
