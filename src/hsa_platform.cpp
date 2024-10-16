@@ -614,7 +614,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
     options.NoTrappingFPMath = true;
     std::string attrs = "-trap-handler";
-    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOptLevel::Aggressive);
+    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive);
 
     // link ocml.amdgcn and ocml config
     if (cpu.compare(0, 3, "gfx"))
