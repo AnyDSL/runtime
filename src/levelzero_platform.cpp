@@ -38,6 +38,8 @@ static std::string get_ze_error_code_str(int error) {
         ZE_ERROR_CODE(ZE_RESULT_ERROR_INVALID_GROUP_SIZE_DIMENSION);
         ZE_ERROR_CODE(ZE_RESULT_ERROR_INVALID_KERNEL_ARGUMENT_INDEX);
         ZE_ERROR_CODE(ZE_RESULT_ERROR_INVALID_KERNEL_ARGUMENT_SIZE);
+        ZE_ERROR_CODE(ZE_RESULT_NOT_READY);
+        ZE_ERROR_CODE(ZE_RESULT_ERROR_INVALID_ARGUMENT);
 
         default: return "unknown error code";
     }
@@ -304,14 +306,14 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
 
     ze_group_count_t launchArgs;
     launchArgs.groupCountX = launch_params.grid[0] / launch_params.block[0];
-    launchArgs.groupCountX = launch_params.grid[1] / launch_params.block[1];
-    launchArgs.groupCountX = launch_params.grid[2] / launch_params.block[2];
+    launchArgs.groupCountY = launch_params.grid[1] / launch_params.block[1];
+    launchArgs.groupCountZ = launch_params.grid[2] / launch_params.block[2];
 
     WRAP_LEVEL_ZERO(zeCommandListAppendLaunchKernel(ze_dev.queue, hKernel, &launchArgs, nullptr, 0, nullptr));
 }
 
 void LevelZeroPlatform::synchronize(DeviceId dev) {
-    WRAP_LEVEL_ZERO(zeCommandListHostSynchronize(devices_[dev].queue, 0));
+    WRAP_LEVEL_ZERO(zeCommandListHostSynchronize(devices_[dev].queue, UINT64_MAX));
 }
 
 void LevelZeroPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
@@ -371,6 +373,7 @@ ze_kernel_handle_t LevelZeroPlatform::load_kernel(DeviceId dev, const std::strin
         mod_desc.inputSize = mod_src.length();
         mod_desc.pBuildFlags = nullptr;
         mod_desc.pConstants = nullptr;
+        mod_desc.pInputModule = reinterpret_cast<const uint8_t*>(mod_src.c_str());
 
         ze_module_build_log_handle_t hBuildLog;
 
