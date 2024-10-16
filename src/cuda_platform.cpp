@@ -35,6 +35,8 @@ using namespace std::literals;
 #define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
 #define CHECK_CUDA(err, name)  check_cuda_errors  (err, name, __FILE__, __LINE__)
 
+#define ANYDSL_CUDA_LIBDEVICE_PATH_ENV "ANYDSL_CUDA_LIBDEVICE_PATH"
+
 inline void check_cuda_errors(CUresult err, const char* name, const char* file, const int line) {
     if (CUDA_SUCCESS != err) {
         const char* error_name;
@@ -401,9 +403,13 @@ static std::string emit_nvptx(const std::string& program, const std::string& cpu
     llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOptLevel::Aggressive);
 
     // link libdevice
-    std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(AnyDSL_runtime_LIBDEVICE_LIB, diagnostic_err, llvm_context));
+    const char* env_libdevice_path = std::getenv(ANYDSL_CUDA_LIBDEVICE_PATH_ENV);
+    if (!env_libdevice_path)
+        env_libdevice_path = AnyDSL_runtime_LIBDEVICE_LIB;
+
+    std::unique_ptr<llvm::Module> libdevice_module(llvm::parseIRFile(env_libdevice_path, diagnostic_err, llvm_context));
     if (libdevice_module == nullptr)
-        error("Can't create libdevice module for '%'", AnyDSL_runtime_LIBDEVICE_LIB);
+        error("Can't create libdevice module for '%'", env_libdevice_path);
 
     // override data layout with the one coming from the target machine
     llvm_module->setDataLayout(machine->createDataLayout());
@@ -444,17 +450,18 @@ static std::string emit_nvptx(const std::string& program, const std::string& cpu
 
     return outstr.c_str();
 }
-#else
-static std::string emit_nvptx(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) {
-    error("Recompile runtime with LLVM enabled for nvptx support.");
-}
-#endif
 
 std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     debug("Compiling NVVM to PTX using NVPTX for '%' on CUDA device %", filename, dev);
     std::string cpu = "sm_" + std::to_string(devices_[dev].compute_capability);
     return emit_nvptx(program_string, cpu, filename, llvm::OptimizationLevel::O3);
 }
+#else
+std::string CudaPlatform::compile_nvptx(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+    error("Recompile runtime with LLVM enabled for nvptx support.");
+    return std::string{};
+}
+#endif
 
 std::string CudaPlatform::compile_nvvm(DeviceId dev, const std::string& filename, const std::string& program_string) const {
     nvvmProgram program;
