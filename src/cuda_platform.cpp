@@ -400,7 +400,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& cpu
     auto target = llvm::TargetRegistry::lookupTarget(triple_str, error_str);
     llvm::TargetOptions options;
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
-    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOptLevel::Aggressive);
+    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, "" /* attrs */, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive);
 
     // link libdevice
     const char* env_libdevice_path = std::getenv(ANYDSL_CUDA_LIBDEVICE_PATH_ENV);
@@ -445,7 +445,7 @@ static std::string emit_nvptx(const std::string& program, const std::string& cpu
     llvm::legacy::PassManager module_pass_manager;
     llvm::SmallString<0> outstr;
     llvm::raw_svector_ostream llvm_stream(outstr);
-    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::AssemblyFile, true);
+    machine->addPassesToEmitFile(module_pass_manager, llvm_stream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile, true);
     module_pass_manager.run(*llvm_module);
 
     return outstr.c_str();
