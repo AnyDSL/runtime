@@ -20,7 +20,7 @@
 #[import(cc = "thorin")] fn hls(_dev: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn cgra(_dev: i32, _runtime_ratio: f32, _location: (i32, i32), _vector_size_: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "cgra", interface = "stream")] fn cgra_stream(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
-#[import(cc = "thorin", name = "cgra", interface = "window", size = 1024)] fn cgra_window(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
+#[import(cc = "thorin", name = "cgra", interface = "window", size = 4096)] fn cgra_window(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
 //#[import(cc = "thorin", name = "cgra", interface = "async")] fn cgra_async(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
 //#[import(cc = "thorin", name = "cgra", interface = "free_running")] fn cgra_free_running(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
 //#[import(cc = "thorin", interface = "buffer")] fn cgra_buffer(_dev: i32, _runtime_ratio: f32, _location: (i32,i32), _vector_size_: i32, _body: fn() -> ()) -> ();
