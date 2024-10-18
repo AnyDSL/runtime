@@ -547,16 +547,18 @@ struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
 
 
 // Window
-#[import(cc = "device", name = "window_readincr_v")] fn cgra_window_readincr_v_i32(u32, &mut channel_i32) -> i32;
-#[import(cc = "device", name = "window_readincr_v")] fn cgra_window_readincr_v[T](u32, &mut channel[T]) -> T;
-#[import(cc = "device", name = "window_writeincr")] fn cgra_window_writeincr_i32(&mut channel_i32, i32) -> ();
-#[import(cc = "device", name = "window_writeincr")] fn cgra_window_writeincr[T](&mut channel[T], T) -> ();
+#[import(cc = "device", name = "window_readincr_v_channel")] fn cgra_window_readincr_v_i32(u32, &mut channel_i32) -> i32;
+#[import(cc = "device", name = "window_readincr_v_channel")] fn cgra_window_readincr_v[T](u32, &mut channel[T]) -> T;
+#[import(cc = "device", name = "window_writeincr_channel")] fn cgra_window_writeincr_i32(&mut channel_i32, i32) -> ();
+#[import(cc = "device", name = "window_writeincr_channel")] fn cgra_window_writeincr[T](&mut channel[T], T) -> ();
 
 // Stream
-#[import(cc = "device", name = "readincr_v")] fn cgra_readincr_v_i32(u32, &mut channel_i32) -> i32;
-#[import(cc = "device", name = "readincr_v")] fn cgra_readincr_v[T](u32, &mut channel[T]) -> T;
-#[import(cc = "device", name = "writeincr_v")] fn cgra_writeincr_v_i32(u32, &mut channel_i32, i32) -> ();
-#[import(cc = "device", name = "writeincr_v")] fn cgra_writeincr_v[T](u32, &mut channel[T], T) -> ();
+#[import(cc = "device", name = "readincr_v_channel")] fn cgra_readincr_v_i32(u32, &mut channel_i32) -> i32;
+#[import(cc = "device", name = "readincr_v_channel")] fn cgra_readincr_v[T](u32, &mut channel[T]) -> T;
+#[import(cc = "device", name = "writeincr_v_channel")] fn cgra_writeincr_v_i32(u32, &mut channel_i32, i32) -> ();
+#[import(cc = "device", name = "writeincr_v_channel")] fn cgra_writeincr_v[T](u32, &mut channel[T], T) -> ();
+#[import(cc = "device", name = "writeincr_channel")]   fn cgra_writeincr[T](u32, &mut channel[T], T) -> ();
+
 
 enum Interface {
     stream,
