@@ -1,0 +1,1 @@
+#[import(cc = "device", name = "spirv.builtin")] fn spirv_get_builtin[T](i32) -> T;
