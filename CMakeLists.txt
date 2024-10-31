@@ -26,6 +26,8 @@ find_path(Impala_DIR NAMES impala-config.cmake PATHS ${Impala_DIR} $ENV{Impala_D
 find_path(Anyopt_DIR NAMES anyopt-config.cmake PATHS ${Anyopt_DIR} $ENV{Anyopt_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
 
 set(AnyDSL_runtime_ENABLE_DEBUG_OUTPUT ${DEBUG_OUTPUT})
+set(AnyDSL_runtime_TARGET_NAME runtime CACHE STRING "Name of the cmake target for the AnyDSL runtime")
+mark_as_advanced(AnyDSL_runtime_TARGET_NAME)
 
 add_subdirectory(src)
 

@@ -26,7 +26,6 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Transforms/IPO.h>
-#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #endif
 
@@ -615,7 +614,7 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
     options.AllowFPOpFusion = llvm::FPOpFusion::Fast;
     options.NoTrappingFPMath = true;
     std::string attrs = "-trap-handler";
-    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOpt::Aggressive);
+    llvm::TargetMachine* machine = target->createTargetMachine(triple_str, cpu, attrs, options, llvm::Reloc::PIC_, llvm::CodeModel::Small, llvm::CodeGenOptLevel::Aggressive);
 
     // link ocml.amdgcn and ocml config
     if (cpu.compare(0, 3, "gfx"))

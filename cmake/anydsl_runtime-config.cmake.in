@@ -169,6 +169,7 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 #   [FRONTEND frontend_name]
 #   [ARTIC_FLAGS [args1...]]
 #   [IMPALA_FLAGS [args2...]]
+#   [ANYOPT_FLAGS [args3...]]
 #   [CLANG_FLAGS [args6...]]
 #   [HLS_FLAGS [args7...]]
 #   [PLUGINS [files...]]
@@ -209,7 +210,7 @@ function(anydsl_runtime_wrap outfiles)
         "PARGS"
         "EMIT_C"
         "FRONTEND;INTERFACE;NAME"
-        "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
+        "ARTIC_FLAGS;IMPALA_FLAGS;ANYOPT_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -265,6 +266,15 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_bin ${Impala_BIN})
     endif()
 
+    if(${_frontend} STREQUAL "anyopt")
+        # check for impala in toolchain
+        if(NOT Anyopt_BIN)
+            message(FATAL_ERROR "Could not find anyopt binary, please set Anyopt_DIR or Anyopt_BIN respectively")
+        endif()
+        set(_frontend_flags ${PARGS_ANYOPT_FLAGS} ${_opt_flags} ${_plugin_flags})
+        set(_frontend_bin ${Anyopt_BIN})
+    endif()
+
     # parse extra clang flags
     set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
 
@@ -304,18 +314,22 @@ function(anydsl_runtime_wrap outfiles)
     set(_cfile ${_basepath}.c)
     set(_objfile ${_basepath}.o)
 
-    set(_frontend_platform_files
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_rv.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_cpu.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_hls.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_cuda.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_nvvm.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_amdgpu.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_opencl.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala
-        ${_additional_platform_files})
+    if (_frontend STREQUAL "anyopt")
+        set(_frontend_platform_files "")
+    else()
+        set(_frontend_platform_files
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_rv.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_cpu.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_hls.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_cuda.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_nvvm.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_amdgpu.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_opencl.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
+            ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala
+            ${_additional_platform_files})
+    endif()
 
     if(NOT MSVC)
         list(APPEND _clang_flags -fPIE)
