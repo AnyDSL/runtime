@@ -347,6 +347,9 @@ void LevelZeroPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t 
     //ze_event_handle_t hSignalEvent;
     // we use an immediate commandlist that is supposed to block syncronously
     WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst, src, size, nullptr, 0, nullptr));
+    // unfortunately the immediate command list guarantees only the order of commands
+    // whenever we read back memory, we have to explicitly sync on device level or use signaling events later
+    synchronize(dev_src);
 }
 
 ze_kernel_handle_t LevelZeroPlatform::load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname) {
