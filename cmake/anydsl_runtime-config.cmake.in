@@ -210,7 +210,7 @@ function(anydsl_runtime_wrap outfiles)
         "PARGS"
         "EMIT_C;EMIT_JSON"
         "FRONTEND;INTERFACE;NAME"
-        "ARTIC_FLAGS;IMPALA_FLAGS;ANYOPT_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
+        "ARTIC_FLAGS;ANYOPT_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
@@ -247,7 +247,7 @@ function(anydsl_runtime_wrap outfiles)
     endforeach()
 
     if(NOT PARGS_FRONTEND)
-        set(_frontend "impala")
+        set(_frontend "artic")
     else()
         string(TOLOWER ${PARGS_FRONTEND} _frontend)
     endif()
@@ -260,15 +260,6 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${_opt_flags} ${_plugin_flags})
         set(_frontend_bin ${Artic_BIN})
         list(APPEND _additional_platform_files "${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_math.impala")
-    endif()
-
-    if(${_frontend} STREQUAL "impala")
-        # check for impala in toolchain
-        if(NOT Impala_BIN)
-            message(FATAL_ERROR "Could not find impala binary, please set Impala_DIR or Impala_BIN respectively")
-        endif()
-        set(_frontend_flags ${PARGS_IMPALA_FLAGS} ${OPT_FLAGS} ${_plugin_flags})
-        set(_frontend_bin ${Impala_BIN})
     endif()
 
     if(${_frontend} STREQUAL "anyopt")
