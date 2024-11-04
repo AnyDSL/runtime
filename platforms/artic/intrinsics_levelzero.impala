@@ -1,27 +1,32 @@
 // most device intrinsics are the same as OpenCL and don't need to be duplicated
-fn spv_levelzero_get_global_id() = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](28 /* BuiltInGlobalInvocationId */);
+fn spv_levelzero_get_num_groups()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](24 /* BuiltInNumWorkgroups */);
+fn spv_levelzero_get_local_size()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](25 /* BuiltInWorkgroupSize */);
+fn spv_levelzero_get_group_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](26 /* BuiltInWorkgroupId */);
+fn spv_levelzero_get_local_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](27 /* BuiltInLocalInvocationId */);
+fn spv_levelzero_get_global_id()   = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](28 /* BuiltInGlobalInvocationId */);
+fn spv_levelzero_get_global_size() = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](31 /* BuiltInGlobalSize */);
 
 fn @levelzero_accelerator(dev: i32) = Accelerator {
     exec          = @|body| |grid, block| {
         let work_item = WorkItem {
-            tidx  = @|| opencl_get_local_id(0) as i32,
-            tidy  = @|| opencl_get_local_id(1) as i32,
-            tidz  = @|| opencl_get_local_id(2) as i32,
-            bidx  = @|| opencl_get_group_id(0) as i32,
-            bidy  = @|| opencl_get_group_id(1) as i32,
-            bidz  = @|| opencl_get_group_id(2) as i32,
+            tidx  = @|| spv_levelzero_get_local_id()(0) as i32,
+            tidy  = @|| spv_levelzero_get_local_id()(1) as i32,
+            tidz  = @|| spv_levelzero_get_local_id()(2) as i32,
+            bidx  = @|| spv_levelzero_get_group_id()(0) as i32,
+            bidy  = @|| spv_levelzero_get_group_id()(1) as i32,
+            bidz  = @|| spv_levelzero_get_group_id()(2) as i32,
             gidx  = @|| spv_levelzero_get_global_id()(0) as i32,
             gidy  = @|| spv_levelzero_get_global_id()(1) as i32,
             gidz  = @|| spv_levelzero_get_global_id()(2) as i32,
-            bdimx = @|| opencl_get_local_size(0) as i32,
-            bdimy = @|| opencl_get_local_size(1) as i32,
-            bdimz = @|| opencl_get_local_size(2) as i32,
-            gdimx = @|| opencl_get_global_size(0) as i32,
-            gdimy = @|| opencl_get_global_size(1) as i32,
-            gdimz = @|| opencl_get_global_size(2) as i32,
-            nblkx = @|| opencl_get_num_groups(0) as i32,
-            nblky = @|| opencl_get_num_groups(1) as i32,
-            nblkz = @|| opencl_get_num_groups(2) as i32
+            bdimx = @|| spv_levelzero_get_local_size()(0) as i32,
+            bdimy = @|| spv_levelzero_get_local_size()(1) as i32,
+            bdimz = @|| spv_levelzero_get_local_size()(2) as i32,
+            gdimx = @|| spv_levelzero_get_global_size()(0) as i32,
+            gdimy = @|| spv_levelzero_get_global_size()(1) as i32,
+            gdimz = @|| spv_levelzero_get_global_size()(2) as i32,
+            nblkx = @|| spv_levelzero_get_num_groups()(0) as i32,
+            nblky = @|| spv_levelzero_get_num_groups()(1) as i32,
+            nblkz = @|| spv_levelzero_get_num_groups()(2) as i32
         };
         levelzero(dev, grid, block, || @body(work_item))
     },
