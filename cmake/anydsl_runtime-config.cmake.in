@@ -208,7 +208,7 @@ endforeach()
 function(anydsl_runtime_wrap outfiles)
     cmake_parse_arguments(
         "PARGS"
-        "EMIT_C"
+        "EMIT_C;EMIT_JSON"
         "FRONTEND;INTERFACE;NAME"
         "ARTIC_FLAGS;IMPALA_FLAGS;ANYOPT_FLAGS;CLANG_FLAGS;HLS_FLAGS;PLUGINS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
@@ -217,6 +217,11 @@ function(anydsl_runtime_wrap outfiles)
 
     set(_additional_platform_files)
     set(_plugin_flags)
+    set(_opt_flags)
+
+    if (NOT PARGS_EMIT_JSON)
+        set(_opt_flags ${OPT_FLAGS})
+    endif()
 
     foreach (_plugin_file ${PARGS_PLUGINS})
         get_filename_component(_plugin_basename ${_plugin_file} NAME_WE)
@@ -252,7 +257,7 @@ function(anydsl_runtime_wrap outfiles)
         if(NOT Artic_BIN)
             message(FATAL_ERROR "Could not find artic binary, please set Artic_DIR or Artic_BIN respectively")
         endif()
-        set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${OPT_FLAGS} ${_plugin_flags})
+        set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${_opt_flags} ${_plugin_flags})
         set(_frontend_bin ${Artic_BIN})
         list(APPEND _additional_platform_files "${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_math.impala")
     endif()
@@ -276,7 +281,7 @@ function(anydsl_runtime_wrap outfiles)
     endif()
 
     # parse extra clang flags
-    set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
+    set(_clang_flags ${PARGS_CLANG_FLAGS} ${_opt_flags})
 
     list(FIND _frontend_flags "--log-level" FRONTEND_FLAGS_LOG_LEVEL_IDX)
     if(FRONTEND_FLAGS_LOG_LEVEL_IDX EQUAL -1)
@@ -312,6 +317,7 @@ function(anydsl_runtime_wrap outfiles)
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
     set(_llfile ${_basepath}.ll)
     set(_cfile ${_basepath}.c)
+    set(_jsonfile ${_basepath}.thorin.json)
     set(_objfile ${_basepath}.o)
 
     if (_frontend STREQUAL "anyopt")
@@ -345,6 +351,12 @@ function(anydsl_runtime_wrap outfiles)
         add_custom_command(OUTPUT ${_objfile}
             COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_cfile}
             DEPENDS ${_cfile} VERBATIM COMMAND_EXPAND_LISTS)
+    elseif(PARGS_EMIT_JSON)
+        # generate .json file
+        add_custom_command(OUTPUT ${_jsonfile}
+            COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-json -o ${_basepath}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
     else()
         # generate .ll file and patch it
         add_custom_command(OUTPUT ${_llfile}
@@ -370,8 +382,13 @@ function(anydsl_runtime_wrap outfiles)
         set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
     endif()
 
-    set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
-    set(${outfiles} ${${outfiles}} ${_objfile} ${_frontend_platform_files} PARENT_SCOPE)
+    if(PARGS_EMIT_JSON)
+        set_source_files_properties(${_jsonfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true)
+        set(${outfiles} ${${outfiles}} ${_jsonfile} PARENT_SCOPE)
+    else()
+        set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
+        set(${outfiles} ${${outfiles}} ${_objfile} ${_frontend_platform_files} PARENT_SCOPE)
+    endif()
 endfunction()
 
 include(FindPackageHandleStandardArgs)
