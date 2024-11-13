@@ -366,7 +366,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     auto kernel = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
 
     // set up arguments
-    std::vector<cl_mem> kernel_structs(launch_params.num_args);
+    std::vector<cl_mem> kernel_structs;
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
         if (launch_params.args.types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
@@ -374,8 +374,8 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
             cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, launch_params.args.sizes[i], launch_params.args.data[i], &err);
             CHECK_OPENCL(err, "clCreateBuffer()");
-            kernel_structs[i] = struct_buf;
-            clSetKernelArg(kernel, i, sizeof(cl_mem), &kernel_structs[i]);
+            kernel_structs.push_back(struct_buf);
+            clSetKernelArg(kernel, i, sizeof(cl_mem), &struct_buf);
         } else {
             #ifdef CL_VERSION_2_0
             if (launch_params.args.types[i] == KernelArgType::Ptr && devices_[dev].version_major == 2) {
@@ -421,11 +421,9 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
         dynamic_profile(dev, launch_params.file_name);
 
     // release temporary buffers for struct arguments
-    for (uint32_t i = 0; i < launch_params.num_args; i++) {
-        if (launch_params.args.types[i] == KernelArgType::Struct) {
-            cl_int err = clReleaseMemObject(kernel_structs[i]);
-            CHECK_OPENCL(err, "clReleaseMemObject()");
-        }
+    for (auto tmp : kernel_structs) {
+        cl_int err = clReleaseMemObject(tmp);
+        CHECK_OPENCL(err, "clReleaseMemObject()");
     }
 }
 
