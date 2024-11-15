@@ -79,6 +79,10 @@ fn @alloc_hsa(dev: i32, size: i64) -> Buffer { alloc(runtime_device(3, dev), siz
 fn @alloc_hsa_host(dev: i32, size: i64) -> Buffer { alloc_host(runtime_device(3, dev), size) }
 fn @alloc_hsa_unified(dev: i32, size: i64) -> Buffer { alloc_unified(runtime_device(3, dev), size) }
 fn @synchronize_hsa(dev: i32) -> () { runtime_synchronize(runtime_device(3, dev)) }
+fn @alloc_pal(dev: i32, size: i64) -> Buffer { alloc(runtime_device(4, dev), size) }
+fn @alloc_pal_host(dev: i32, size: i64) -> Buffer { alloc_host(runtime_device(4, dev), size) }
+fn @alloc_pal_unified(dev: i32, size: i64) -> Buffer { alloc_unified(runtime_device(4, dev), size) }
+fn @synchronize_pal(dev: i32) -> () { runtime_synchronize(runtime_device(4, dev)) }
 
 fn @copy(src: Buffer, dst: Buffer) -> () {
     runtime_copy(src.device, src.data, 0i64, dst.device, dst.data, 0i64, src.size)
