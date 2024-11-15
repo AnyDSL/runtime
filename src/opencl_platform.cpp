@@ -514,6 +514,7 @@ cl_program OpenCLPlatform::load_program_binary(DeviceId dev, const std::string& 
 }
 
 cl_program OpenCLPlatform::load_program_il(DeviceId dev, const std::string& filename, const std::string& program_string) const {
+#if CL_VERSION_2_1
     const size_t program_length = program_string.length();
     const char* program_c_str = program_string.c_str();
     cl_int err = CL_SUCCESS;
@@ -522,6 +523,9 @@ cl_program OpenCLPlatform::load_program_il(DeviceId dev, const std::string& file
     debug("Loading IL '%' for OpenCL device %", filename, dev);
 
     return program;
+#else
+    error("OpenCL 2.1 or later is required for SPIR-V support.");
+#endif
 }
 
 cl_program OpenCLPlatform::load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const {
