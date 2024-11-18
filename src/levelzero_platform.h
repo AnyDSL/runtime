@@ -48,6 +48,7 @@ protected:
         ze_context_handle_t ctx = nullptr;
         std::unordered_map<std::string, ze_module_handle_t> modules;
         std::unordered_map<ze_module_handle_t, KernelMap> kernels;
+        double timerResolution;
 
         DeviceData(
             LevelZeroPlatform* parent,

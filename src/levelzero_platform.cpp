@@ -182,6 +182,11 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
                 continue;
 
             DeviceData& dev = devices_.emplace_back(this, hDriver, hDevice, std::string(device_properties.name));
+            if (device_properties.stype == ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES_1_2) {
+                dev.timerResolution = 1000000000.0 / static_cast<double>(device_properties.timerResolution);
+            } else {
+                dev.timerResolution = device_properties.timerResolution;
+            }
             determineDeviceCapabilities(hDevice, dev);
 
             ze_context_desc_t context_desc = {};
@@ -310,7 +315,55 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
     launchArgs.groupCountY = launch_params.grid[1] / launch_params.block[1];
     launchArgs.groupCountZ = launch_params.grid[2] / launch_params.block[2];
 
-    WRAP_LEVEL_ZERO(zeCommandListAppendLaunchKernel(ze_dev.queue, hKernel, &launchArgs, nullptr, 0, nullptr));
+    // TODO: create persistent eventpool per device
+    ze_event_pool_handle_t eventPool;
+    ze_event_pool_desc_t eventPoolDesc;
+    eventPoolDesc.stype = ZE_STRUCTURE_TYPE_EVENT_POOL_DESC;
+    eventPoolDesc.pNext = nullptr;
+    eventPoolDesc.count = 1;
+    eventPoolDesc.flags = ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
+    WRAP_LEVEL_ZERO(zeEventPoolCreate(ze_dev.ctx, &eventPoolDesc, 1, &ze_dev.device, &eventPool));
+
+    ze_event_handle_t kernelTsEvent = nullptr;
+
+    if (runtime_->profiling_enabled()) {
+        ze_event_desc_t eventDesc;
+        eventDesc.stype = ZE_STRUCTURE_TYPE_EVENT_DESC;
+        eventDesc.pNext = nullptr;
+        eventDesc.index = 0;
+        eventDesc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
+        eventDesc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
+        WRAP_LEVEL_ZERO(zeEventCreate(eventPool, &eventDesc, &kernelTsEvent));
+    }
+
+    WRAP_LEVEL_ZERO(zeCommandListAppendLaunchKernel(ze_dev.queue, hKernel, &launchArgs, kernelTsEvent, 0, nullptr));
+
+    if (runtime_->profiling_enabled()) {
+        // TODO: handle kernel time aggregation on device to avoid host sync
+
+        //WRAP_LEVEL_ZERO(zeCommandListAppendBarrier(ze_dev.queue, nullptr, 0u, nullptr));
+        //WRAP_LEVEL_ZERO(zeCommandListAppendWaitOnEvents(ze_dev.queue, 1, &kernelTsEvent));
+        WRAP_LEVEL_ZERO(zeEventHostSynchronize(kernelTsEvent, UINT32_MAX));
+
+        ze_kernel_timestamp_result_t kernelTsResults;
+        WRAP_LEVEL_ZERO(zeEventQueryKernelTimestamp(kernelTsEvent, &kernelTsResults));
+
+        WRAP_LEVEL_ZERO(zeEventDestroy(kernelTsEvent));
+
+        uint64_t kernelDuration = kernelTsResults.context.kernelEnd - kernelTsResults.context.kernelStart;
+        debug("Kernel timestamp statistics:");
+        debug("  Global start: % cycles", kernelTsResults.global.kernelStart);
+        debug("  Kernel start: % cycles", kernelTsResults.context.kernelStart);
+        debug("  Kernel end:   % cycles", kernelTsResults.context.kernelEnd);
+        debug("  Global end:   % cycles", kernelTsResults.global.kernelEnd);
+        debug("  timerResolution clock: % ns", ze_dev.timerResolution);
+        debug("  Kernel duration : % cycles, % ns", kernelDuration, kernelDuration * ze_dev.timerResolution);
+
+        uint64_t kernelTime = kernelDuration * ze_dev.timerResolution / 1000.0;
+        runtime_->kernel_time().fetch_add(kernelTime);
+    }
+
+    WRAP_LEVEL_ZERO(zeEventPoolDestroy(eventPool));
 }
 
 void LevelZeroPlatform::synchronize(DeviceId dev) {
