@@ -173,8 +173,9 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
 
         for (uint32_t d = 0; d < deviceCount; ++d) {
             ze_device_handle_t hDevice = allDevices[d];
-            ze_device_properties_t device_properties{};
+            ze_device_properties_t device_properties;
             device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            device_properties.pNext = nullptr;
             WRAP_LEVEL_ZERO(zeDeviceGetProperties(hDevice, &device_properties));
 
             if (device_properties.type != ZE_DEVICE_TYPE_GPU)
