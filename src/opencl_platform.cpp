@@ -357,6 +357,12 @@ void time_kernel_callback(cl_event event, cl_int, void* data) {
     CHECK_OPENCL(err, "clReleaseEvent()");
 }
 
+static inline bool ends_with(std::string_view str, std::string_view suffix) {
+    if (str.size() < suffix.size())
+        return false;
+    return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params) {
     if (devices_[dev].is_intel_fpga && launch_params.num_args == 0) {
         debug("processing by autorun kernel");
@@ -364,11 +370,12 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
     }
 
     auto kernel = load_kernel(dev, launch_params.file_name, launch_params.kernel_name);
+    bool is_spirv = ends_with(launch_params.file_name, ".spv");
 
     // set up arguments
     std::vector<cl_mem> kernel_structs;
     for (uint32_t i = 0; i < launch_params.num_args; i++) {
-        if (launch_params.args.types[i] == KernelArgType::Struct) {
+        if (!is_spirv && launch_params.args.types[i] == KernelArgType::Struct) {
             // create a buffer for each structure argument
             cl_int err = CL_SUCCESS;
             cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
