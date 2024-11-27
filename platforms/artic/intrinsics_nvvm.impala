@@ -429,6 +429,47 @@ fn @nvvm_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) =
 fn @nvvm_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, 2, "") { (old, _success) => old };
 fn @nvvm_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, 2, "") { (old, _success) => old };
 
+//
+// reductions
+//
+
+//TODO: and, or and xor. Only supported by b32 and b64
+//TODO: Somehow inc and dec return a result.
+
+fn @nvvm_reduce_add_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.add.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.add.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.add.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.add.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_f32(addr: &mut addrspace(1)f32, val: f32) = asm("red.global.add.f32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_f64(addr: &mut addrspace(1)f64, val: f64) = asm("red.global.add.f64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_add_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.add.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.add.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.add.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.add.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_f32(addr: &mut addrspace(3)f32, val: f32) = asm("red.shared.add.f32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_f64(addr: &mut addrspace(3)f64, val: f64) = asm("red.shared.add.f64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_min_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.min.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.min.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.min.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.min.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_min_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.min.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.min.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.min.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.min.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.max.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.max.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.max.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.max.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_max_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.max.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.max.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.max.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.max.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
 // fn @nvvm_warp_sync_all(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 0, predicate) { (_ballot, bit) => bit };
 // fn @nvvm_warp_sync_any(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 1, predicate) { (_ballot, bit) => bit };
 // fn @nvvm_warp_sync_ballot(membermask: u32, predicate: bool) -> u32 = match nvvm_warp_vote_sync(membermask, 3, predicate) { (ballot, _bit) => ballot };

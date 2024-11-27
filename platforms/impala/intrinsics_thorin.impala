@@ -13,7 +13,8 @@ extern "thorin" {
     fn cuda(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
     fn nvvm(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
     fn opencl(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
-    fn amdgpu(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
+    fn amdgpu_hsa(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
+    fn amdgpu_pal(i32, (i32, i32, i32), (i32, i32, i32), fn() -> ()) -> ();
     fn reserve_shared[T](i32) -> &mut[3][T];
 
     fn hls(dev: i32, body: fn() -> ()) -> ();
