@@ -374,11 +374,11 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 //TODO: to support buffers we need to add aie::begin_vector and aie::end_vector. they return a vector iterator type which should be implemented in the backend
 
 //TODO: 32b x 32b multiplications like (i32 * i32) needs acc80 as return type, it is mapped to u64 internally in the backend
-//TODO :We can make a more generic implementation for these APIs using a generic type like (V) for the return type
+//TODO : Depending on the size of the MUL we need i64 or u64 for return and acc params. We can make a more generic implementation for these APIs using a generic type like (V) for the return type. Acc follows the same type as the return type. The new APIs needs the support in the C backend as we change the number of type parameters in the function signature
 // aie::sliding_mul_xy_ops<...>::mul(....)
 #[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul")] fn cgra_sliding_mul_xy_ops_mul[T, U](u32, u32, i32, i32,  T, u32, U, u32) -> u64;
 // aie::sliding_mul_xy_ops<...>::mac(....)
-#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mac")] fn cgra_sliding_mul_xy_ops_mac[T, U](u32, u32, i32, i32, i64, T, u32, U, u32) -> u64;
+#[import(cc = "device", name = "aie::sliding_mul_xy_ops::mac")] fn cgra_sliding_mul_xy_ops_mac[T, U](u32, u32, i32, i32, u64, T, u32, U, u32) -> u64;
 // aie::sliding_mul_xy_ops<...>::mul_common(....)
 #[import(cc = "device", name = "aie::sliding_mul_xy_ops::mul_common")] fn cgra_sliding_mul_xy_ops_mul_common[T, U](u32, u32, i32, i32,  T, u32, U, u32, i64) -> u64;
 // aie::sliding_mul_xy_ops<...>::negmul(....)
@@ -511,6 +511,7 @@ struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
 #[import(cc = "device", name = "clear_rnd")] fn cgra_clear_rnd() -> ();
 
 
+#[import(cc = "device", name = "aie::print")] fn cgra_print[T](T, bool, &[u8]) -> ();
 //#[import(cc = "device")] fn print_pragma(&[u8]) -> ();
 
 // channel scalar types
