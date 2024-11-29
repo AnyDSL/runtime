@@ -257,7 +257,7 @@ if(LLVM_FOUND)
     llvm_config(${AnyDSL_runtime_TARGET_NAME} ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
-set(RUNTIME_LIBRARIES runtime ${RUNTIME_JIT_LIBRARIES})
+set(RUNTIME_LIBRARIES ${AnyDSL_runtime_TARGET_NAME} ${RUNTIME_JIT_LIBRARIES})
 # If the runtime is built as a static library, individual
 # dependencies must be exported via CMake packaging
 if(NOT AnyDSL_runtime_BUILD_SHARED)
