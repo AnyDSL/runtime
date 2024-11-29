@@ -67,6 +67,15 @@ if(OpenCL_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 
+# look for oneAPI Level Zero
+find_package(LevelZero)
+if(LevelZero_FOUND)
+    add_library(runtime_levelzero STATIC levelzero_platform.cpp levelzero_platform.h)
+    target_link_libraries(runtime_levelzero PRIVATE runtime_base LevelZero::LevelZero)
+    list(APPEND RUNTIME_PLATFORMS runtime_levelzero)
+endif()
+set(AnyDSL_runtime_HAS_LEVELZERO_SUPPORT ${LevelZero_FOUND} CACHE INTERNAL "enables Level Zero support")
+
 # look for HSA
 find_package(hsa-runtime64 PATHS /opt/rocm)
 if(hsa-runtime64_FOUND)
@@ -124,7 +133,7 @@ if(LLVM_FOUND)
     include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
     set(AnyDSL_runtime_LLVM_COMPONENTS irreader support passes ${LLVM_TARGETS_TO_BUILD})
     set(AnyDSL_runtime_JIT_LLVM_COMPONENTS ${AnyDSL_runtime_LLVM_COMPONENTS} mcjit)
-    if(AnyDSL_runtime_HAS_HSA_SUPPORT AND RUNTIME_JIT)
+    if(AnyDSL_runtime_HAS_HSA_SUPPORT)
         find_package(LLD REQUIRED)
         target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_hsa PRIVATE lldELF lldCommon)
         llvm_config(${AnyDSL_runtime_TARGET_NAME}_hsa ${AnyDSL_LLVM_LINK_SHARED} lto option ${LLVM_TARGETS_TO_BUILD})
@@ -149,6 +158,7 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_amdgpu.impala
             ../platforms/${frontend}/intrinsics_opencl.impala
             ../platforms/${frontend}/intrinsics_spirv.impala
+            ../platforms/${frontend}/intrinsics_levelzero.impala
             ../platforms/${frontend}/intrinsics_thorin.impala
             ../platforms/${frontend}/intrinsics.impala
             ../platforms/${frontend}/runtime.impala)
@@ -247,9 +257,10 @@ if(LLVM_FOUND)
     llvm_config(${AnyDSL_runtime_TARGET_NAME} ${AnyDSL_LLVM_LINK_SHARED} ${AnyDSL_runtime_LLVM_COMPONENTS})
 endif()
 
-set(RUNTIME_LIBRARIES ${AnyDSL_runtime_TARGET_NAME} ${RUNTIME_JIT_LIBRARIES} PARENT_SCOPE)
+set(RUNTIME_LIBRARIES ${AnyDSL_runtime_TARGET_NAME} ${RUNTIME_JIT_LIBRARIES})
 # If the runtime is built as a static library, individual
 # dependencies must be exported via CMake packaging
 if(NOT AnyDSL_runtime_BUILD_SHARED)
-	set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} ${AnyDSL_runtime_TARGET_NAME}_base ${RUNTIME_PLATFORMS} PARENT_SCOPE)
+    set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} ${AnyDSL_runtime_TARGET_NAME}_base ${RUNTIME_PLATFORMS})
 endif()
+set(RUNTIME_LIBRARIES ${RUNTIME_LIBRARIES} PARENT_SCOPE)

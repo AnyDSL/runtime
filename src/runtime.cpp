@@ -20,6 +20,9 @@ void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyP
 #ifndef AnyDSL_runtime_HAS_PAL_SUPPORT
 void register_pal_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("PAL"); }
 #endif
+#ifndef AnyDSL_runtime_HAS_LEVELZERO_SUPPORT
+void register_levelzero_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("Level Zero"); }
+#endif
 
 Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)

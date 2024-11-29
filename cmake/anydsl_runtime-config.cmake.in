@@ -274,6 +274,7 @@ function(anydsl_runtime_wrap outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_amdgpu.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_opencl.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_spirv.impala
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_levelzero.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala
         ${_additional_platform_files})
