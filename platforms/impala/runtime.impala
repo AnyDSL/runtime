@@ -31,6 +31,13 @@ extern "C" {
     fn "anydsl_print_char"   print_char(u8) -> ();
     fn "anydsl_print_string" print_string(&[u8]) -> ();
     fn "anydsl_print_flush"  print_flush() -> ();
+
+    fn "anydsl_create_event"   runtime_create_event(_device: i32) -> u64;
+    fn "anydsl_destroy_event"  runtime_destroy_event(_device: i32, _event: u64) -> ();
+    fn "anydsl_record_event"   runtime_record_event(_device: i32, _event: u64) -> ();
+    fn "anydsl_check_event"    runtime_check_event(_device: i32, _event: u64) -> bool;
+    fn "anydsl_query_us_event" runtime_query_us_event(_device: i32, _event_start: u64, _event_end: u64) -> u64;
+    fn "anydsl_sync_event"     runtime_sync_event(_device: i32, _event: u64) -> ();
 }
 
 struct Buffer {
