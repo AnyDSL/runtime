@@ -51,15 +51,17 @@ protected:
     }
 
     void copy(DeviceId, const void* src, int64_t offset_src,
-              DeviceId, void* dst, int64_t offset_dst, int64_t size) override {
+              DeviceId, void* dst, int64_t offset_dst, int64_t size, bool) override {
         copy(src, offset_src, dst, offset_dst, size);
     }
+
     void copy_from_host(const void* src, int64_t offset_src, DeviceId,
-                        void* dst, int64_t offset_dst, int64_t size) override {
+                        void* dst, int64_t offset_dst, int64_t size, bool) override {
         copy(src, offset_src, dst, offset_dst, size);
     }
+
     void copy_to_host(DeviceId, const void* src, int64_t offset_src,
-                      void* dst, int64_t offset_dst, int64_t size) override {
+                      void* dst, int64_t offset_dst, int64_t size, bool) override {
         copy(src, offset_src, dst, offset_dst, size);
     }
 
