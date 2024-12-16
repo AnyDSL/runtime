@@ -213,12 +213,28 @@ void CudaPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_params
         CHECK_CUDA(cuEventRecord(start, 0), "cuEventRecord()");
     }
 
+    std::vector<void*> launch_args(launch_params.num_args);
+    // TODO: the size is a conservative guess for kernels with no arguments except lsm
+    std::vector<int32_t> lsm_offset(launch_params.num_args);
+    int32_t current_lsm_off = 0;
+    int32_t current_lsm_idx = 0;
+    for(uint32_t argIdx = 0; argIdx < launch_params.num_args; ++argIdx) {
+        if (launch_params.args.types[argIdx] == KernelArgType::LSM) {
+            lsm_offset[current_lsm_idx] = current_lsm_off;
+            launch_args[argIdx] = &lsm_offset[current_lsm_idx];
+            current_lsm_off += launch_params.args.alloc_sizes[argIdx];
+            current_lsm_idx += 1;
+        } else {
+            launch_args[argIdx] = launch_params.args.data[argIdx];
+        }
+    }
+
     CUresult err = cuLaunchKernel(func,
         launch_params.grid[0] / launch_params.block[0],
         launch_params.grid[1] / launch_params.block[1],
         launch_params.grid[2] / launch_params.block[2],
         launch_params.block[0], launch_params.block[1], launch_params.block[2],
-        0, nullptr, launch_params.args.data, nullptr);
+        0, nullptr, launch_args.data(), nullptr);
     CHECK_CUDA(err, "cuLaunchKernel()");
 
     if (runtime_->profiling_enabled()) {

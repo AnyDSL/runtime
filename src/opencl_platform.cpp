@@ -383,6 +383,9 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
             CHECK_OPENCL(err, "clCreateBuffer()");
             kernel_structs.push_back(struct_buf);
             clSetKernelArg(kernel, i, sizeof(cl_mem), &struct_buf);
+        } else if (launch_params.args.types[i] == KernelArgType::LSM) {
+            cl_int err = clSetKernelArg(kernel, i, launch_params.args.sizes[i], nullptr);
+            CHECK_OPENCL(err, "clSetKernelArg() for KernelArgType::LSM");
         } else {
             #ifdef CL_VERSION_2_0
             if (launch_params.args.types[i] == KernelArgType::Ptr && devices_[dev].version_major == 2) {

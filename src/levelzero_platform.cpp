@@ -305,7 +305,9 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
 
     // set up arguments
     for (uint32_t argIdx = 0; argIdx < launch_params.num_args; ++argIdx) {
-        WRAP_LEVEL_ZERO(zeKernelSetArgumentValue(hKernel, argIdx, launch_params.args.sizes[argIdx], launch_params.args.data[argIdx]));
+        WRAP_LEVEL_ZERO(zeKernelSetArgumentValue(hKernel, argIdx,
+            launch_params.args.sizes[argIdx],
+            launch_params.args.types[argIdx] == KernelArgType::LSM ? nullptr : launch_params.args.data[argIdx]));
     }
 
     WRAP_LEVEL_ZERO(zeKernelSetGroupSize(hKernel, launch_params.block[0] , launch_params.block[1] , launch_params.block[2]));

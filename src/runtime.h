@@ -19,7 +19,7 @@ enum class ProfileLevel : uint8_t { None = 0, Full, Fpga_dynamic };
 
 class Platform;
 
-enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
+enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct, LSM };
 
 struct ParamsArgs {
     void** data;
