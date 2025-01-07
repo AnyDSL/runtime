@@ -83,10 +83,10 @@ struct JIT {
             llvm_module->print(llvm_stream, nullptr);
             runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
-            if (backends.cgs[thorin::DeviceBackends::HLS])
-                error("JIT compilation of hls not supported!");
             for (auto& cg : backends.cgs) {
                 if (cg) {
+                    if (std::string(cg->file_ext()) == ".hls")
+                        error("JIT compilation of hls not supported!");
                     std::ostringstream stream;
                     cg->emit_stream(stream);
                     runtime->store_to_cache(cg->file_ext() + program_str, stream.str(), cg->file_ext());
