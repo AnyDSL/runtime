@@ -157,8 +157,6 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_nvvm.impala
             ../platforms/${frontend}/intrinsics_amdgpu.impala
             ../platforms/${frontend}/intrinsics_opencl.impala
-            ../platforms/${frontend}/intrinsics_spirv.impala
-            ../platforms/${frontend}/intrinsics_levelzero.impala
             ../platforms/${frontend}/intrinsics_thorin.impala
             ../platforms/${frontend}/intrinsics.impala
             ../platforms/${frontend}/runtime.impala)
@@ -167,7 +165,9 @@ if(RUNTIME_JIT)
         if("${frontend}" STREQUAL "artic")
             set(RUNTIME_FRONTEND_SRCS
                 ${RUNTIME_FRONTEND_SRCS}
-                ../platforms/${frontend}/intrinsics_math.impala)
+                ../platforms/${frontend}/intrinsics_math.impala
+                ../platforms/${frontend}/intrinsics_spirv.impala
+                ../platforms/${frontend}/intrinsics_levelzero.impala)
         endif()
 
         set(RUNTIME_JIT_SRC jit.cpp)
