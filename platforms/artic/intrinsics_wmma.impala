@@ -1,0 +1,187 @@
+/*
+ * D = A * B + C
+ *
+ * Where:
+ *
+ * A:    (  -> K )
+ *       (       )
+ *       (| M    )
+ *       (V      )
+ *
+ * B:    (  -> N )
+ *       (       )
+ *       (| K    )
+ *       (V      )
+ *
+ * C, D: (  -> N )
+ *       (       )
+ *       (| M    )
+ *       (V      )
+ */
+
+
+//See llvm-project/llvm/test/CodeGen/NVPTX $ python wmma-ptx71-sm80.py for a somewhat decent list of operations.
+//Matrix load operations for each of the three inputs. Separate operations need to be used as the data layout on device changes with the operator in question.
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.a.row.f16.p0")]
+fn nvvm_wmma_load_a_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.b.row.f16.p0")]
+fn nvvm_wmma_load_b_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.c.row.f16.p0")]
+fn nvvm_wmma_load_c_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.a.col.f16.p0")]
+fn nvvm_wmma_load_a_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.b.col.f16.p0")]
+fn nvvm_wmma_load_b_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.c.col.f16.p0")]
+fn nvvm_wmma_load_c_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.a.row.f16.p0")]
+fn nvvm_wmma_m8_load_a_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.b.row.f16.p0")]
+fn nvvm_wmma_m8_load_b_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.c.row.f16.p0")]
+fn nvvm_wmma_m8_load_c_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.a.col.f16.p0")]
+fn nvvm_wmma_m8_load_a_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.b.col.f16.p0")]
+fn nvvm_wmma_m8_load_b_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.c.col.f16.p0")]
+fn nvvm_wmma_m8_load_c_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.a.row.f16.p0")]
+fn nvvm_wmma_m32_load_a_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.b.row.f16.p0")]
+fn nvvm_wmma_m32_load_b_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.c.row.f16.p0")]
+fn nvvm_wmma_m32_load_c_row (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.a.col.f16.p0")]
+fn nvvm_wmma_m32_load_a_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.b.col.f16.p0")]
+fn nvvm_wmma_m32_load_b_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.c.col.f16.p0")]
+fn nvvm_wmma_m32_load_c_col (_addr : &i8) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+
+//Strided variants. The default stride with these operations is 16, larger strides can be specified with these operations.
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.a.row.stride.f16.p0")]
+fn nvvm_wmma_load_a_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.b.row.stride.f16.p0")]
+fn nvvm_wmma_load_b_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.c.row.stride.f16.p0")]
+fn nvvm_wmma_load_c_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.a.col.stride.f16.p0")]
+fn nvvm_wmma_load_a_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.b.col.stride.f16.p0")]
+fn nvvm_wmma_load_b_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.load.c.col.stride.f16.p0")]
+fn nvvm_wmma_load_c_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.a.row.stride.f16.p0")]
+fn nvvm_wmma_m8_load_a_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.b.row.stride.f16.p0")]
+fn nvvm_wmma_m8_load_b_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.c.row.stride.f16.p0")]
+fn nvvm_wmma_m8_load_c_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.a.col.stride.f16.p0")]
+fn nvvm_wmma_m8_load_a_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.b.col.stride.f16.p0")]
+fn nvvm_wmma_m8_load_b_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.load.c.col.stride.f16.p0")]
+fn nvvm_wmma_m8_load_c_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.a.row.stride.f16.p0")]
+fn nvvm_wmma_m32_load_a_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.b.row.stride.f16.p0")]
+fn nvvm_wmma_m32_load_b_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.c.row.stride.f16.p0")]
+fn nvvm_wmma_m32_load_c_row_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.a.col.stride.f16.p0")]
+fn nvvm_wmma_m32_load_a_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.b.col.stride.f16.p0")]
+fn nvvm_wmma_m32_load_b_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.load.c.col.stride.f16.p0")]
+fn nvvm_wmma_m32_load_c_col_stride (_addr : &i8, _stride : i32) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+
+//The actual WMMA operation. No strides or anything; this operates on registers.
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.mma.row.row.f16.f16")]
+fn nvvm_wmma_row_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.mma.col.row.f16.f16")]
+fn nvvm_wmma_col_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.mma.row.col.f16.f16")]
+fn nvvm_wmma_row_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.mma.col.col.f16.f16")]
+fn nvvm_wmma_col_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.mma.row.row.f16.f16")]
+fn nvvm_wmma_m8_row_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.mma.col.row.f16.f16")]
+fn nvvm_wmma_m8_col_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.mma.row.col.f16.f16")]
+fn nvvm_wmma_m8_row_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.mma.col.col.f16.f16")]
+fn nvvm_wmma_m8_col_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.mma.row.row.f16.f16")]
+fn nvvm_wmma_m32_row_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.mma.col.row.f16.f16")]
+fn nvvm_wmma_m32_col_row (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.mma.row.col.f16.f16")]
+fn nvvm_wmma_m32_row_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.mma.col.col.f16.f16")]
+fn nvvm_wmma_m32_col_col (_a0 : simd[f16 * 2], _a1 : simd[f16 * 2], _a2 : simd[f16 * 2], _a3 : simd[f16 * 2], _a4 : simd[f16 * 2], _a5 : simd[f16 * 2], _a6 : simd[f16 * 2], _a7 : simd[f16 * 2], _b0 : simd[f16 * 2], _b1 : simd[f16 * 2], _b2 : simd[f16 * 2], _b3 : simd[f16 * 2], _b4 : simd[f16 * 2], _b5 : simd[f16 * 2], _b6 : simd[f16 * 2], _b7 : simd[f16 * 2], _c0 : simd[f16 * 2], _c1 : simd[f16 * 2], _c2 : simd[f16 * 2], _c3 : simd[f16 * 2]) -> (simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]);
+
+
+//Store the result matrix back to memory.
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.store.d.row.f16.p0")]
+fn nvvm_wmma_store_d_row (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.store.d.col.f16.p0")]
+fn nvvm_wmma_store_d_col (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.store.d.row.f16.p0")]
+fn nvvm_wmma_m8_store_d_row (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.store.d.col.f16.p0")]
+fn nvvm_wmma_m8_store_d_col (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.store.d.row.f16.p0")]
+fn nvvm_wmma_m32_store_d_row (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.store.d.col.f16.p0")]
+fn nvvm_wmma_m32_store_d_col (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2]) -> ();
+
+
+//Again, a strided variant of that operation.
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.store.d.row.stride.f16.p0")]
+fn nvvm_wmma_store_d_row_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m16n16k16.store.d.col.stride.f16.p0")]
+fn nvvm_wmma_store_d_col_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.store.d.row.stride.f16.p0")]
+fn nvvm_wmma_m8_store_d_row_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m8n32k16.store.d.col.stride.f16.p0")]
+fn nvvm_wmma_m8_store_d_col_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.store.d.row.stride.f16.p0")]
+fn nvvm_wmma_m32_store_d_row_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
+
+#[import(cc = "device", name = "llvm.nvvm.wmma.m32n8k16.store.d.col.stride.f16.p0")]
+fn nvvm_wmma_m32_store_d_col_stride (_addr : &mut i8, simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], simd[f16 * 2], _stride : i32) -> ();
