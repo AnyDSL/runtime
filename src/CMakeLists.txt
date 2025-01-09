@@ -155,6 +155,7 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_hls.impala
             ../platforms/${frontend}/intrinsics_cuda.impala
             ../platforms/${frontend}/intrinsics_nvvm.impala
+            ../platforms/${frontend}/intrinsics_wmma.impala
             ../platforms/${frontend}/intrinsics_amdgpu.impala
             ../platforms/${frontend}/intrinsics_opencl.impala
             ../platforms/${frontend}/intrinsics_thorin.impala
