@@ -442,7 +442,9 @@ void HSAPlatform::synchronize(DeviceId dev) {
         error("HSA signal completion failed: %", completion);
 }
 
-void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+void HSAPlatform::copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async) {
+    unused(hint_async);
+
     hsa_status_t status = hsa_memory_copy((char*)dst + offset_dst, (char*)src + offset_src, size);
     CHECK_HSA(status, "hsa_memory_copy()");
 }

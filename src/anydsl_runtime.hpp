@@ -125,6 +125,27 @@ void copy(const Array<T>& a, int64_t offset_a, Array<T>& b, int64_t offset_b, in
                 size * sizeof(T));
 }
 
+template <typename T>
+void copy_async(const Array<T>& a, Array<T>& b) {
+    anydsl_copy_async(a.device(), (const void*)a.data(), 0,
+                b.device(), (void*)b.data(), 0,
+                a.size() * sizeof(T));
+}
+
+template <typename T>
+void copy_async(const Array<T>& a, Array<T>& b, int64_t size) {
+    anydsl_copy_async(a.device(), (const void*)a.data(), 0,
+                b.device(), (void*)b.data(), 0,
+                size * sizeof(T));
+}
+
+template <typename T>
+void copy_async(const Array<T>& a, int64_t offset_a, Array<T>& b, int64_t offset_b, int64_t size) {
+    anydsl_copy_async(a.device(), (const void*)a.data(), offset_a * sizeof(T),
+                b.device(), (void*)b.data(), offset_b * sizeof(T),
+                size * sizeof(T));
+}
+
 } // namespace anydsl
 
 #endif
