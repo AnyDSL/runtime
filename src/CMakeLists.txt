@@ -38,7 +38,14 @@ if(CUDAToolkit_FOUND)
         PATH_SUFFIXES lib lib64 lib/x64)
     add_library(${AnyDSL_runtime_TARGET_NAME}_cuda STATIC cuda_platform.cpp cuda_platform.h)
     target_include_directories(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE "${CUDAToolkit_LIBRARY_ROOT}/nvvm/include")
-    target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc CUDA::nvptxcompiler_static ${CUDAToolkit_NVVM_LIBRARY})
+
+    if (TARGET CUDA::nvptxcompiler_static)
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc CUDA::nvptxcompiler_static ${CUDAToolkit_NVVM_LIBRARY})
+        set(AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER ON)
+    else()
+        target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
+    endif()
+
     list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_cuda)
     # TODO: would be nice to reference directly the file
     find_file(AnyDSL_runtime_LIBDEVICE_LIB

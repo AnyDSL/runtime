@@ -44,6 +44,8 @@
 #define AnyDSL_runtime_LIBDEVICE_LIB        "@AnyDSL_runtime_LIBDEVICE_LIB@"
 #define AnyDSL_runtime_NVCC_INC             "@AnyDSL_runtime_NVCC_INC@"
 
+#cmakedefine AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER
+
 // HSA support
 
 #define AnyDSL_runtime_HSA_BITCODE_PATH     "@AnyDSL_runtime_HSA_BITCODE_PATH@/"

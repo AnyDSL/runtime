@@ -594,9 +594,10 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
 }
 
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
-    const unsigned int opt_level = 4;
+#ifdef AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER
+    const unsigned int opt_level = 3;
 
-    debug("Creating module from PTX '%' on CUDA device %", filename, dev);
+    debug("Creating module from PTX '%' on CUDA device % using nvPTXCompiler", filename, dev);
 
     nvPTXCompilerHandle handle;
     nvPTXCompileResult err = nvPTXCompilerCreate(&handle, ptx_string.length(), const_cast<char*>(ptx_string.c_str()));
@@ -628,13 +629,29 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 
     if (dump_binaries) {
         auto cubin_name = filename + ".sm_" + std::to_string(devices_[dev].compute_capability) + ".cubin";
-        runtime_->store_file(cubin_name, static_cast<const std::byte*>((void*)(&binary[0])), binary_size);
+        runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(binary.c_str()), binary_size);
     }
 
     CUmodule mod;
     CHECK_CUDA(cuModuleLoadData(&mod, &binary[0]), "cuModuleLoadData()");
 
     CHECK_NVPTXCOMPILER(nvPTXCompilerDestroy(&handle), "nvPTXCompilerDestroy()");
+#else
+    const unsigned int opt_level = 4;
+    const unsigned int error_log_size = 10240;
+    const unsigned int num_options = 4;
+    char error_log_buffer[error_log_size] = { 0 };
+
+    CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
+    void* option_values[]  = { (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
+
+    debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
+    CUmodule mod;
+    CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
+    if (err != CUDA_SUCCESS)
+        info("Compilation error: %", error_log_buffer);
+    CHECK_CUDA(err, "cuModuleLoadDataEx()");
+#endif
 
     return mod;
 }
