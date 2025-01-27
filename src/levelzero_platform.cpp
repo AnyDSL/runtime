@@ -364,13 +364,16 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
         WRAP_LEVEL_ZERO(zeEventDestroy(kernelTsEvent));
 
         uint64_t kernelDuration = kernelTsResults.context.kernelEnd - kernelTsResults.context.kernelStart;
-        debug("Kernel timestamp statistics:");
+        debug("Kernel timestamp statistics on device %:", dev);
+        debug("  Launch configuration: (%, %, %) / (%, %, %)",
+            launch_params.block[0], launch_params.block[1], launch_params.block[2],
+            launch_params.grid[0], launch_params.grid[1], launch_params.grid[2]);
         debug("  Global start: % cycles", kernelTsResults.global.kernelStart);
         debug("  Kernel start: % cycles", kernelTsResults.context.kernelStart);
         debug("  Kernel end:   % cycles", kernelTsResults.context.kernelEnd);
         debug("  Global end:   % cycles", kernelTsResults.global.kernelEnd);
         debug("  timerResolution clock: % ns", ze_dev.timerResolution);
-        debug("  Kernel duration : % cycles, % ns", kernelDuration, kernelDuration * ze_dev.timerResolution);
+        debug("  Kernel duration : % cycles, % ns", kernelDuration, uint64_t(kernelDuration * ze_dev.timerResolution));
 
         uint64_t kernelTime = kernelDuration * ze_dev.timerResolution / 1000.0;
         runtime_->kernel_time().fetch_add(kernelTime);
