@@ -390,33 +390,39 @@ void LevelZeroPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_s
     assert(dev_src == dev_dst);
     unused(dev_dst);
 
-    assert(offset_src == 0 && offset_dst == 0);
+    //assert(offset_src == 0 && offset_dst == 0);
 
     DeviceData& dev = devices_[dev_src];
+    const uint8_t* src_ptr = static_cast<const uint8_t*>(src) + offset_src;
+    uint8_t*       dst_ptr = static_cast<uint8_t*>(dst) + offset_dst;
 
     //ze_event_handle_t hSignalEvent;
     // we use an immediate commandlist that is supposed to block syncronously
-    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst, src, size, nullptr, 0, nullptr));
+    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst_ptr, src_ptr, size, nullptr, 0, nullptr));
 }
 
 void LevelZeroPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
-    assert(offset_src == 0 && offset_dst == 0);
+    //assert(offset_src == 0 && offset_dst == 0);
 
     DeviceData& dev = devices_[dev_dst];
+    const uint8_t* src_ptr = static_cast<const uint8_t*>(src) + offset_src;
+    uint8_t*       dst_ptr = static_cast<uint8_t*>(dst)       + offset_dst;
 
     //ze_event_handle_t hSignalEvent;
     // we use an immediate commandlist that is supposed to block syncronously
-    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst, src, size, nullptr, 0, nullptr));
+    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst_ptr, src_ptr, size, nullptr, 0, nullptr));
 }
 
 void LevelZeroPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
-    assert(offset_src == 0 && offset_dst == 0);
+    //assert(offset_src == 0 && offset_dst == 0);
 
     DeviceData& dev = devices_[dev_src];
+    const uint8_t* src_ptr = static_cast<const uint8_t*>(src) + offset_src;
+    uint8_t*       dst_ptr = static_cast<uint8_t*>(dst)       + offset_dst;
 
     //ze_event_handle_t hSignalEvent;
     // we use an immediate commandlist that is supposed to block syncronously
-    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst, src, size, nullptr, 0, nullptr));
+    WRAP_LEVEL_ZERO(zeCommandListAppendMemoryCopy(dev.queue, dst_ptr, src_ptr, size, nullptr, 0, nullptr));
     // unfortunately the immediate command list guarantees only the order of commands
     // whenever we read back memory, we have to explicitly sync on device level or use signaling events later
     synchronize(dev_src);
