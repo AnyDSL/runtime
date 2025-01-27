@@ -280,7 +280,7 @@ void* LevelZeroPlatform::alloc_unified(DeviceId dev, int64_t size) {
     const size_t alignment = 64;
     void* mem = nullptr;
 
-    WRAP_LEVEL_ZERO(zeMemAllocShared(devices_[dev].ctx, &device_desc, &host_desc, size, alignment, devices_[dev].device, &mem));
+    WRAP_LEVEL_ZERO(zeMemAllocShared(devices_[dev].ctx, &device_desc, &host_desc, size, alignment, nullptr, &mem));
 
     if (mem == nullptr)
         error("zeMemAllocShared() failed for Level Zero device %", dev);
