@@ -171,6 +171,8 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
         debug("oneAPI Level Zero Driver Version %", driver_properties.driverVersion);
         debug("oneAPI Level Zero API Version %.%", ZE_MAJOR_VERSION(apiVersion), ZE_MINOR_VERSION(apiVersion));
 
+        std::vector<ze_device_handle_t> utilizedDevices;
+
         for (uint32_t d = 0; d < deviceCount; ++d) {
             ze_device_handle_t hDevice = allDevices[d];
             ze_device_properties_t device_properties;
@@ -189,10 +191,18 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
             }
             determineDeviceCapabilities(hDevice, dev);
 
-            ze_context_desc_t context_desc = {};
-            context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-            WRAP_LEVEL_ZERO(zeContextCreateEx(dev.driver, &context_desc, 1, &dev.device, &dev.ctx));
+            utilizedDevices.push_back(hDevice);
+        }
 
+        ze_context_desc_t context_desc = {};
+        context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+        ze_context_handle_t ctx = nullptr;
+        WRAP_LEVEL_ZERO(zeContextCreateEx(hDriver, &context_desc, utilizedDevices.size(), utilizedDevices.data(), &ctx));
+
+        contexts_.push_back(ctx);
+
+        for (DeviceData& dev : devices_) {
+            dev.ctx = ctx;
             // Create an immediate command list for direct submission
             ze_command_queue_desc_t altdesc = {};
             altdesc.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
@@ -213,7 +223,10 @@ LevelZeroPlatform::~LevelZeroPlatform() {
             WRAP_LEVEL_ZERO(zeModuleDestroy(it.second));
 
         WRAP_LEVEL_ZERO(zeCommandListDestroy(dev.queue));
-        WRAP_LEVEL_ZERO(zeContextDestroy(dev.ctx));
+    }
+
+    for (auto& ctx : contexts_) {
+        WRAP_LEVEL_ZERO(zeContextDestroy(ctx));
     }
 }
 

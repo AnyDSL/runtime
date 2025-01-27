@@ -65,6 +65,7 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+    std::vector<ze_context_handle_t> contexts_;
 
     ze_kernel_handle_t load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
     friend void determineDeviceCapabilities(ze_device_handle_t hDevice, LevelZeroPlatform::DeviceData& device);
