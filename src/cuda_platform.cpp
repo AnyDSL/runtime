@@ -616,10 +616,17 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     int num_options = std::size(options);
 
     err = nvPTXCompilerCompile(handle, num_options, options);
-    if (err != NVPTXCOMPILE_SUCCESS) {
-        size_t log_size;
-        nvPTXCompilerGetErrorLogSize(handle, &log_size);
-        std::string error_log(log_size, '\0');
+    size_t info_log_size;
+    size_t error_log_size;
+    nvPTXCompilerGetInfoLogSize(handle, &info_log_size);
+    nvPTXCompilerGetErrorLogSize(handle, &error_log_size);
+    if (info_log_size) {
+        std::string info_log(info_log_size, '\0');
+        nvPTXCompilerGetInfoLog(handle, &info_log[0]);
+        info("Compilation info: %", info_log);
+    }
+    if (error_log_size) {
+        std::string error_log(error_log_size, '\0');
         nvPTXCompilerGetErrorLog(handle, &error_log[0]);
         info("Compilation error: %", error_log);
     }
@@ -643,16 +650,21 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 #else
     const unsigned int opt_level = 4;
     const unsigned int error_log_size = 10240;
+    const unsigned int info_log_size = 10240;
     const unsigned int num_options = 4;
     char error_log_buffer[error_log_size] = { 0 };
+    char info_log_buffer[info_log_size] = { 0 };
 
-    CUjit_option options[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
-    void* option_values[]  = { (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
+
+    CUjit_option options[] = { CU_JIT_INFO_LOG_BUFFER, CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES, CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
+    void* option_values[]  = { (void*)info_log_buffer, (void*)info_log_size, (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
 
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
     CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
-    if (err != CUDA_SUCCESS)
+    if (strnlen(info_log_buffer, info_log_size))
+        info("Compilation info: %", info_log_buffer);
+    if (strnlen(error_log_buffer, error_log_size))
         info("Compilation error: %", error_log_buffer);
     CHECK_CUDA(err, "cuModuleLoadDataEx()");
 #endif
