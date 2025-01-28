@@ -15,7 +15,7 @@
 #include <cuda.h>
 #include <nvrtc.h>
 #include <nvvm.h>
-#ifdef AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER
+#if CUDA_VERSION > 11010
 #include <nvPTXCompiler.h>
 #endif
 
