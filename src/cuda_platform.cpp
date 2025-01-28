@@ -34,7 +34,9 @@ using namespace std::literals;
 #define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
 #define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
 #define CHECK_CUDA(err, name)  check_cuda_errors  (err, name, __FILE__, __LINE__)
+#ifdef AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER
 #define CHECK_NVPTXCOMPILER(err, name) check_nvptxcompiler_errors (err, name, __FILE__, __LINE__)
+#endif
 
 #define ANYDSL_CUDA_LIBDEVICE_PATH_ENV "ANYDSL_CUDA_LIBDEVICE_PATH"
 
@@ -59,6 +61,7 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
 
+#ifdef AnyDSL_runtime_CUDA_ENABLE_NVPTXCOMPILER
 static const char* _nvptxcompilerGetErrorString(nvPTXCompileResult err) {
     switch (err) {
         case NVPTXCOMPILE_SUCCESS: return "NVPTXCOMPILE_SUCCESS";
@@ -78,6 +81,7 @@ inline void check_nvptxcompiler_errors(nvPTXCompileResult err, const char* name,
     if (NVPTXCOMPILE_SUCCESS != err)
         error("NVPTXCOMPILER API function % (%) [file %, line %]: %", name, err, file, line, _nvptxcompilerGetErrorString(err));
 }
+#endif
 
 CudaPlatform::CudaPlatform(Runtime* runtime)
     : Platform(runtime), dump_binaries(std::getenv("ANYDSL_DUMP_CUDA_BINARIES") != nullptr)
