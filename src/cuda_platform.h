@@ -15,6 +15,9 @@
 #include <cuda.h>
 #include <nvrtc.h>
 #include <nvvm.h>
+#if CUDA_VERSION > 11010
+#include <nvPTXCompiler.h>
+#endif
 
 #if CUDA_VERSION < 10000
     #error "CUDA 10.0 or higher required!"
