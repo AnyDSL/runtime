@@ -155,7 +155,6 @@ if(RUNTIME_JIT)
             ../platforms/${frontend}/intrinsics_hls.impala
             ../platforms/${frontend}/intrinsics_cuda.impala
             ../platforms/${frontend}/intrinsics_nvvm.impala
-            ../platforms/${frontend}/intrinsics_wmma.impala
             ../platforms/${frontend}/intrinsics_amdgpu.impala
             ../platforms/${frontend}/intrinsics_opencl.impala
             ../platforms/${frontend}/intrinsics_thorin.impala
@@ -167,6 +166,7 @@ if(RUNTIME_JIT)
             set(RUNTIME_FRONTEND_SRCS
                 ${RUNTIME_FRONTEND_SRCS}
                 ../platforms/${frontend}/intrinsics_math.impala
+                ../platforms/${frontend}/intrinsics_wmma.impala
                 ../platforms/${frontend}/intrinsics_spirv.impala
                 ../platforms/${frontend}/intrinsics_levelzero.impala)
         endif()
