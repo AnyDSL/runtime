@@ -662,9 +662,9 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
     CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
-    if (strnlen(info_log_buffer, info_log_size))
+    if (strnlen_s(info_log_buffer, info_log_size))
         info("Compilation info: %", info_log_buffer);
-    if (strnlen(error_log_buffer, error_log_size))
+    if (strnlen_s(error_log_buffer, error_log_size))
         info("Compilation error: %", error_log_buffer);
     CHECK_CUDA(err, "cuModuleLoadDataEx()");
 #endif
