@@ -68,8 +68,10 @@ struct JIT {
             if (!::compile(
                 { "runtime", module_name },
                 { std::string(runtime_srcs), program_str },
-                thorin.world(), std::cerr))
+                thorin.world(), std::cerr)) {
                 error("JIT: error while compiling sources");
+                return -1;
+            }
 
             thorin.opt();
 
