@@ -655,7 +655,6 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     char error_log_buffer[error_log_size] = { 0 };
     char info_log_buffer[info_log_size] = { 0 };
 
-
     CUjit_option options[] = { CU_JIT_INFO_LOG_BUFFER, CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES, CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
     void* option_values[]  = { (void*)info_log_buffer, (void*)info_log_size, (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
 
