@@ -41,14 +41,19 @@ if(CUDAToolkit_FOUND)
 
     target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
 
-    if ((${CUDAToolkit_VERSION_MAJOR} GREATER_EQUAL 12) OR ((${CUDAToolkit_VERSION_MAJOR} EQUAL 11) AND (${CUDAToolkit_VERSION_MINOR} GREATER_EQUAL 1)))
+    if ((${CUDAToolkit_VERSION} VERSION_GREATER_EQUAL "11.1") AND NOT MSVC)
+        # we cannot link against lib nvptxcompiler_static using MSVC due to a mixup of msvcrt variants
         if (TARGET CUDA::nvptxcompiler_static)
             target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE CUDA::nvptxcompiler_static)
+            target_compile_definitions(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE CUDA_USE_NVPTXCOMPILER_API)
         else()
             find_library(CUDAToolkit_NVPTXCOMPILER_LIBRARY nvptxcompiler_static
                 HINTS ${CUDAToolkit_LIBRARY_ROOT}
                 PATH_SUFFIXES lib lib64 lib/x64)
-            target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${CUDAToolkit_NVPTXCOMPILER_LIBRARY})
+            if (CUDAToolkit_NVPTXCOMPILER_LIBRARY)
+                target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${CUDAToolkit_NVPTXCOMPILER_LIBRARY})
+                target_compile_definitions(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE CUDA_USE_NVPTXCOMPILER_API)
+            endif()
         endif()
     endif()
 

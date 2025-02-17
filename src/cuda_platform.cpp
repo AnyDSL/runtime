@@ -29,12 +29,16 @@
 #include <llvm/Transforms/IPO.h>
 #endif
 
+#ifdef CUDA_USE_NVPTXCOMPILER_API
+#include <nvPTXCompiler.h>
+#endif
+
 using namespace std::literals;
 
 #define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
 #define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
 #define CHECK_CUDA(err, name)  check_cuda_errors  (err, name, __FILE__, __LINE__)
-#if CUDA_VERSION > 11010
+#ifdef CUDA_USE_NVPTXCOMPILER_API
 #define CHECK_NVPTXCOMPILER(err, name) check_nvptxcompiler_errors (err, name, __FILE__, __LINE__)
 #endif
 
@@ -61,7 +65,7 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
 
-#if CUDA_VERSION > 11010
+#ifdef CUDA_USE_NVPTXCOMPILER_API
 static const char* _nvptxcompilerGetErrorString(nvPTXCompileResult err) {
     switch (err) {
         case NVPTXCOMPILE_SUCCESS: return "NVPTXCOMPILE_SUCCESS";
@@ -598,7 +602,9 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
 }
 
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
-#if CUDA_VERSION > 11010
+    CUmodule mod;
+
+#ifdef CUDA_USE_NVPTXCOMPILER_API
     const unsigned int opt_level = 3;
 
     debug("Creating module from PTX '%' on CUDA device % using nvPTXCompiler", filename, dev);
@@ -643,7 +649,6 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
         runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(binary.c_str()), binary_size);
     }
 
-    CUmodule mod;
     CHECK_CUDA(cuModuleLoadData(&mod, &binary[0]), "cuModuleLoadData()");
 
     CHECK_NVPTXCOMPILER(nvPTXCompilerDestroy(&handle), "nvPTXCompilerDestroy()");
@@ -659,7 +664,6 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     void* option_values[]  = { (void*)info_log_buffer, (void*)info_log_size, (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
 
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
-    CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
     if (strnlen_s(info_log_buffer, info_log_size))
         info("Compilation info: %", info_log_buffer);
