@@ -29,14 +29,15 @@
 #include <llvm/Transforms/IPO.h>
 #endif
 
+#include <nvrtc.h>
+#include <nvvm.h>
+
+
 using namespace std::literals;
 
 #define CHECK_NVVM(err, name)  check_nvvm_errors  (err, name, __FILE__, __LINE__)
 #define CHECK_NVRTC(err, name) check_nvrtc_errors (err, name, __FILE__, __LINE__)
 #define CHECK_CUDA(err, name)  check_cuda_errors  (err, name, __FILE__, __LINE__)
-#if CUDA_VERSION > 11010
-#define CHECK_NVPTXCOMPILER(err, name) check_nvptxcompiler_errors (err, name, __FILE__, __LINE__)
-#endif
 
 #define ANYDSL_CUDA_LIBDEVICE_PATH_ENV "ANYDSL_CUDA_LIBDEVICE_PATH"
 
@@ -61,27 +62,6 @@ inline void check_nvrtc_errors(nvrtcResult err, const char* name, const char* fi
         error("NVRTC API function % (%) [file %, line %]: %", name, err, file, line, nvrtcGetErrorString(err));
 }
 
-#if CUDA_VERSION > 11010
-static const char* _nvptxcompilerGetErrorString(nvPTXCompileResult err) {
-    switch (err) {
-        case NVPTXCOMPILE_SUCCESS: return "NVPTXCOMPILE_SUCCESS";
-        case NVPTXCOMPILE_ERROR_INVALID_COMPILER_HANDLE: return "NVPTXCOMPILE_ERROR_INVALID_COMPILER_HANDLE";
-        case NVPTXCOMPILE_ERROR_INVALID_INPUT: return "NVPTXCOMPILE_ERROR_INVALID_INPUT";
-        case NVPTXCOMPILE_ERROR_COMPILATION_FAILURE: return "NVPTXCOMPILE_ERROR_COMPILATION_FAILURE";
-        case NVPTXCOMPILE_ERROR_INTERNAL: return "NVPTXCOMPILE_ERROR_INTERNAL";
-        case NVPTXCOMPILE_ERROR_OUT_OF_MEMORY: return "NVPTXCOMPILE_ERROR_OUT_OF_MEMORY";
-        case NVPTXCOMPILE_ERROR_COMPILER_INVOCATION_INCOMPLETE: return "NVPTXCOMPILE_ERROR_COMPILER_INVOCATION_INCOMPLETE";
-        case NVPTXCOMPILE_ERROR_UNSUPPORTED_PTX_VERSION: return "NVPTXCOMPILE_ERROR_UNSUPPORTED_PTX_VERSION";
-        case NVPTXCOMPILE_ERROR_UNSUPPORTED_DEVSIDE_SYNC: return "NVPTXCOMPILE_ERROR_UNSUPPORTED_DEVSIDE_SYNC";
-        default: return "<unknown>";
-    }
-}
-
-inline void check_nvptxcompiler_errors(nvPTXCompileResult err, const char* name, const char* file, const int line) {
-    if (NVPTXCOMPILE_SUCCESS != err)
-        error("NVPTXCOMPILER API function % (%) [file %, line %]: %", name, err, file, line, _nvptxcompilerGetErrorString(err));
-}
-#endif
 
 CudaPlatform::CudaPlatform(Runtime* runtime)
     : Platform(runtime), dump_binaries(std::getenv("ANYDSL_DUMP_CUDA_BINARIES") != nullptr)
@@ -597,15 +577,27 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     return ptx;
 }
 
+#if CUDA_VERSION > 11010
+
+#ifdef _MSC_VER
+#define NVPTXCOMPILE_API __declspec(dllimport)
+#endif
+
+bool NVPTXCOMPILE_API nvPTXCompile(
+    int num_options, const char* options[],
+    const std::string& filename,
+    const std::string& ptx_string,
+    std::string& binary);
+
+#endif
+
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
+    CUmodule mod;
+
 #if CUDA_VERSION > 11010
     const unsigned int opt_level = 3;
 
     debug("Creating module from PTX '%' on CUDA device % using nvPTXCompiler", filename, dev);
-
-    nvPTXCompilerHandle handle;
-    nvPTXCompileResult err = nvPTXCompilerCreate(&handle, ptx_string.length(), const_cast<char*>(ptx_string.c_str()));
-    CHECK_NVPTXCOMPILER(err, "nvPTXCompilerCreate()");
 
     std::string sm_arch("-arch=sm_" + std::to_string(devices_[dev].compute_capability));
     std::string opt_str("-O" + std::to_string(opt_level));
@@ -615,38 +607,16 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     };
     int num_options = std::size(options);
 
-    err = nvPTXCompilerCompile(handle, num_options, options);
-    size_t info_log_size;
-    size_t error_log_size;
-    nvPTXCompilerGetInfoLogSize(handle, &info_log_size);
-    nvPTXCompilerGetErrorLogSize(handle, &error_log_size);
-    if (info_log_size) {
-        std::string info_log(info_log_size, '\0');
-        nvPTXCompilerGetInfoLog(handle, &info_log[0]);
-        info("Compilation info: %", info_log);
-    }
-    if (error_log_size) {
-        std::string error_log(error_log_size, '\0');
-        nvPTXCompilerGetErrorLog(handle, &error_log[0]);
-        info("Compilation error: %", error_log);
-    }
-    CHECK_NVPTXCOMPILER(err, "nvPTXCompilerCompile()");
-
-    size_t binary_size;
-    CHECK_NVPTXCOMPILER(nvPTXCompilerGetCompiledProgramSize(handle, &binary_size), "nvPTXCompilerGetCompiledProgramSize()");
-
-    std::string binary(binary_size, '\0');
-    CHECK_NVPTXCOMPILER(nvPTXCompilerGetCompiledProgram(handle, &binary[0]), "nvPTXCompilerGetCompiledProgram()");
+    std::string binary;
 
     if (dump_binaries) {
         auto cubin_name = filename + ".sm_" + std::to_string(devices_[dev].compute_capability) + ".cubin";
-        runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(binary.c_str()), binary_size);
+        runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(binary.c_str()), binary.size());
     }
 
-    CUmodule mod;
-    CHECK_CUDA(cuModuleLoadData(&mod, &binary[0]), "cuModuleLoadData()");
+    bool success = nvPTXCompile(num_options, options, filename, ptx_string, binary);
 
-    CHECK_NVPTXCOMPILER(nvPTXCompilerDestroy(&handle), "nvPTXCompilerDestroy()");
+    CHECK_CUDA(cuModuleLoadData(&mod, &binary[0]), "cuModuleLoadData()");
 #else
     const unsigned int opt_level = 4;
     const unsigned int error_log_size = 10240;
@@ -659,7 +629,6 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     void* option_values[]  = { (void*)info_log_buffer, (void*)info_log_size, (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
 
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
-    CUmodule mod;
     CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
     if (strnlen_s(info_log_buffer, info_log_size))
         info("Compilation info: %", info_log_buffer);

@@ -41,15 +41,20 @@ if(CUDAToolkit_FOUND)
 
     target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
 
-    if ((${CUDAToolkit_VERSION_MAJOR} GREATER_EQUAL 12) OR ((${CUDAToolkit_VERSION_MAJOR} EQUAL 11) AND (${CUDAToolkit_VERSION_MINOR} GREATER_EQUAL 1)))
+    if (${CUDAToolkit_VERSION} VERSION_GREATER_EQUAL "11.1")
+		add_library(${AnyDSL_runtime_TARGET_NAME}_cuda_nvptxcompiler SHARED nvptxcompiler_wrapper.cpp)
+		set_target_properties(${AnyDSL_runtime_TARGET_NAME}_cuda_nvptxcompiler PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)
+		
         if (TARGET CUDA::nvptxcompiler_static)
-            target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE CUDA::nvptxcompiler_static)
+            target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda_nvptxcompiler PRIVATE CUDA::nvptxcompiler_static)
         else()
             find_library(CUDAToolkit_NVPTXCOMPILER_LIBRARY nvptxcompiler_static
                 HINTS ${CUDAToolkit_LIBRARY_ROOT}
                 PATH_SUFFIXES lib lib64 lib/x64)
-            target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${CUDAToolkit_NVPTXCOMPILER_LIBRARY})
+            target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda_nvptxcompiler PRIVATE ${CUDAToolkit_NVPTXCOMPILER_LIBRARY} CUDA::cuda_driver)
         endif()
+		
+		target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_cuda_nvptxcompiler)
     endif()
 
     list(APPEND RUNTIME_PLATFORMS ${AnyDSL_runtime_TARGET_NAME}_cuda)
