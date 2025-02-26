@@ -606,7 +606,21 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 
 #ifdef CUDA_USE_NVPTXCOMPILER_API
     const unsigned int opt_level = 3;
+#else
+    const unsigned int opt_level = 4;
+#endif
 
+    const unsigned int error_log_buffer_size = 10240;
+    const unsigned int info_log_buffer_size = 10240;
+
+    char error_log_buffer[error_log_buffer_size] = { 0 };
+    char info_log_buffer[info_log_buffer_size] = { 0 };
+
+    CUjit_option jit_options[] = { CU_JIT_INFO_LOG_BUFFER, CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES, CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
+    void* jit_option_values[]  = { (void*)info_log_buffer, (void*)info_log_buffer_size, (void*)error_log_buffer, (void*)error_log_buffer_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
+    int num_jit_options = std::size(jit_option_values);
+
+#ifdef CUDA_USE_NVPTXCOMPILER_API
     debug("Creating module from PTX '%' on CUDA device % using nvPTXCompiler", filename, dev);
 
     nvPTXCompilerHandle handle;
@@ -615,13 +629,13 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
 
     std::string sm_arch("-arch=sm_" + std::to_string(devices_[dev].compute_capability));
     std::string opt_str("-O" + std::to_string(opt_level));
-    const char* options[] = {
+    const char* ptxcompiler_options[] = {
         sm_arch.c_str(),
         opt_str.c_str(),
     };
-    int num_options = std::size(options);
+    int num_ptxcompiler_options = std::size(ptxcompiler_options);
 
-    err = nvPTXCompilerCompile(handle, num_options, options);
+    err = nvPTXCompilerCompile(handle, num_ptxcompiler_options, ptxcompiler_options);
     size_t info_log_size;
     size_t error_log_size;
     nvPTXCompilerGetInfoLogSize(handle, &info_log_size);
@@ -649,25 +663,15 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
         runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(binary.c_str()), binary_size);
     }
 
-    CHECK_CUDA(cuModuleLoadData(&mod, &binary[0]), "cuModuleLoadData()");
+    CHECK_CUDA(cuModuleLoadDataEx(&mod, &binary[0], num_jit_options, jit_options, jit_option_values), "cuModuleLoadDataEx()");
 
     CHECK_NVPTXCOMPILER(nvPTXCompilerDestroy(&handle), "nvPTXCompilerDestroy()");
 #else
-    const unsigned int opt_level = 4;
-    const unsigned int error_log_size = 10240;
-    const unsigned int info_log_size = 10240;
-    const unsigned int num_options = 4;
-    char error_log_buffer[error_log_size] = { 0 };
-    char info_log_buffer[info_log_size] = { 0 };
-
-    CUjit_option options[] = { CU_JIT_INFO_LOG_BUFFER, CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES, CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_TARGET, CU_JIT_OPTIMIZATION_LEVEL };
-    void* option_values[]  = { (void*)info_log_buffer, (void*)info_log_size, (void*)error_log_buffer, (void*)error_log_size, (void*)devices_[dev].compute_capability, (void*)opt_level };
-
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
-    CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_options, options, option_values);
-    if (strnlen_s(info_log_buffer, info_log_size))
+    CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_jit_options, jit_options, jit_option_values);
+    if (info_log_buffer[0] != '\0')
         info("Compilation info: %", info_log_buffer);
-    if (strnlen_s(error_log_buffer, error_log_size))
+    if (error_log_buffer[0] != '\0')
         info("Compilation error: %", error_log_buffer);
     CHECK_CUDA(err, "cuModuleLoadDataEx()");
 #endif
