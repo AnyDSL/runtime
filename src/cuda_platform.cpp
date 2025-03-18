@@ -683,6 +683,13 @@ const char* CudaPlatform::device_name(DeviceId dev) const {
     return devices_[dev].name.c_str();
 }
 
+int CudaPlatform::device_nodes(DeviceId dev) const {
+    int multiProcessorCount;
+    CUresult err = cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, devices_[dev].dev);
+    CHECK_CUDA(err, "cuFuncGetAttribute()");
+    return multiProcessorCount;
+}
+
 bool CudaPlatform::device_check_feature_support(DeviceId dev, const char* feature) const {
     if (feature == "ITS"sv)
         return static_cast<int>(devices_[dev].compute_capability) >= 70;

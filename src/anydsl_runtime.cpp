@@ -80,6 +80,14 @@ const char* anydsl_device_name(int32_t mask) {
     return runtime().device_name(to_platform(mask), to_device(mask));
 }
 
+int anydsl_device_threads(int32_t mask) {
+    return 0;
+}
+
+int anydsl_device_nodes(int32_t mask) {
+    return runtime().device_nodes(to_platform(mask), to_device(mask));
+}
+
 bool anydsl_device_check_feature_support(int32_t mask, const char* feature) {
     return runtime().device_check_feature_support(to_platform(mask), to_device(mask), feature);
 }

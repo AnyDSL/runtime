@@ -43,6 +43,11 @@ const char* Runtime::device_name(PlatformId plat, DeviceId dev) const {
     return platforms_[plat]->device_name(dev);
 }
 
+int Runtime::device_nodes(PlatformId plat, DeviceId dev) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_nodes(dev);
+}
+
 bool Runtime::device_check_feature_support(PlatformId plat, DeviceId dev, const char* feature) const {
     check_device(plat, dev);
     return platforms_[plat]->device_check_feature_support(dev, feature);
