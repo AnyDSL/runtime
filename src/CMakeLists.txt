@@ -131,7 +131,7 @@ if(pal_FOUND)
 
     find_file(AnyDSL_runtime_ROCM_OCML_LIB
         NAMES ocml.bc
-        HINTS ${CMAKE_SOURCE_DIR}/../rocm-device-libs
+        HINTS ${CMAKE_SOURCE_DIR}/../rocm-device-libs ${CMAKE_SOURCE_DIR}/../llvm-project/amd/device-libs
         PATH_SUFFIXES build/amdgcn/bitcode
         REQUIRED)
     get_filename_component(AnyDSL_runtime_PAL_BITCODE_PATH ${AnyDSL_runtime_ROCM_OCML_LIB} DIRECTORY)

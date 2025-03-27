@@ -102,7 +102,7 @@ PreservedAnalyses PalPlatformLowerKernelArgumentsPass::run(Function& F, Function
     // global address space pointing to memory that won't change during execution
     unsigned CONSTANT_ADDRESS = 4;
     InlineAsm* inline_assembly =
-        InlineAsm::get(FunctionType::get(Type::getInt8PtrTy(Ctx, CONSTANT_ADDRESS), false), asmString.c_str(),
+        InlineAsm::get(FunctionType::get(Builder.getPtrTy(CONSTANT_ADDRESS), false), asmString.c_str(),
             constraints, true, false, InlineAsm::AD_ATT);
     CallInst* KernArgSegment = Builder.CreateCall(inline_assembly, inline_asm_args);
 

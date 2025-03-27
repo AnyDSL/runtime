@@ -27,6 +27,8 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+
+LLD_HAS_DRIVER(elf)
 #endif
 
 #define CHECK_HSA(err, name) check_hsa_error(err, name, __FILE__, __LINE__)
@@ -705,8 +707,8 @@ std::string HSAPlatform::emit_gcn(const std::string& program, const std::string&
 
     bool print_ir = false;
     if (print_ir)
-        run_pass_manager(llvm::CloneModule(*llvm_module.get()), llvm::CodeGenFileType::CGFT_AssemblyFile, asm_file, print_ir);
-    run_pass_manager(std::move(llvm_module), llvm::CodeGenFileType::CGFT_ObjectFile, obj_file);
+        run_pass_manager(llvm::CloneModule(*llvm_module.get()), llvm::CodeGenFileType::AssemblyFile, asm_file, print_ir);
+    run_pass_manager(std::move(llvm_module), llvm::CodeGenFileType::ObjectFile, obj_file);
 
     llvm::raw_os_ostream lld_cout(std::cout);
     llvm::raw_os_ostream lld_cerr(std::cerr);

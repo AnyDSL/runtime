@@ -18,7 +18,6 @@
 #include <palPipelineAbi.h>
 
 #ifdef AnyDSL_runtime_HAS_LLVM_SUPPORT
-#include <lld/Common/Driver.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -488,9 +487,9 @@ std::string PALPlatform::emit_gcn(pal_utils::ShaderSrc&& shader_src, const std::
 
     bool print_ir = true;
     if (print_ir)
-        run_pass_manager(llvm::CloneModule(*shader_src.llvm_module.get()), llvm::CodeGenFileType::CGFT_AssemblyFile,
+        run_pass_manager(llvm::CloneModule(*shader_src.llvm_module.get()), llvm::CodeGenFileType::AssemblyFile,
             asm_file, print_ir);
-    run_pass_manager(std::move(shader_src.llvm_module), llvm::CodeGenFileType::CGFT_ObjectFile, obj_file);
+    run_pass_manager(std::move(shader_src.llvm_module), llvm::CodeGenFileType::ObjectFile, obj_file);
 
     return runtime_->load_file(obj_file);
 }
