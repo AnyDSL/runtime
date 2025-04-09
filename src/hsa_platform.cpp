@@ -737,6 +737,13 @@ const char* HSAPlatform::device_name(DeviceId dev) const {
     return devices_[dev].name.c_str();
 }
 
+int HSAPlatform::device_nodes(DeviceId dev) const {
+    int num_nodes;
+    hsa_status_t status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_COMPUTE_UNIT_COUNT, &num_nodes);
+    CHECK_HSA(status, "hsa_agent_get_info()");
+    return num_nodes;
+}
+
 void register_hsa_platform(Runtime* runtime) {
     runtime->register_platform<HSAPlatform>();
 }

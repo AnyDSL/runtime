@@ -41,7 +41,7 @@ protected:
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
     const char* device_name(DeviceId dev) const override;
-    int device_nodes(DeviceId) const override { return 96; };
+    int device_nodes(DeviceId) const override;
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     struct KernelInfo {
