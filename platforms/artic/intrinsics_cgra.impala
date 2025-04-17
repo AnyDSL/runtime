@@ -7,6 +7,7 @@
 #[import(cc = "device", name = "aie::invsqrt")]    fn cgra_rsqrtf(f32) -> f32;
 #[import(cc = "device", name = "aie::sqrt")]     fn cgra_sqrtf(f32) -> f32;
 #[import(cc = "device", name = "aie::abs")]     fn cgra_fabsf(f32) -> f32;
+#[import(cc = "device", name = "aie::abs")]     fn cgra_abs(i32) -> i32;
 #[import(cc = "device", name = "aie::sin")]      fn cgra_sinf(f32) -> f32;
 #[import(cc = "device", name = "aie::cos")]      fn cgra_cosf(f32) -> f32;
 fn @cgra_tanf(s: f32) -> f32 = cgra_sinf(s) / cgra_cosf(s);
@@ -83,10 +84,11 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 #[import(cc = "device", name = "aie::div")]      fn cgra_div_f32(f32, f32) -> f32;
 
 // multiply-add
-#[import(cc = "device", name = "aie::mac")]      fn cgra_mac[T](T, T, T) -> i64;
-#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_u16(u16, u16, u16) -> i64;
-#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_i32(i32, i32, i32) -> i64;
-#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_f32(f32, f32, f32) -> i64;
+// the first parameter is the accumulator, the second and third are the two input vectors.
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac[T](i64, T, T) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_u16(i64, u16, u16) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_i32(i64, i32, i32) -> i64;
+#[import(cc = "device", name = "aie::mac")]      fn cgra_mac_f32(i64, f32, f32) -> i64;
 
 
 // mac-square
@@ -323,12 +325,18 @@ fn @cgra_tan(s:f64) -> f64 = cgra_sin(s) / cgra_cos(s);
 #[import(cc = "device", name = "aie::store")] fn cgra_store_i32(&mut addrspace(1)i32, i32) -> ();
 #[import(cc = "device", name = "aie::store")] fn cgra_store_f32(&mut addrspace(1)f32, f32) -> ();
 
+#[import(cc = "device", name = "aie::store_v")] fn cgra_store_v_local[T](&mut addrspace(3) T, T) -> ();
+#[import(cc = "device", name = " ")] fn copy_v[T](T) -> T;
+
+
+
 // shift-round-saturate intrinsic to move a value from an accumulator register to a vector register with any required shifting and rounding
 // instead of a non-static to_vector<...>(...) API we use low-level srs(...) inrinsic
 // also a dummy lane size is added as the first parameter, so that the backend can infer the correct vector size
 // TODO: the second parameter can be a u64 or i64 for acc80 and acc46 respectively
 // to make it more generic we can reimplment this API with a generic type or we can make  a different API for each type
-#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T](u32, u64, u32) -> T;
+//#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T](u32, u64, u32) -> T;
+#[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate[T, U](u32, U, u32) -> T;
 #[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_u16(u32, u64, u32) -> u16;
 #[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_i32(u32, u64, u32) -> i32;
 #[import(cc = "device", name = "srs")] fn cgra_shift_round_saturate_f32(u32, u64, u32) -> f32;
@@ -510,8 +518,6 @@ struct mmul[T] { M : i32, K: i32, N: i32, data_type: T }
 #[import(cc = "device", name = "clear_sat")] fn cgra_clear_sat() -> ();
 #[import(cc = "device", name = "clear_rnd")] fn cgra_clear_rnd() -> ();
 
-
-#[import(cc = "device", name = "aie::print")] fn cgra_print[T](T, bool, &[u8]) -> ();
 //#[import(cc = "device")] fn print_pragma(&[u8]) -> ();
 
 // channel scalar types
