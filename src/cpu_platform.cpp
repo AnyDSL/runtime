@@ -65,7 +65,7 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
     std::string model_string = "model name\t: ";
     #endif
 
-    std::search(std::istreambuf_iterator<char>(cpuinfo), {}, model_string.begin(), model_string.end());
+    std::ignore = std::search(std::istreambuf_iterator<char>(cpuinfo), {}, model_string.begin(), model_string.end());
     std::getline(cpuinfo >> std::ws, device_name_);
     #endif
 }
