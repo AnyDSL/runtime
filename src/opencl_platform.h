@@ -31,6 +31,9 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
+    void map_buffer_svm(DeviceId, void*, int64_t) override;
+    void unmap_buffer_svm(DeviceId, void*) override;
+
     void launch_kernel(DeviceId dev, const LaunchParams& launch_params) override;
     void synchronize(DeviceId dev) override;
 

@@ -345,6 +345,26 @@ void OpenCLPlatform::release(DeviceId dev, void* ptr) {
     CHECK_OPENCL(err, "clReleaseMemObject()");
 }
 
+void OpenCLPlatform::map_buffer_svm(DeviceId dev, void* ptr, int64_t size) {
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev].use_svm) {
+        clEnqueueSVMMap(devices_[dev].queue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, ptr, size, 0, nullptr, nullptr);
+    }
+    #else
+    error("Coarse-grained SVM is not supported on OpenCL device %d", dev);
+    #endif
+}
+
+void OpenCLPlatform::unmap_buffer_svm(DeviceId dev, void* ptr) {
+    #ifdef CL_VERSION_2_0
+    if (devices_[dev].use_svm) {
+        clEnqueueSVMUnmap(devices_[dev].queue, ptr, 0, nullptr, nullptr);
+    }
+    #else
+    error("Coarse-grained SVM is not supported on OpenCL device %d", dev);
+    #endif
+}
+
 void time_kernel_callback(cl_event event, cl_int, void* data) {
     auto dev = reinterpret_cast<OpenCLPlatform::DeviceData*>(data);
     cl_ulong end, start;
@@ -552,12 +572,12 @@ cl_program OpenCLPlatform::compile_program(DeviceId dev, cl_program program, con
     options += " -cl-std=CL" + std::to_string(devices_[dev].version_major) + "." + std::to_string(devices_[dev].version_minor);
 
     cl_build_status build_status;
-    cl_int err  = clBuildProgram(program, 0, NULL, options.c_str(), NULL, NULL);
+    cl_int err  = clBuildProgram(program, 1, &devices_[dev].dev, options.c_str(), NULL, NULL);
     err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_STATUS, sizeof(build_status), &build_status, NULL);
 
     if (build_status == CL_BUILD_ERROR || err != CL_SUCCESS) {
         // determine the size of the options and log
-        size_t log_size, options_size;
+        size_t log_size = 0, options_size = 0;
         err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_OPTIONS, 0, NULL, &options_size);
         err |= clGetProgramBuildInfo(program, devices_[dev].dev, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 

@@ -2,14 +2,16 @@
 #[import(cc = "C", name = "anydsl_device_name")]                  fn runtime_device_name(_device: i32) -> &[u8];
 #[import(cc = "C", name = "anydsl_device_check_feature_support")] fn runtime_device_check_feature_support(_device: i32, _feature: &[u8]) -> bool;
 
-#[import(cc = "C", name = "anydsl_alloc")]          fn runtime_alloc(_device: i32, _size: i64) -> &mut [i8];
-#[import(cc = "C", name = "anydsl_alloc_host")]     fn runtime_alloc_host(_device: i32, _size: i64) -> &mut [i8];
-#[import(cc = "C", name = "anydsl_alloc_unified")]  fn runtime_alloc_unified(_device: i32, _size: i64) -> &mut [i8];
-#[import(cc = "C", name = "anydsl_copy")]           fn runtime_copy(_src_device: i32, _src_ptr: &[i8], _src_offset: i64, _dst_device: i32, _dst_ptr: &mut [i8], _dst_offset: i64, _size: i64) -> ();
-#[import(cc = "C", name = "anydsl_get_device_ptr")] fn runtime_get_device_ptr(_device: i32, _ptr: &[i8]) -> &[i8];
-#[import(cc = "C", name = "anydsl_synchronize")]    fn runtime_synchronize(_device: i32) -> ();
-#[import(cc = "C", name = "anydsl_release")]        fn runtime_release(_device: i32, _ptr: &[i8]) -> ();
-#[import(cc = "C", name = "anydsl_release_host")]   fn runtime_release_host(_device: i32, _ptr: &[i8]) -> ();
+#[import(cc = "C", name = "anydsl_alloc")]            fn runtime_alloc(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_alloc_host")]       fn runtime_alloc_host(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_alloc_unified")]    fn runtime_alloc_unified(_device: i32, _size: i64) -> &mut [i8];
+#[import(cc = "C", name = "anydsl_copy")]             fn runtime_copy(_src_device: i32, _src_ptr: &[i8], _src_offset: i64, _dst_device: i32, _dst_ptr: &mut [i8], _dst_offset: i64, _size: i64) -> ();
+#[import(cc = "C", name = "anydsl_get_device_ptr")]   fn runtime_get_device_ptr(_device: i32, _ptr: &[i8]) -> &[i8];
+#[import(cc = "C", name = "anydsl_synchronize")]      fn runtime_synchronize(_device: i32) -> ();
+#[import(cc = "C", name = "anydsl_release")]          fn runtime_release(_device: i32, _ptr: &[i8]) -> ();
+#[import(cc = "C", name = "anydsl_release_host")]     fn runtime_release_host(_device: i32, _ptr: &[i8]) -> ();
+#[import(cc = "C", name = "anydsl_map_buffer_svm")]   fn runtime_anydsl_map_buffer_svm(_device: i32, _ptr: &mut [i8], _size: i64) -> ();
+#[import(cc = "C", name = "anydsl_unmap_buffer_svm")] fn runtime_anydsl_unmap_buffer_svm(_device: i32, _ptr: &mut [i8]) -> ();
 
 #[import(cc = "C", name = "anydsl_random_seed")]    fn random_seed(_: u32) -> ();
 #[import(cc = "C", name = "anydsl_random_val_f32")] fn random_val_f32() -> f32;

@@ -108,6 +108,14 @@ void anydsl_release_host(int32_t mask, void* ptr) {
     runtime().release_host(to_platform(mask), to_device(mask), ptr);
 }
 
+void anydsl_map_buffer_svm(int32_t mask, void* ptr, int64_t size) {
+    runtime().map_buffer_svm(to_platform(mask), to_device(mask), ptr, size);
+}
+
+void anydsl_unmap_buffer_svm(int32_t mask, void* ptr) {
+    runtime().unmap_buffer_svm(to_platform(mask), to_device(mask), ptr);
+}
+
 void anydsl_copy(
     int32_t mask_src, const void* src, int64_t offset_src,
     int32_t mask_dst, void* dst, int64_t offset_dst, int64_t size) {

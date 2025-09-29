@@ -69,6 +69,10 @@ public:
     void release(PlatformId plat, DeviceId dev, void* ptr);
     /// Releases previously allocated page-locked memory.
     void release_host(PlatformId plat, DeviceId dev, void* ptr);
+    /// Map a coarse-grained SVM buffer for host access
+    void map_buffer_svm(PlatformId plat, DeviceId dev, void* ptr, int64_t size);
+    /// Unmap a coarse-grained SVM buffer for device access
+    void unmap_buffer_svm(PlatformId plat, DeviceId dev, void* ptr);
     /// Copies memory between devices.
     void copy(
         PlatformId plat_src, DeviceId dev_src, const void* src, int64_t offset_src,
