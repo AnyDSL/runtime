@@ -202,7 +202,7 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
             devices_.emplace_back(this, platform, device, version_major, version_minor, platform_name, device_name);
 
             #ifdef CL_VERSION_2_0
-            devices_[dev].use_svm = true;
+            devices_[dev].use_svm = svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER;
             devices_[dev].svm_caps = svm_caps;
             #endif
 
