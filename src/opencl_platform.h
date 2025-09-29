@@ -58,6 +58,7 @@ protected:
         cl_command_queue queue = nullptr;
         cl_context ctx = nullptr;
         #ifdef CL_VERSION_2_0
+        bool use_svm = false;
         cl_device_svm_capabilities svm_caps;
         #endif
         bool is_intel_fpga = false;
