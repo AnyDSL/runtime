@@ -172,6 +172,7 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
         debug("oneAPI Level Zero API Version %.%", ZE_MAJOR_VERSION(apiVersion), ZE_MINOR_VERSION(apiVersion));
 
         std::vector<ze_device_handle_t> utilizedDevices;
+        std::vector<DeviceData*> updateDevices;
 
         for (uint32_t d = 0; d < deviceCount; ++d) {
             ze_device_handle_t hDevice = allDevices[d];
@@ -192,6 +193,7 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
             determineDeviceCapabilities(hDevice, dev);
 
             utilizedDevices.push_back(hDevice);
+            updateDevices.push_back(&dev);
         }
 
         ze_context_desc_t context_desc = {};
@@ -201,12 +203,12 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
 
         contexts_.push_back(ctx);
 
-        for (DeviceData& dev : devices_) {
-            dev.ctx = ctx;
+        for (DeviceData* dev : updateDevices) {
+            dev->ctx = ctx;
             // Create an immediate command list for direct submission
             ze_command_queue_desc_t altdesc = {};
             altdesc.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-            WRAP_LEVEL_ZERO(zeCommandListCreateImmediate(dev.ctx, dev.device, &altdesc, &dev.queue));
+            WRAP_LEVEL_ZERO(zeCommandListCreateImmediate(dev->ctx, dev->device, &altdesc, &dev->queue));
         }
     }
 }
