@@ -233,10 +233,12 @@ LevelZeroPlatform::~LevelZeroPlatform() {
 void* LevelZeroPlatform::alloc(DeviceId dev, int64_t size) {
     if (!size) return nullptr;
 
-    ze_device_mem_alloc_desc_t device_desc;
-    device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-    device_desc.pNext = nullptr;
-    device_desc.ordinal = 0;
+    ze_device_mem_alloc_desc_t device_desc {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+        .ordinal = 0
+    };
 
     const size_t alignment = 64;
     void* mem = nullptr;
@@ -252,9 +254,11 @@ void* LevelZeroPlatform::alloc(DeviceId dev, int64_t size) {
 void* LevelZeroPlatform::alloc_host(DeviceId dev, int64_t size) {
     if (!size) return nullptr;
 
-    ze_host_mem_alloc_desc_t host_desc;
-    host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
-    host_desc.pNext = nullptr;
+    ze_host_mem_alloc_desc_t host_desc {
+        .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
+        .pNext = nullptr,
+        .flags = 0
+    };
 
     const size_t alignment = 64;
     void* mem = nullptr;
@@ -270,10 +274,13 @@ void* LevelZeroPlatform::alloc_host(DeviceId dev, int64_t size) {
 void* LevelZeroPlatform::alloc_unified(DeviceId dev, int64_t size) {
     if (!size) return nullptr;
 
-    ze_device_mem_alloc_desc_t device_desc;
-    device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-    device_desc.pNext = nullptr;
-    device_desc.ordinal = 0;
+    ze_device_mem_alloc_desc_t device_desc {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+        .ordinal = 0
+    };
+
     ze_host_mem_alloc_desc_t host_desc;
     host_desc.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
 
@@ -349,6 +356,8 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
         WRAP_LEVEL_ZERO(zeEventCreate(eventPool, &eventDesc, &kernelTsEvent));
     }
 
+    WRAP_LEVEL_ZERO(zeKernelSetIndirectAccess(hKernel, ZE_KERNEL_INDIRECT_ACCESS_FLAG_HOST | ZE_KERNEL_INDIRECT_ACCESS_FLAG_DEVICE | ZE_KERNEL_INDIRECT_ACCESS_FLAG_SHARED));
+
     WRAP_LEVEL_ZERO(zeCommandListAppendLaunchKernel(ze_dev.queue, hKernel, &launchArgs, kernelTsEvent, 0, nullptr));
 
     if (runtime_->profiling_enabled()) {
@@ -383,6 +392,7 @@ void LevelZeroPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_p
 }
 
 void LevelZeroPlatform::synchronize(DeviceId dev) {
+    WRAP_LEVEL_ZERO(zeCommandListAppendBarrier(devices_[dev].queue, nullptr, 0u, nullptr));
     WRAP_LEVEL_ZERO(zeCommandListHostSynchronize(devices_[dev].queue, UINT64_MAX));
 }
 
