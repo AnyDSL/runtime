@@ -40,6 +40,7 @@ protected:
     void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_svm_device(DeviceId dev, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
     void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
     void dynamic_profile(DeviceId dev, const std::string& filename);
 

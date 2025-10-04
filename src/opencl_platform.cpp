@@ -403,7 +403,7 @@ void OpenCLPlatform::launch_kernel(DeviceId dev, const LaunchParams& launch_para
             cl_mem struct_buf = clCreateBuffer(devices_[dev].ctx, flags, launch_params.args.sizes[i], launch_params.args.data[i], &err);
             CHECK_OPENCL(err, "clCreateBuffer()");
             kernel_structs.push_back(struct_buf);
-            clSetKernelArg(kernel, i, sizeof(cl_mem), &struct_buf);
+            CHECK_OPENCL(clSetKernelArg(kernel, i, sizeof(cl_mem), &struct_buf), "clSetKernelArg");
         } else {
             #ifdef CL_VERSION_2_0
             if (launch_params.args.types[i] == KernelArgType::Ptr && devices_[dev].use_svm) {
@@ -480,6 +480,8 @@ void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src,
         return copy_svm(src, offset_src, dst, offset_dst, size);
     if ((devices_[dev_src].use_svm != devices_[dev_dst].use_svm))
         error("copy between SVM and non-SVM OpenCL devices % and %", dev_src, dev_dst);
+    if (devices_[dev_src].use_svm)
+        return copy_svm(src, offset_src, dst, offset_dst, size);
     #endif
 
     cl_int err = clEnqueueCopyBuffer(devices_[dev_src].queue, (cl_mem)src, (cl_mem)dst, offset_src, offset_dst, size, 0, NULL, NULL);
@@ -489,8 +491,16 @@ void OpenCLPlatform::copy(DeviceId dev_src, const void* src, int64_t offset_src,
 
 void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {
     #ifdef CL_VERSION_2_0
-    if (devices_[dev_dst].use_svm)
-        return copy_svm(src, offset_src, dst, offset_dst, size);
+    if (devices_[dev_dst].use_svm) {
+        if (!(devices_[dev_dst].svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)) {
+            map_buffer_svm(dev_dst, const_cast<void *>(dst), size);
+            copy_svm(src, offset_src, dst, offset_dst, size);
+            unmap_buffer_svm(dev_dst, const_cast<void *>(dst));
+            //copy_svm_device(dev_dst, src, offset_src, dst, offset_dst, size);
+        } else
+            copy_svm(src, offset_src, dst, offset_dst, size);
+        return;
+    }
     #endif
     cl_int err = clEnqueueWriteBuffer(devices_[dev_dst].queue, (cl_mem)dst, CL_FALSE, offset_dst, size, (char*)src + offset_src, 0, NULL, NULL);
     err |= clFinish(devices_[dev_dst].queue);
@@ -499,12 +509,25 @@ void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceI
 
 void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
     #ifdef CL_VERSION_2_0
-    if (devices_[dev_src].svm_caps)
-        return copy_svm(src, offset_src, dst, offset_dst, size);
+    if (devices_[dev_src].svm_caps) {
+        if (!(devices_[dev_src].svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)) {
+            //map_buffer_svm(dev_src, const_cast<void *>(src), size);
+            //copy_svm(src, offset_src, dst, offset_dst, size);
+            //unmap_buffer_svm(dev_src, const_cast<void *>(src));
+            copy_svm_device(dev_src, src, offset_src, dst, offset_dst, size);
+        }
+        else
+            copy_svm(src, offset_src, dst, offset_dst, size);
+        return;
+    }
     #endif
     cl_int err = clEnqueueReadBuffer(devices_[dev_src].queue, (cl_mem)src, CL_FALSE, offset_src, size, (char*)dst + offset_dst, 0, NULL, NULL);
     err |= clFinish(devices_[dev_src].queue);
     CHECK_OPENCL(err, "clEnqueueReadBuffer()");
+}
+
+void OpenCLPlatform::copy_svm_device(DeviceId dev, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
+    clEnqueueSVMMemcpy(devices_[dev].queue, true, (char*)dst + offset_dst, (char*)src + offset_src, size, 0, nullptr, nullptr);
 }
 
 void OpenCLPlatform::copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
