@@ -203,6 +203,8 @@ OpenCLPlatform::OpenCLPlatform(Runtime* runtime)
 
             #ifdef CL_VERSION_2_0
             devices_[dev].use_svm = svm_caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER;
+            if (getenv("ANYDSL_CL_DISABLE_SVM"))
+                devices_[dev].use_svm = false;
             devices_[dev].svm_caps = svm_caps;
             #endif
 
