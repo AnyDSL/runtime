@@ -509,7 +509,7 @@ void OpenCLPlatform::copy_from_host(const void* src, int64_t offset_src, DeviceI
 
 void OpenCLPlatform::copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) {
     #ifdef CL_VERSION_2_0
-    if (devices_[dev_src].svm_caps) {
+    if (devices_[dev_src].use_svm) {
         if (!(devices_[dev_src].svm_caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)) {
             //map_buffer_svm(dev_src, const_cast<void *>(src), size);
             //copy_svm(src, offset_src, dst, offset_dst, size);
