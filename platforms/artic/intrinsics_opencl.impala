@@ -55,6 +55,7 @@
 #[import(cc = "device", name = "min")]               fn opencl_min(i32, i32) -> i32;
 #[import(cc = "device", name = "max")]               fn opencl_max(i32, i32) -> i32;
 #[import(cc = "device", name = "atomic_add")]        fn opencl_atomic_add_global(&mut addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "atomic_add")]        fn opencl_atomic_add_global_f32(&mut addrspace(1)f32, f32) -> f32;
 #[import(cc = "device", name = "atomic_add")]        fn opencl_atomic_add_shared(&mut addrspace(3)i32, i32) -> i32;
 #[import(cc = "device", name = "atomic_min")]        fn opencl_atomic_min_global(&mut addrspace(1)i32, i32) -> i32;
 #[import(cc = "device", name = "atomic_min")]        fn opencl_atomic_min_shared(&mut addrspace(3)i32, i32) -> i32;
@@ -93,6 +94,43 @@ fn @opencl_accelerator(dev: i32) = Accelerator {
             nblkz = @|| opencl_get_num_groups(2) as i32
         };
         opencl(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_opencl(dev),
+    alloc         = @|size| alloc_opencl(dev, size),
+    alloc_unified = @|size| alloc_opencl_unified(dev, size),
+    barrier       = @|| opencl_barrier(CLK_LOCAL_MEM_FENCE),
+};
+
+fn spv_cl_get_num_groups()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](24 /* BuiltInNumWorkgroups */);
+fn spv_cl_get_local_size()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](25 /* BuiltInWorkgroupSize */);
+fn spv_cl_get_group_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](26 /* BuiltInWorkgroupId */);
+fn spv_cl_get_local_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](27 /* BuiltInLocalInvocationId */);
+fn spv_cl_get_global_id()   = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](28 /* BuiltInGlobalInvocationId */);
+fn spv_cl_get_global_size() = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](31 /* BuiltInGlobalSize */);
+
+fn @opencl_spirv_accelerator(dev: i32) = Accelerator {
+    exec          = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = @|| spv_cl_get_local_id()(0) as i32,
+            tidy  = @|| spv_cl_get_local_id()(1) as i32,
+            tidz  = @|| spv_cl_get_local_id()(2) as i32,
+            bidx  = @|| spv_cl_get_group_id()(0) as i32,
+            bidy  = @|| spv_cl_get_group_id()(1) as i32,
+            bidz  = @|| spv_cl_get_group_id()(2) as i32,
+            gidx  = @|| spv_cl_get_global_id()(0) as i32,
+            gidy  = @|| spv_cl_get_global_id()(1) as i32,
+            gidz  = @|| spv_cl_get_global_id()(2) as i32,
+            bdimx = @|| spv_cl_get_local_size()(0) as i32,
+            bdimy = @|| spv_cl_get_local_size()(1) as i32,
+            bdimz = @|| spv_cl_get_local_size()(2) as i32,
+            gdimx = @|| spv_cl_get_global_size()(0) as i32,
+            gdimy = @|| spv_cl_get_global_size()(1) as i32,
+            gdimz = @|| spv_cl_get_global_size()(2) as i32,
+            nblkx = @|| spv_cl_get_num_groups()(0) as i32,
+            nblky = @|| spv_cl_get_num_groups()(1) as i32,
+            nblkz = @|| spv_cl_get_num_groups()(2) as i32
+        };
+        opencl_spirv(dev, grid, block, || @body(work_item))
     },
     sync          = @|| synchronize_opencl(dev),
     alloc         = @|size| alloc_opencl(dev, size),

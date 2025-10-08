@@ -4,6 +4,8 @@
 #[import(cc = "device", name = "llvm.amdgcn.ds.gws.barrier")]       fn amdgcn_ds_gws_barrier(i32, i32) -> ();
 #[import(cc = "device", name = "llvm.amdgcn.s.barrier")]            fn amdgcn_s_barrier() -> ();
 #[import(cc = "device", name = "llvm.amdgcn.wave.barrier")]         fn amdgcn_wave_barrier() -> ();
+#[import(cc = "device", name = "llvm.amdgcn.sched.barrier")]        fn amdgcn_sched_barrier(i32) -> ();
+#[import(cc = "device", name = "llvm.amdgcn.s.sethalt")]            fn amdgcn_s_sethalt(i32) -> ();
 #[import(cc = "device", name = "llvm.amdgcn.wavefrontsize")]        fn amdgcn_wavefrontsize() -> i32;
 #[import(cc = "device", name = "llvm.amdgcn.mbcnt.hi")]             fn amdgcn_mbcnt_hi(i32, i32) -> i32;
 #[import(cc = "device", name = "llvm.amdgcn.mbcnt.lo")]             fn amdgcn_mbcnt_lo(i32, i32) -> i32;
@@ -21,8 +23,9 @@
 #[import(cc = "device", name = "llvm.amdgcn.s.sleep")]              fn amdgcn_s_sleep(i32) -> ();
 #[import(cc = "device", name = "llvm.amdgcn.icmp.i32.i32")]         fn amdgcn_icmp_i32(i32, i32, i32) -> i32;
 #[import(cc = "device", name = "llvm.amdgcn.icmp.i64.i32")]         fn amdgcn_icmp_i64(i32, i32, i32) -> i64;
-#[import(cc = "device", name = "llvm.amdgcn.atomic.inc.i32.p1i32")] fn amdgcn_atomic_inc_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
-#[import(cc = "device", name = "llvm.amdgcn.atomic.dec.i32.p1i32")] fn amdgcn_atomic_dec_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
+#[import(cc = "device", name = "llvm.amdgcn.atomic.inc.i32.p1")] fn amdgcn_atomic_inc_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
+#[import(cc = "device", name = "llvm.amdgcn.atomic.dec.i32.p1")] fn amdgcn_atomic_dec_global_u32(&mut addrspace(1)u32, u32, u32, u32, bool) -> u32;
+#[import(cc = "device", name = "llvm.amdgcn.s.memrealtime")]        fn amdgcn_s_memrealtime() -> u64;
 
 // https://github.com/RadeonOpenCompute/ROCm-Device-Libs/blob/master/doc/OCML.md
 #[import(cc = "C", name = "__ocml_exp_f32")]      fn ocml_expf(f32) -> f32;
@@ -91,9 +94,9 @@
 // syncscope: agent workgroup wavefront one-as agent-one-as workgroup-one-as wavefront-one-as singlethread-one-as
 //
 
-fn @amdgcn_atomic_load_global_i32(addr: &mut addrspace(1)i32) = atomic_load_p1[i32](addr, 2, "agent");
-fn @amdgcn_atomic_load_global_u32(addr: &mut addrspace(1)u32) = atomic_load_p1[u32](addr, 2, "agent");
-fn @amdgcn_atomic_load_global_u64(addr: &mut addrspace(1)u64) = atomic_load_p1[u64](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_i32(addr: &addrspace(1)i32) = atomic_load_p1[i32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u32(addr: &addrspace(1)u32) = atomic_load_p1[u32](addr, 2, "agent");
+fn @amdgcn_atomic_load_global_u64(addr: &addrspace(1)u64) = atomic_load_p1[u64](addr, 2, "agent");
 fn @amdgcn_atomic_store_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_store_p1[i32](addr, val, 2, "agent");
 fn @amdgcn_atomic_store_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_store_p1[u32](addr, val, 2, "agent");
 fn @amdgcn_atomic_store_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_store_p1[u64](addr, val, 2, "agent");
@@ -146,10 +149,12 @@ fn @amdgcn_atomic_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = atomic_
 fn @amdgcn_atomic_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = atomic_p1[u32](9, addr, val, 2, "agent");
 fn @amdgcn_atomic_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = atomic_p1[u64](9, addr, val, 2, "agent");
 
-fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, "agent") { (old, _success) => old };
-fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) = match cmpxchg_p1[u16](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+fn @amdgcn_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, 2, "agent") { (old, _success) => old };
+
+fn @amdgcn_threadfence() = fence(7, "agent");
 
 fn @amdgcn_lane_id() -> i32 {
     if amdgcn_wavefrontsize() == 64 {
@@ -299,6 +304,12 @@ fn @amdgcn_maxmax(a: i32, b: i32, c: i32) -> i32 {
     res
 }
 
+fn @amdpal_breakpoint() -> () {
+    amdgcn_sched_barrier(0);
+    amdgcn_s_sethalt(1);
+    amdgcn_sched_barrier(0);
+}
+
 struct hsa_signal_t {
     handle : u64
 }
@@ -321,7 +332,7 @@ struct hsa_dispatch_packet_t {
     completion_signal : hsa_signal_t
 }
 
-fn @amdgpu_accelerator(dev: i32) = Accelerator {
+fn @amdgpu_hsa_accelerator(dev: i32) = Accelerator {
     exec = @|body| |grid, block| {
         fn @div_round_up(num: i32, multiple: i32) -> i32 { (num + multiple - 1) / multiple }
         let work_item = WorkItem {
@@ -344,7 +355,7 @@ fn @amdgpu_accelerator(dev: i32) = Accelerator {
             nblky = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(4) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(3) as i32),
             nblkz = @|| div_round_up(bitcast[&addrspace(4)[u32]](amdgcn_dispatch_ptr())(5) as i32, bitcast[&addrspace(4)[u16]](amdgcn_dispatch_ptr())(4) as i32)
         };
-        amdgpu(dev, grid, block, || @body(work_item))
+        amdgpu_hsa(dev, grid, block, || @body(work_item))
     },
     sync          = @|| synchronize_hsa(dev),
     alloc         = @|size| alloc_hsa(dev, size),
@@ -352,8 +363,51 @@ fn @amdgpu_accelerator(dev: i32) = Accelerator {
     barrier       = amdgcn_s_barrier,
 };
 
+#[import(cc = "device", name = "anydsl.amdpal.workitem.id.x")]        fn amdpal_workitem_id_x() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workitem.id.y")]        fn amdpal_workitem_id_y() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workitem.id.z")]        fn amdpal_workitem_id_z() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.id.x")]       fn amdpal_workgroup_id_x() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.id.y")]       fn amdpal_workgroup_id_y() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.id.z")]       fn amdpal_workgroup_id_z() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.size.x")]     fn amdpal_workgroup_size_x() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.size.y")]     fn amdpal_workgroup_size_y() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.workgroup.size.z")]     fn amdpal_workgroup_size_z() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.nblk.x")]               fn amdpal_nblk_x() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.nblk.y")]               fn amdpal_nblk_y() -> i32;
+#[import(cc = "device", name = "anydsl.amdpal.nblk.z")]               fn amdpal_nblk_z() -> i32;
+
+fn @amdgpu_pal_accelerator(dev: i32) = Accelerator {
+    exec = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = amdpal_workitem_id_x,
+            tidy  = amdpal_workitem_id_y,
+            tidz  = amdpal_workitem_id_z,
+            bidx  = amdpal_workgroup_id_x,
+            bidy  = amdpal_workgroup_id_y,
+            bidz  = amdpal_workgroup_id_z,
+            gidx  = @|| amdpal_workgroup_id_x() * amdpal_workgroup_size_x() + amdpal_workitem_id_x(),
+            gidy  = @|| amdpal_workgroup_id_y() * amdpal_workgroup_size_y() + amdpal_workitem_id_y(),
+            gidz  = @|| amdpal_workgroup_id_z() * amdpal_workgroup_size_z() + amdpal_workitem_id_z(),
+            bdimx = amdpal_workgroup_size_x,
+            bdimy = amdpal_workgroup_size_y,
+            bdimz = amdpal_workgroup_size_z,
+            gdimx = @|| amdpal_nblk_x() * amdpal_workgroup_size_x(),
+            gdimy = @|| amdpal_nblk_y() * amdpal_workgroup_size_y(),
+            gdimz = @|| amdpal_nblk_z() * amdpal_workgroup_size_z(),
+            nblkx = amdpal_nblk_x,
+            nblky = amdpal_nblk_y,
+            nblkz = amdpal_nblk_z
+        };
+        amdgpu_pal(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_pal(dev),
+    alloc         = @|size| alloc_pal(dev, size),
+    alloc_unified = @|size| alloc_pal_unified(dev, size),
+    barrier       = amdgcn_s_barrier,
+};
+
 static amdgpu_intrinsics = Intrinsics {
-    expf        = ocml_sinf,
+    expf        = ocml_expf,
     exp2f       = ocml_exp2f,
     logf        = ocml_logf,
     log2f       = ocml_log2f,

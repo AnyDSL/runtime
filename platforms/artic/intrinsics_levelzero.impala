@@ -1,0 +1,92 @@
+// most device intrinsics are the same as OpenCL and don't need to be duplicated
+fn spv_levelzero_get_num_groups()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](24 /* BuiltInNumWorkgroups */);
+fn spv_levelzero_get_local_size()  = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](25 /* BuiltInWorkgroupSize */);
+fn spv_levelzero_get_group_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](26 /* BuiltInWorkgroupId */);
+fn spv_levelzero_get_local_id()    = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](27 /* BuiltInLocalInvocationId */);
+fn spv_levelzero_get_global_id()   = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](28 /* BuiltInGlobalInvocationId */);
+fn spv_levelzero_get_global_size() = *spirv_get_builtin[&mut addrspace(8) simd[u64 * 3]](31 /* BuiltInGlobalSize */);
+
+fn @levelzero_accelerator(dev: i32) = Accelerator {
+    exec          = @|body| |grid, block| {
+        let work_item = WorkItem {
+            tidx  = @|| spv_levelzero_get_local_id()(0) as i32,
+            tidy  = @|| spv_levelzero_get_local_id()(1) as i32,
+            tidz  = @|| spv_levelzero_get_local_id()(2) as i32,
+            bidx  = @|| spv_levelzero_get_group_id()(0) as i32,
+            bidy  = @|| spv_levelzero_get_group_id()(1) as i32,
+            bidz  = @|| spv_levelzero_get_group_id()(2) as i32,
+            gidx  = @|| spv_levelzero_get_global_id()(0) as i32,
+            gidy  = @|| spv_levelzero_get_global_id()(1) as i32,
+            gidz  = @|| spv_levelzero_get_global_id()(2) as i32,
+            bdimx = @|| spv_levelzero_get_local_size()(0) as i32,
+            bdimy = @|| spv_levelzero_get_local_size()(1) as i32,
+            bdimz = @|| spv_levelzero_get_local_size()(2) as i32,
+            gdimx = @|| spv_levelzero_get_global_size()(0) as i32,
+            gdimy = @|| spv_levelzero_get_global_size()(1) as i32,
+            gdimz = @|| spv_levelzero_get_global_size()(2) as i32,
+            nblkx = @|| spv_levelzero_get_num_groups()(0) as i32,
+            nblky = @|| spv_levelzero_get_num_groups()(1) as i32,
+            nblkz = @|| spv_levelzero_get_num_groups()(2) as i32
+        };
+        levelzero(dev, grid, block, || @body(work_item))
+    },
+    sync          = @|| synchronize_levelzero(dev),
+    alloc         = @|size| alloc_levelzero(dev, size),
+    alloc_unified = @|size| alloc_levelzero_unified(dev, size),
+    barrier       = @|| opencl_barrier(CLK_LOCAL_MEM_FENCE),
+};
+
+static levelzero_intrinsics = Intrinsics {
+    expf        = opencl_expf,
+    exp2f       = opencl_exp2f,
+    logf        = opencl_logf,
+    log2f       = opencl_log2f,
+    powf        = opencl_powf,
+    rsqrtf      = opencl_rsqrtf,
+    sqrtf       = opencl_sqrtf,
+    fabsf       = opencl_fabsf,
+    sinf        = opencl_sinf,
+    cosf        = opencl_cosf,
+    tanf        = opencl_tanf,
+    asinf       = opencl_asinf,
+    acosf       = opencl_acosf,
+    atanf       = opencl_atanf,
+    erff        = opencl_erff,
+    atan2f      = opencl_atan2f,
+    copysignf   = opencl_copysignf,
+    fmaf        = opencl_fmaf,
+    fmaxf       = opencl_fmaxf,
+    fminf       = opencl_fminf,
+    fmodf       = opencl_fmodf,
+    floorf      = opencl_floorf,
+    isinff      = opencl_isinff,
+    isnanf      = opencl_isnanf,
+    isfinitef   = opencl_isfinitef,
+    exp         = opencl_exp,
+    exp2        = opencl_exp2,
+    log         = opencl_log,
+    log2        = opencl_log2,
+    pow         = opencl_pow,
+    rsqrt       = opencl_rsqrt,
+    sqrt        = opencl_sqrt,
+    fabs        = opencl_fabs,
+    sin         = opencl_sin,
+    cos         = opencl_cos,
+    tan         = opencl_tan,
+    asin        = opencl_asin,
+    acos        = opencl_acos,
+    atan        = opencl_atan,
+    erf         = opencl_erf,
+    atan2       = opencl_atan2,
+    copysign    = opencl_copysign,
+    fma         = opencl_fma,
+    fmax        = opencl_fmax,
+    fmin        = opencl_fmin,
+    fmod        = opencl_fmod,
+    floor       = opencl_floor,
+    isinf       = opencl_isinf,
+    isnan       = opencl_isnan,
+    isfinite    = opencl_isfinite,
+    min         = opencl_min,
+    max         = opencl_max,
+};

@@ -17,19 +17,38 @@ void register_opencl_platform(Runtime* runtime) { runtime->register_platform<Dum
 #ifndef AnyDSL_runtime_HAS_HSA_SUPPORT
 void register_hsa_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("HSA"); }
 #endif
+#ifndef AnyDSL_runtime_HAS_PAL_SUPPORT
+void register_pal_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("PAL"); }
+#endif
+#ifndef AnyDSL_runtime_HAS_LEVELZERO_SUPPORT
+void register_levelzero_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("Level Zero"); }
+#endif
 #ifndef AnyDSL_runtime_HAS_Vulkan_SUPPORT
 void register_vulkan_platform(Runtime* runtime) { runtime->register_platform<DummyPlatform>("Vulkan"); }
 #endif
 
-Runtime::Runtime(ProfileLevel profile)
+Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     : profile_(profile)
+    , cache_dir_("")
 {}
 
-void Runtime::display_info() {
+void Runtime::display_info() const {
     info("Available platforms:");
     for (auto& p: platforms_) {
         info("    * %: % device(s)", p->name(), p->dev_count());
+        for (size_t d=0; d<p->dev_count(); ++d)
+            info("      + (%) %", d, p->device_name(DeviceId(d)));
     }
+}
+
+const char* Runtime::device_name(PlatformId plat, DeviceId dev) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_name(dev);
+}
+
+bool Runtime::device_check_feature_support(PlatformId plat, DeviceId dev, const char* feature) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_check_feature_support(dev, feature);
 }
 
 void* Runtime::alloc(PlatformId plat, DeviceId dev, int64_t size) {
@@ -167,14 +186,22 @@ static std::string get_self_directory() {
 }
 #endif
 
-static std::string get_cache_directory() {
-    std::string cache_path = get_self_directory();
-    if (!cache_path.empty())
-        cache_path += PATH_DIR_SEPARATOR;
-    return cache_path + "cache";
+void Runtime::set_cache_directory(const std::string& dir) {
+    cache_dir_ = dir;
 }
 
-static std::string get_cached_filename(const std::string& str, const std::string& ext) {
+std::string Runtime::get_cache_directory() const {
+    if (cache_dir_.empty()) {
+        std::string cache_path = get_self_directory();
+        if (!cache_path.empty())
+            cache_path += PATH_DIR_SEPARATOR;
+        return cache_path + "cache";
+    } else {
+        return cache_dir_;
+    }
+}
+
+std::string Runtime::get_cached_filename(const std::string& str, const std::string& ext) const {
     size_t key = std::hash<std::string>{}(str);
     std::stringstream hex_stream;
     hex_stream << std::hex << key;
@@ -197,10 +224,14 @@ std::string Runtime::load_file(const std::string& filename) const {
 }
 
 void Runtime::store_file(const std::string& filename, const std::string& str) const {
+    store_file(filename, reinterpret_cast<const std::byte*>(str.data()), str.length());
+}
+
+void Runtime::store_file(const std::string& filename, const std::byte* data, size_t size) const {
     std::ofstream dst_file(filename, std::ofstream::binary);
     if (!dst_file)
         error("Can't open destination file '%'", filename);
-    dst_file.write(str.data(), str.size());
+    dst_file.write(reinterpret_cast<const char*>(data), size);
 }
 
 std::string Runtime::load_from_cache(const std::string& key, const std::string& ext) const {

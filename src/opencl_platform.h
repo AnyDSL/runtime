@@ -38,9 +38,12 @@ protected:
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
+    void dynamic_profile(DeviceId dev, const std::string& filename);
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }
+    const char* device_name(DeviceId dev) const override;
+    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;
 
@@ -58,6 +61,7 @@ protected:
         cl_device_svm_capabilities svm_caps;
         #endif
         bool is_intel_fpga = false;
+        bool is_xilinx_fpga = false;
 
         std::unordered_map<std::string, cl_program> programs;
         std::unordered_map<cl_program, KernelMap> kernels;
@@ -100,11 +104,10 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
-    std::unordered_map<std::string, std::string> files_;
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
-
     cl_program load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    cl_program load_program_il(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program compile_program(DeviceId dev, cl_program program, const std::string& filename) const;
 

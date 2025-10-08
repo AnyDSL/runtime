@@ -17,10 +17,15 @@ enum {
     ANYDSL_CUDA = 1,
     ANYDSL_OPENCL = 2,
     ANYDSL_HSA = 3,
-    ANYDSL_Vulkan = 4
+    ANYDSL_PAL = 4,
+    ANYDSL_LEVELZERO = 5,
+    ANYDSL_Vulkan = 6
 };
 
 AnyDSL_runtime_API void anydsl_info(void);
+
+AnyDSL_runtime_API const char* anydsl_device_name(int32_t);
+AnyDSL_runtime_API bool anydsl_device_check_feature_support(int32_t, const char*);
 
 AnyDSL_runtime_API void* anydsl_alloc(int32_t, int64_t);
 AnyDSL_runtime_API void* anydsl_alloc_host(int32_t, int64_t);
@@ -43,6 +48,7 @@ AnyDSL_runtime_API float    anydsl_random_val_f32();
 AnyDSL_runtime_API uint64_t anydsl_random_val_u64();
 
 AnyDSL_runtime_API uint64_t anydsl_get_micro_time();
+AnyDSL_runtime_API uint64_t anydsl_get_nano_time();
 AnyDSL_runtime_API uint64_t anydsl_get_kernel_time();
 
 AnyDSL_runtime_API int32_t anydsl_isinff(float);

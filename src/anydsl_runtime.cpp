@@ -1,6 +1,8 @@
 #include <random>
 #include <chrono>
 #include <locale>
+#include <mutex>
+#include <sstream>
 
 #include "anydsl_runtime.h"
 // Make sure the definition for runtime() matches
@@ -14,10 +16,11 @@
 
 #ifdef AnyDSL_runtime_HAS_TBB_SUPPORT
 #define NOMINMAX
-#include <tbb/flow_graph.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_arena.h>
 #include <tbb/task_group.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_queue.h>
 #else
 #include <thread>
 #endif
@@ -32,18 +35,26 @@ struct RuntimeSingleton {
         register_cuda_platform(&runtime);
         register_opencl_platform(&runtime);
         register_hsa_platform(&runtime);
+        register_pal_platform(&runtime);
+        register_levelzero_platform(&runtime);
         register_vulkan_platform(&runtime);
     }
 
-    static ProfileLevel detect_profile_level() {
-        auto profile = ProfileLevel::None;
+    static std::pair<ProfileLevel, ProfileLevel> detect_profile_level() {
+        auto profile = std::make_pair(ProfileLevel::None, ProfileLevel::None);
         const char* env_var = std::getenv("ANYDSL_PROFILE");
         if (env_var) {
             std::string env_str = env_var;
             for (auto& c: env_str)
                 c = std::toupper(c, std::locale());
-            if (env_str == "FULL")
-                profile = ProfileLevel::Full;
+            std::stringstream profile_levels(env_str);
+            std::string level;
+            while (profile_levels >> level) {
+                if (level == "FULL")
+                    profile.first = ProfileLevel::Full;
+                else if (level == "FPGA_DYNAMIC")
+                    profile.second = ProfileLevel::Fpga_dynamic;
+            }
         }
         return profile;
     }
@@ -64,6 +75,14 @@ inline DeviceId to_device(int32_t m) {
 
 void anydsl_info(void) {
     runtime().display_info();
+}
+
+const char* anydsl_device_name(int32_t mask) {
+    return runtime().device_name(to_platform(mask), to_device(mask));
+}
+
+bool anydsl_device_check_feature_support(int32_t mask, const char* feature) {
+    return runtime().device_check_feature_support(to_platform(mask), to_device(mask), feature);
 }
 
 void* anydsl_alloc(int32_t mask, int64_t size) {
@@ -130,7 +149,12 @@ void anydsl_synchronize(int32_t mask) {
 
 uint64_t anydsl_get_micro_time() {
     using namespace std::chrono;
-    return duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
+    return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+uint64_t anydsl_get_nano_time() {
+    using namespace std::chrono;
+    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 uint64_t anydsl_get_kernel_time() {
@@ -191,6 +215,7 @@ uint64_t anydsl_random_val_u64() {
 #ifndef AnyDSL_runtime_HAS_TBB_SUPPORT // C++11 threads version
 static std::unordered_map<int32_t, std::thread> thread_pool;
 static std::vector<int32_t> free_ids;
+static std::mutex thread_lock;
 
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     // Get number of available hardware threads
@@ -222,6 +247,8 @@ void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void
 }
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
+    std::lock_guard<std::mutex> lock(thread_lock);
+
     int32_t (*fun_ptr) (void*) = reinterpret_cast<int32_t (*) (void*)>(fun);
 
     int32_t id;
@@ -238,23 +265,22 @@ int32_t anydsl_spawn_thread(void* args, void* fun) {
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto thread = thread_pool.find(id);
+    auto thread = thread_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        thread = thread_pool.find(id);
+    }
     if (thread != thread_pool.end()) {
         thread->second.join();
-        free_ids.push_back(thread->first);
-        thread_pool.erase(thread);
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push_back(thread->first);
+            thread_pool.erase(thread);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid thread id");
     }
 }
-
-[[noreturn]] void tbb_required() {
-    error("Flow Graph implementation only available in TBB, rebuild runtime with TBB support!");
-}
-int32_t anydsl_create_graph() { tbb_required(); }
-int32_t anydsl_create_task(int32_t, Closure) { tbb_required(); }
-void anydsl_create_edge(int32_t, int32_t) { tbb_required(); }
-void anydsl_execute_graph(int32_t, int32_t) { tbb_required(); }
 #else // TBB version
 void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void* args, void* fun) {
     tbb::task_arena limited((num_threads == 0) ? tbb::task_arena::automatic : num_threads);
@@ -274,116 +300,45 @@ void anydsl_parallel_for(int32_t num_threads, int32_t lower, int32_t upper, void
     limited.execute([&] { tg.wait(); });
 }
 
-static std::unordered_map<int32_t, tbb::task*> task_pool;
-static std::vector<int32_t> free_ids;
-
-class RuntimeTask : public tbb::task {
-public:
-    RuntimeTask(void* args, void* fun)
-        : args_(args), fun_(fun)
-    {}
-
-    tbb::task* execute() {
-        int32_t (*fun_ptr) (void*) = reinterpret_cast<int32_t (*) (void*)>(fun_);
-        fun_ptr(args_);
-        return nullptr;
-    }
-
-private:
-    void* args_;
-    void* fun_;
-};
+typedef tbb::concurrent_unordered_map<int32_t, tbb::task_group, std::hash<int32_t>> task_group_map;
+typedef std::pair<task_group_map::iterator, bool> task_group_node_ref;
+static task_group_map task_pool;
+static tbb::concurrent_queue<int32_t> free_ids;
+static std::mutex thread_lock;
 
 int32_t anydsl_spawn_thread(void* args, void* fun) {
-    int32_t id;
-    if (free_ids.size()) {
-        id = free_ids.back();
-        free_ids.pop_back();
-    } else {
+    std::lock_guard<std::mutex> lock(thread_lock);
+    int32_t id = -1;
+    if (!free_ids.try_pop(id)) {
         id = int32_t(task_pool.size());
     }
 
-    tbb::task* root = new (tbb::task::allocate_root()) RuntimeTask(args, fun);
-    root->set_ref_count(2);
-    tbb::task* child = new (root->allocate_child()) RuntimeTask(args, fun);
-    root->spawn(*child);
-    task_pool[id] = root;
+    int32_t(*fun_ptr) (void*) = reinterpret_cast<int32_t(*)(void*)>(fun);
+
+    assert(id >= 0);
+
+    task_group_node_ref p = task_pool.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple());
+    tbb::task_group& tg = p.first->second;
+
+    tg.run([=] { fun_ptr(args); });
+
     return id;
 }
 
 void anydsl_sync_thread(int32_t id) {
-    auto task = task_pool.find(id);
+    auto task = task_pool.end();
+    {
+        std::lock_guard<std::mutex> lock(thread_lock);
+        task = task_pool.find(id);
+    }
     if (task != task_pool.end()) {
-        task->second->wait_for_all();
-        tbb::task::destroy(*task->second);
-        free_ids.push_back(task->first);
-        task_pool.erase(task);
+        task->second.wait();
+        {
+            std::lock_guard<std::mutex> lock(thread_lock);
+            free_ids.push(task->first);
+        }
     } else {
         assert(0 && "Trying to synchronize on invalid task id");
-    }
-}
-
-static std::unordered_map<int32_t, tbb::flow::graph*> graph_pool;
-static std::unordered_map<int32_t, tbb::flow::graph_node*> node_pool;
-static std::vector<int32_t> free_graph_ids;
-static std::vector<int32_t> free_node_ids;
-
-int32_t anydsl_create_graph() {
-    int32_t id;
-    if (free_graph_ids.size()) {
-        id = free_graph_ids.back();
-        free_graph_ids.pop_back();
-    } else {
-        id = int32_t(graph_pool.size());
-    }
-
-    tbb::flow::graph* graph = new tbb::flow::graph();
-    graph_pool[id] = graph;
-    return id;
-}
-
-int32_t anydsl_create_task(int32_t graph_id, Closure closure) {
-    int32_t id;
-    if (free_node_ids.size()) {
-        id = free_node_ids.back();
-        free_node_ids.pop_back();
-    } else {
-        id = int32_t(node_pool.size());
-    }
-
-    auto graph = graph_pool.find(graph_id);
-    if (graph == graph_pool.end())
-        assert(0 && "Trying to find invalid graph id");
-
-    auto node = new tbb::flow::continue_node<tbb::flow::continue_msg>(*graph->second,
-        [=](const tbb::flow::continue_msg &) {
-                closure.fn(closure.payload);
-        });
-    node_pool[id] = node;
-    return id;
-}
-
-void anydsl_create_edge(int32_t task1_id, int32_t task2_id) {
-    auto node1 = node_pool.find(task1_id);
-    auto node2 = node_pool.find(task2_id);
-    if (node1 == node_pool.end() || node2 == node_pool.end())
-        assert(0 && "Trying to find invalid task id");
-
-    tbb::flow::make_edge(
-        (tbb::flow::continue_node<tbb::flow::continue_msg>&)*node1->second,
-        (tbb::flow::continue_node<tbb::flow::continue_msg>&)*node2->second);
-}
-
-void anydsl_execute_graph(int32_t graph_id, int32_t root_id) {
-    auto graph = graph_pool.find(graph_id);
-    if (graph != graph_pool.end()) {
-        auto root = node_pool.find(root_id);
-        if (root == node_pool.end())
-            assert(0 && "Trying to find invalid task id");
-        ((tbb::flow::continue_node<tbb::flow::continue_msg>*)root->second)->try_put(tbb::flow::continue_msg());
-        graph->second->wait_for_all();
-    } else {
-        assert(0 && "Trying to execute invalid graph id");
     }
 }
 #endif

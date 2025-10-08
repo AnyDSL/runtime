@@ -12,6 +12,8 @@ void register_cpu_platform(Runtime*);
 void register_cuda_platform(Runtime*);
 void register_opencl_platform(Runtime*);
 void register_hsa_platform(Runtime*);
+void register_pal_platform(Runtime*);
+void register_levelzero_platform(Runtime*);
 void register_vulkan_platform(Runtime*);
 
 /// A runtime platform. Exposes a set of devices, a copy function,
@@ -49,10 +51,14 @@ public:
     /// Copies memory to the host (CPU).
     virtual void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) = 0;
 
-    /// Returns the number of devices in this platform.
-    virtual size_t dev_count() const = 0;
     /// Returns the platform name.
     virtual std::string name() const = 0;
+    /// Returns the number of devices in this platform.
+    virtual size_t dev_count() const = 0;
+    /// Returns the name of the given device.
+    virtual const char* device_name(DeviceId dev) const = 0;
+    /// Checks whether the given platform-specific feature is supported on the given device.
+    virtual bool device_check_feature_support(DeviceId dev, const char* feature) const = 0;
 
 protected:
     [[noreturn]] void platform_error() {

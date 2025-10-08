@@ -9,7 +9,9 @@
 # AnyDSL_runtime_FOUND
 # AnyDSL_runtime_HAS_JIT_SUPPORT
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13.4)
+
+enable_language(C)
 
 find_path(AnyDSL_runtime_DIR
     NAMES
@@ -96,6 +98,7 @@ find_package(LLVM CONFIG QUIET PATHS ${LLVM_DIR} $ENV{LLVM_DIR} "@LLVM_DIR@" NO_
 set(AnyDSL_runtime_HAS_CUDA_SUPPORT    @AnyDSL_runtime_HAS_CUDA_SUPPORT@)
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT  @AnyDSL_runtime_HAS_OPENCL_SUPPORT@)
 set(AnyDSL_runtime_HAS_HSA_SUPPORT     @AnyDSL_runtime_HAS_HSA_SUPPORT@)
+set(AnyDSL_runtime_HAS_PAL_SUPPORT     @AnyDSL_runtime_HAS_PAL_SUPPORT@)
 set(AnyDSL_runtime_HAS_TBB_SUPPORT     @AnyDSL_runtime_HAS_TBB_SUPPORT@)
 set(AnyDSL_runtime_HAS_LLVM_SUPPORT    @AnyDSL_runtime_HAS_LLVM_SUPPORT@)
 set(AnyDSL_runtime_HAS_JIT_SUPPORT     @AnyDSL_runtime_HAS_JIT_SUPPORT@)
@@ -151,9 +154,6 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 #   [FRONTEND frontend_name]
 #   [ARTIC_FLAGS [args1...]]
 #   [IMPALA_FLAGS [args2...]]
-#   [TARGET_TRIPLE [args3...]]
-#   [TARGET_CPU [args4...]]
-#   [TARGET_FEATURES [args5...]]
 #   [CLANG_FLAGS [args6...]]
 #   [HLS_FLAGS [args7...]]
 #   [FILES [files...]]
@@ -172,6 +172,7 @@ if(NOT _release_configs)
     set(_release_configs "Release")
 endif()
 list(REMOVE_ITEM _release_configs ${_debug_configs})
+list(REMOVE_DUPLICATES _release_configs)
 
 message(STATUS "AnyDSL debug flags (${_debug_configs}): ${OPT_FLAGS_DEBUG}")
 foreach(_config ${_debug_configs})
@@ -188,10 +189,16 @@ foreach(_config ${_release_configs})
 endforeach()
 
 function(anydsl_runtime_wrap outfiles)
-    cmake_parse_arguments("PARGS" "" "FRONTEND;INTERFACE;NAME" "ARTIC_FLAGS;IMPALA_FLAGS;TARGET_TRIPLE;TARGET_CPU;TARGET_FEATURES;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
+    cmake_parse_arguments(
+        "PARGS"
+        "EMIT_C"
+        "FRONTEND;INTERFACE;NAME"
+        "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(FATAL_ERROR "Unparsed arguments ${PARGS_UNPARSED_ARGUMENTS}")
     endif()
+
+    set(_additional_platform_files)
 
     if(NOT PARGS_FRONTEND)
         set(_frontend "impala")
@@ -206,6 +213,10 @@ function(anydsl_runtime_wrap outfiles)
         endif()
         set(_frontend_flags ${PARGS_ARTIC_FLAGS} ${OPT_FLAGS})
         set(_frontend_bin ${Artic_BIN})
+        list(APPEND _additional_platform_files ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_math.impala
+                                               ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_wmma.impala
+                                               ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_spirv.impala
+                                               ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_levelzero.impala)
     endif()
 
     if(${_frontend} STREQUAL "impala")
@@ -217,24 +228,8 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_bin ${Impala_BIN})
     endif()
 
-    # configure cross-compilation target
-    if(NOT PARGS_TARGET_TRIPLE)
-        set(_frontend_cmd ${_frontend_bin})
-        set(CLANG_TARGET_FLAGS)
-    else()
-        set(TARGET_TRIPLE ${PARGS_TARGET_TRIPLE})
-        set(TARGET_CPU ${PARGS_TARGET_CPU})
-        set(TARGET_FEATURES ${PARGS_TARGET_FEATURES})
-        set(ENV_CMD ${CMAKE_COMMAND} -E env)
-        set(_frontend_cmd ${ENV_CMD} ANYDSL_TARGET_TRIPLE=${TARGET_TRIPLE} ANYDSL_TARGET_CPU=${TARGET_CPU} ANYDSL_TARGET_FEATURES=${TARGET_FEATURES} ${_frontend_bin})
-        if(TARGET_FEATURES)
-            set(CLANG_MATTRS "-mattr=${TARGET_FEATURES}")
-        endif()
-        set(CLANG_TARGET_FLAGS "--target=${TARGET_TRIPLE} ${CLANG_MATTRS}")
-    endif()
-
     # parse extra clang flags
-    set(_clang_flags ${CLANG_TARGET_FLAGS} ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
+    set(_clang_flags ${PARGS_CLANG_FLAGS} ${OPT_FLAGS})
 
     list(FIND _frontend_flags "--log-level" FRONTEND_FLAGS_LOG_LEVEL_IDX)
     if(FRONTEND_FLAGS_LOG_LEVEL_IDX EQUAL -1)
@@ -260,8 +255,16 @@ function(anydsl_runtime_wrap outfiles)
         set(_basename ${PARGS_NAME})
     endif()
 
+    if(NOT PARGS_HLS_FLAGS)
+        set(HLS_COMMAND)
+    else()
+        string(REPLACE ";" "," HLS_FLAGS "${PARGS_HLS_FLAGS}")
+        set(HLS_COMMAND COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DHLS_FLAGS=${HLS_FLAGS} -P ${AnyDSL_runtime_DIR}/build_xilinx_hls.cmake)
+    endif()
+
     set(_basepath ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${_basename})
     set(_llfile ${_basepath}.ll)
+    set(_cfile ${_basepath}.c)
     set(_objfile ${_basepath}.o)
 
     set(_frontend_platform_files
@@ -274,36 +277,47 @@ function(anydsl_runtime_wrap outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_amdgpu.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_opencl.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
-        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala)
+        ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala
+        ${_additional_platform_files})
 
     if(NOT MSVC)
         list(APPEND _clang_flags -fPIE)
     endif()
 
-    # generate .ll file and patch it
-    add_custom_command(OUTPUT ${_llfile}
-        COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
-        COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
-        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
-        COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DSYNTHESIS=${SYNTHESIS} -DFPGA_PART=${FPGA_PART} -DSOC=${SOC} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlssrc.cmake
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+    if(PARGS_EMIT_C)
+        # generate .c file
+        add_custom_command(OUTPUT ${_cfile}
+            COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-c -o ${_basepath}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+        # run clang on the .c file to get the .o
+        add_custom_command(OUTPUT ${_objfile}
+            COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_cfile}
+            DEPENDS ${_cfile} VERBATIM COMMAND_EXPAND_LISTS)
+    else()
+        # generate .ll file and patch it
+        add_custom_command(OUTPUT ${_llfile}
+            COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} ${_frontend_flags} --emit-llvm -o ${_basepath}
+            COMMAND ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_basepath}
+            COMMAND ${CMAKE_COMMAND} -D_basename=${_basename} -DLLVM_AS_BIN=${LLVM_AS_BIN} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_nvvmir.cmake
+            ${HLS_COMMAND}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS ${_frontend_bin} ${Python3_EXECUTABLE} ${AnyDSL_runtime_ROOT_DIR}/post-patcher.py ${_frontend_platform_files} ${_infiles} VERBATIM COMMAND_EXPAND_LISTS)
+        # run clang on the .ll file to get the .o
+        add_custom_command(OUTPUT ${_objfile}
+            COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
+            DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
+    endif()
 
     # generate C interface on request
     if(NOT ${PARGS_INTERFACE} STREQUAL "")
         set(_hfile ${PARGS_INTERFACE}.h)
         add_custom_command(OUTPUT ${_hfile}
-           COMMAND ${_frontend_cmd} ${_frontend_platform_files} ${_infiles} --emit-c-interface -o ${PARGS_INTERFACE}
+           COMMAND ${_frontend_bin} ${_frontend_platform_files} ${_infiles} --emit-c-interface -o ${PARGS_INTERFACE}
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
            DEPENDS ${_frontend_bin} ${_frontend_platform_files} ${_infiles} VERBATIM)
         set_source_files_properties(${_hfile} PROPERTIES GENERATED TRUE)
     endif()
-
-    # run clang on the .ll file to get the .o
-    add_custom_command(OUTPUT ${_objfile}
-        COMMAND ${Clang_BIN} ${_clang_flags} -c -o ${_objfile} ${_llfile}
-        COMMAND ${CMAKE_COMMAND} -D_objfile=${_objfile} -D_basename=${_basename} -P ${AnyDSL_runtime_ROOT_DIR}/cmake/check_hlsobj.cmake
-        DEPENDS ${_llfile} VERBATIM COMMAND_EXPAND_LISTS)
 
     set_source_files_properties(${_objfile} PROPERTIES EXTERNAL_OBJECT true GENERATED true LANGUAGE CXX)
     set(${outfiles} ${${outfiles}} ${_objfile} ${_frontend_platform_files} PARENT_SCOPE)

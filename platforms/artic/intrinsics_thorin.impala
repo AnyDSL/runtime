@@ -6,32 +6,38 @@
 #[import(cc = "builtin")] fn insert[T, U](_tuple: T, _index: i32, _value: U) -> T;
 
 #[import(cc = "thorin")] fn atomic[T](_binop: u32, _addr: &mut T, _val: T, _order: u32, _scope: &[u8]) -> T; // Xchg Add Sub And Nand Or Xor Max Min UMax UMin FAdd FSub
-#[import(cc = "thorin")] fn atomic_load[T](_addr: &mut T, _order: u32, _scope: &[u8]) -> T;
+#[import(cc = "thorin")] fn atomic_load[T](_addr: &T, _order: u32, _scope: &[u8]) -> T;
 #[import(cc = "thorin")] fn atomic_store[T](_addr: &mut T, _val: T, _order: u32, _scope: &[u8]) -> ();
-#[import(cc = "thorin")] fn cmpxchg[T](_addr: &mut T, _cmp: T, _new: T, _order: u32, _scope: &[u8]) -> (T, bool); // only for integer data types
+#[import(cc = "thorin")] fn cmpxchg[T](_addr: &mut T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool); // only for integer data types
+#[import(cc = "thorin")] fn cmpxchg_weak[T](_addr: &mut T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool); // only for integer data types
+#[import(cc = "thorin")] fn fence(_order: u32, _scope: &[u8]) -> ();
 #[import(cc = "thorin")] fn pe_info[T](_src: &[u8], _val: T) -> ();
 #[import(cc = "thorin")] fn cuda(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn nvvm(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn opencl(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
-#[import(cc = "thorin")] fn amdgpu(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
-#[import(cc = "thorin")] fn spirv(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn opencl_spirv(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn amdgpu_hsa(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn amdgpu_pal(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn levelzero(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn reserve_shared[T](_size: i32) -> &mut addrspace(3)[T];
-#[import(cc = "thorin")] fn hls(_body: fn() -> ()) -> ();
+#[import(cc = "thorin")] fn hls(_dev: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "pipeline")] fn thorin_pipeline(_initiation_interval: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> (); // only for HLS/OpenCL backend
 #[import(cc = "thorin", name = "parallel")] fn thorin_parallel(_num_threads: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> ();
 #[import(cc = "thorin", name = "spawn")] fn thorin_spawn(_body: fn() -> ()) -> i32;
 #[import(cc = "thorin")] fn sync(_id: i32) -> ();
 #[import(cc = "thorin")] fn vectorize(_vector_length: i32, _body: fn(i32) -> ()) -> ();
-fn spawn(body: fn() -> ()) = @|| thorin_spawn(body);
 
 #[import(cc = "thorin", name = "atomic")] fn atomic_p1[T](_binop: u32, _addr: &mut addrspace(1)T, _val: T, _order: u32, _scope: &[u8]) -> T;
 #[import(cc = "thorin", name = "atomic")] fn atomic_p3[T](_binop: u32, _addr: &mut addrspace(3)T, _val: T, _order: u32, _scope: &[u8]) -> T;
-#[import(cc = "thorin", name = "atomic_load")] fn atomic_load_p1[T](_addr: &mut addrspace(1)T, _order: u32, _scope: &[u8]) -> T;
-#[import(cc = "thorin", name = "atomic_load")] fn atomic_load_p3[T](_addr: &mut addrspace(3)T, _order: u32, _scope: &[u8]) -> T;
+#[import(cc = "thorin", name = "atomic_load")] fn atomic_load_p1[T](_addr: &addrspace(1)T, _order: u32, _scope: &[u8]) -> T;
+#[import(cc = "thorin", name = "atomic_load")] fn atomic_load_p3[T](_addr: &addrspace(3)T, _order: u32, _scope: &[u8]) -> T;
 #[import(cc = "thorin", name = "atomic_store")] fn atomic_store_p1[T](_addr: &mut addrspace(1)T, _val: T, _order: u32, _scope: &[u8]) -> ();
 #[import(cc = "thorin", name = "atomic_store")] fn atomic_store_p3[T](_addr: &mut addrspace(3)T, _val: T, _order: u32, _scope: &[u8]) -> ();
-#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _order: u32, _scope: &[u8]) -> (T, bool);
-#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg")] fn cmpxchg_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg_weak")] fn cmpxchg_weak_p1[T](_addr: &mut addrspace(1)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
+#[import(cc = "thorin", name = "cmpxchg_weak")] fn cmpxchg_weak_p3[T](_addr: &mut addrspace(3)T, _cmp: T, _new: T, _success_order: u32, _failure_order: u32, _scope: &[u8]) -> (T, bool);
 
-fn @pipeline(body: fn (i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);
-fn @parallel(body: fn (i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body);
+fn @pipeline(body: fn(i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);
+fn @parallel(body: fn(i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body);
+fn @spawn(body: fn() -> ()) = @|| thorin_spawn(body);

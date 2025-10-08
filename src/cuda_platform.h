@@ -13,14 +13,11 @@
 
 #define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda.h>
+#include <nvrtc.h>
 #include <nvvm.h>
 
-#if CUDA_VERSION < 6050
-    #error "CUDA 6.5 or higher required!"
-#endif
-
-#ifdef AnyDSL_runtime_CUDA_NVRTC
-#include <nvrtc.h>
+#if CUDA_VERSION < 10000
+    #error "CUDA 10.0 or higher required!"
 #endif
 
 /// CUDA platform. Has the same number of devices as that of the CUDA implementation.
@@ -46,6 +43,8 @@ protected:
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "CUDA"; }
+    const char* device_name(DeviceId dev) const override;
+    bool device_check_feature_support(DeviceId dev, const char* feature) const override;
 
     typedef std::unordered_map<std::string, CUfunction> FunctionMap;
 
@@ -56,6 +55,7 @@ protected:
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, CUmodule> modules;
         std::unordered_map<CUmodule, FunctionMap> functions;
+        std::string name;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -65,6 +65,7 @@ protected:
             , compute_capability(data.compute_capability)
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
+            , name(std::move(name))
         {}
 
         void lock() {
@@ -77,6 +78,8 @@ protected:
     };
 
     std::vector<DeviceData> devices_;
+
+    bool dump_binaries = false;
 
     struct ProfileData {
         CudaPlatform* platform;

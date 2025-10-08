@@ -9,8 +9,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <hsa.h>
-#include <hsa_ext_amd.h>
+#include <hsa/hsa.h>
+#include <hsa/hsa_ext_amd.h>
+
+namespace llvm {
+class OptimizationLevel;
+}
 
 /// HSA platform. Has the same number of devices as that of the HSA implementation.
 class HSAPlatform : public Platform {
@@ -36,6 +40,8 @@ protected:
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
+    const char* device_name(DeviceId dev) const override;
+    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     struct KernelInfo {
         uint64_t kernel;
@@ -59,6 +65,7 @@ protected:
         std::atomic_flag locked = ATOMIC_FLAG_INIT;
         std::unordered_map<std::string, hsa_executable_t> programs;
         std::unordered_map<uint64_t, KernelMap> kernels;
+        std::string name;
 
         DeviceData() {}
         DeviceData(const DeviceData&) = delete;
@@ -77,6 +84,7 @@ protected:
             , amd_coarsegrained_pool(data.amd_finegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
+            , name(data.name)
         {}
 
         void lock() {
@@ -90,7 +98,6 @@ protected:
 
     uint64_t frequency_;
     std::vector<DeviceData> devices_;
-    std::unordered_map<std::string, std::string> files_;
 
     void* alloc_hsa(int64_t, hsa_region_t);
     void* alloc_hsa(int64_t, hsa_amd_memory_pool_t);
@@ -99,7 +106,7 @@ protected:
     static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
     KernelInfo& load_kernel(DeviceId, const std::string&, const std::string&);
     std::string compile_gcn(DeviceId, const std::string&, const std::string&) const;
-    std::string emit_gcn(const std::string&, const std::string&, const std::string &, int) const;
+    std::string emit_gcn(const std::string&, const std::string&, const std::string&, llvm::OptimizationLevel) const;
 };
 
 #endif
