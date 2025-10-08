@@ -40,6 +40,9 @@ protected:
     size_t dev_count() const override { return usable_devices.size(); }
     std::string name() const override { return "Vulkan"; }
 
+    const char* device_name(DeviceId dev) const override;
+    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
+
     struct Device;
 
     struct Resource {
@@ -86,6 +89,7 @@ protected:
 
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
+        VkPhysicalDeviceProperties2 properties;
         size_t device_id;
         VkDevice device = nullptr;
 

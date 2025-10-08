@@ -97,12 +97,9 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .pNext = nullptr,
         .minImportedHostPointerAlignment = 0xDEADBEEF,
     };
-    auto device_properties2 = VkPhysicalDeviceProperties2 {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-        .pNext = &external_memory_host_properties,
-    };
-    vkGetPhysicalDeviceProperties2(physical_device, &device_properties2);
-    auto& device_properties = device_properties2.properties;
+
+    vkGetPhysicalDeviceProperties2(physical_device, &properties);
+    auto& device_properties = properties.properties;
 
     debug("  GPU%:", device_id);
     debug("  Device name: %", device_properties.deviceName);
@@ -683,6 +680,10 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
     // Cleanup
     vkFreeMemory(device->device, memory, nullptr);
     vkDestroyBuffer(device->device, tmp_buffer, nullptr);
+}
+
+const char *VulkanPlatform::device_name(DeviceId dev) const {
+    return usable_devices[dev]->properties.properties.deviceName;
 }
 
 void register_vulkan_platform(Runtime* runtime) {
