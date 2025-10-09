@@ -1,0 +1,21 @@
+# This is the official list of contributing authors in the AnyDSL runtime project for copyright purposes.
+
+# Name (GitHub Handle), Affiliation(s)
+Puya Amiri (pooyaww), DFKI
+Hugo Devillers (Hugobros3), Saarland University
+Pascal Grittmann (pgrit), Saarland University
+Ralf Jung (RalfJung), Saarland University
+Michael Kenzel (michael-kenzel), DFKI
+Marcel Köster (m4rs-mt), Saarland University
+Matthis Kruse (DasNaCl), Saarland University
+Matthias Kurtenacker (m-kurtenacker), DFKI
+Roland Leißa (leissa), Saarland University
+Stefan Lemme (stlemme), Saarland University / DFKI
+Richard Membarth (richardmembarth), Saarland University / DFKI / Technische Hochschule Ingolstadt
+Simon Moll (simoll), Saarland University
+Arsène Pérard-Gayot (madmann91), Saarland University
+Akif Özkan (akifoezkan), Friedrich-Alexander-University Erlangen-Nuremberg
+Alexander Rath (iRath96), DFKI
+Till Speicher (tillspeicher), Saarland University
+Fabian Wildgrube (FabianWildgrube), Advanced Micro Devices Inc.
+Ömercan Yazici (PearCoding), Saarland University

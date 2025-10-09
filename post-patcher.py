@@ -10,7 +10,7 @@ def patch_llvmir(rttype):
             for line in f:
                 if rttype=="amdgpu" or rttype=="nvvm" or rttype=="ll":
                     # patch to opaque identity functions
-                    m = re.match('^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr(?: #[0-9]+)?\n$', line)
+                    m = re.match(r'^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr(?: #[0-9]+)?\n$', line)
                     if m is not None:
                         ty1, fname, ty2 = m.groups()
                         assert ty1 == ty2, "Argument and return types of magic IDs must match"
@@ -47,7 +47,7 @@ def patch_cfiles(rttype):
         with open(filename) as f:
             for line in f:
                 # patch to opaque identity functions
-                m = re.match('^(.*) = (magic_.*_id)\((.*)\);\n$', line)
+                m = re.match(r'^(.*) = (magic_.*_id)\((.*)\);\n$', line)
                 if m is not None:
                     lhs, fname, arg = m.groups()
                     print("Patching magic ID {0} in {1}".format(fname, filename))
@@ -75,7 +75,7 @@ def patch_defs(rttype):
                     matched = False
 
                     for (func, code) in iter(nvvm_defs.items()):
-                        m = re.match('^declare (.*) (@' + func + ')\((.*)\)\n$', line)
+                        m = re.match(r'^declare (.*) (@' + func + r')\((.*)\)\n$', line)
                         if m is not None:
                             result.append(code)
                             matched = True

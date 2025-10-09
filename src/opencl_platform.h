@@ -107,6 +107,7 @@ protected:
 
     cl_kernel load_kernel(DeviceId dev, const std::string& filename, const std::string& kernelname);
     cl_program load_program_binary(DeviceId dev, const std::string& filename, const std::string& program_string) const;
+    cl_program load_program_il(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program load_program_source(DeviceId dev, const std::string& filename, const std::string& program_string) const;
     cl_program compile_program(DeviceId dev, cl_program program, const std::string& filename) const;
 

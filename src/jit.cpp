@@ -8,7 +8,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Support/Host.h>
+#include <llvm/TargetParser/Host.h>
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
@@ -62,31 +62,31 @@ struct JIT {
             bool debug = false;
             assert(opt <= 3);
 
-            thorin::World world(module_name);
-            world.set(log_level);
-            world.set(std::make_shared<thorin::Stream>(std::cerr));
+            thorin::Thorin thorin(module_name);
+            thorin.world().set(log_level);
+            thorin.world().set(std::make_shared<thorin::Stream>(std::cerr));
             if (!::compile(
                 { "runtime", module_name },
                 { std::string(runtime_srcs), program_str },
-                world, std::cerr))
+                thorin.world(), std::cerr))
                 error("JIT: error while compiling sources");
 
-            world.opt();
+            thorin.opt();
 
             std::string host_triple, host_cpu, host_attr, hls_flags;
-            thorin::DeviceBackends backends(world, opt, debug, hls_flags);
+            thorin::DeviceBackends backends(thorin.world(), opt, debug, hls_flags);
 
-            thorin::llvm::CPUCodeGen cg(world, opt, debug, host_triple, host_cpu, host_attr);
+            thorin::llvm::CPUCodeGen cg(thorin, opt, debug, host_triple, host_cpu, host_attr);
             std::tie(llvm_context, llvm_module) = cg.emit_module();
             std::stringstream stream;
             llvm::raw_os_ostream llvm_stream(stream);
             llvm_module->print(llvm_stream, nullptr);
             runtime->store_to_cache(program_str, stream.str(), ".llvm");
 
-            if (backends.cgs[thorin::DeviceBackends::HLS])
-                error("JIT compilation of hls not supported!");
             for (auto& cg : backends.cgs) {
                 if (cg) {
+                    if (std::string(cg->file_ext()) == ".hls")
+                        error("JIT compilation of hls not supported!");
                     std::ostringstream stream;
                     cg->emit_stream(stream);
                     runtime->store_to_cache(cg->file_ext() + program_str, stream.str(), cg->file_ext());
@@ -116,10 +116,10 @@ struct JIT {
             .setEngineKind(llvm::EngineKind::JIT)
             .setMCPU(llvm::sys::getHostCPUName())
             .setTargetOptions(options)
-            .setOptLevel(   opt == 0  ? llvm::CodeGenOpt::None    :
-                            opt == 1  ? llvm::CodeGenOpt::Less    :
-                            opt == 2  ? llvm::CodeGenOpt::Default :
-                        /* opt == 3 */ llvm::CodeGenOpt::Aggressive)
+            .setOptLevel(   opt == 0  ? llvm::CodeGenOptLevel::None    :
+                            opt == 1  ? llvm::CodeGenOptLevel::Less    :
+                            opt == 2  ? llvm::CodeGenOptLevel::Default :
+                        /* opt == 3 */ llvm::CodeGenOptLevel::Aggressive)
             .create();
         if (!engine)
             return -1;

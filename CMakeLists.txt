@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.13.4 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20.0 FATAL_ERROR)
 
 project(AnyDSL-runtime)
 
 set(PACKAGE_VERSION "0.3.9")
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
+#set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -25,6 +25,8 @@ find_path(Artic_DIR NAMES artic-config.cmake PATHS ${Artic_DIR} $ENV{Artic_DIR} 
 find_path(Impala_DIR NAMES impala-config.cmake PATHS ${Impala_DIR} $ENV{Impala_DIR} ${CMAKE_BINARY_DIR}/share/anydsl/cmake)
 
 set(AnyDSL_runtime_ENABLE_DEBUG_OUTPUT ${DEBUG_OUTPUT})
+set(AnyDSL_runtime_TARGET_NAME runtime CACHE STRING "Name of the cmake target for the AnyDSL runtime")
+mark_as_advanced(AnyDSL_runtime_TARGET_NAME)
 
 add_subdirectory(src)
 

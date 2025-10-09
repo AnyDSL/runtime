@@ -273,13 +273,13 @@
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rn")] fn nvvm_ull2f_rn(i64) -> f32;
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rp")] fn nvvm_ull2f_rp(i64) -> f32;
 #[import(cc = "device", name = "llvm.nvvm.ull2f.rz")] fn nvvm_ull2f_rz(i64) -> f32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i8.p1i8")] fn nvvm_ldg_u8_p1(&addrspace(1)u8, i32) -> u8;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i32.p1i32")] fn nvvm_ldg_i32_p1(&addrspace(1)i32, i32) -> i32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.f32.p1f32")] fn nvvm_ldg_f32_p1(&addrspace(1)f32, i32) -> f32;
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.v4i32.p1v4i32")] fn nvvm_ldg4_i32_p1(&addrspace(1)simd[i32 * 4], i32) -> simd[i32 * 4];
-#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.v4f32.p1v4f32")] fn nvvm_ldg4_f32_p1(&addrspace(1)simd[f32 * 4], i32) -> simd[f32 * 4];
-#[import(cc = "device", name = "llvm.nvvm.atomic.load.inc.32.p1i32")] fn nvvm_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
-#[import(cc = "device", name = "llvm.nvvm.atomic.load.dec.32.p1i32")] fn nvvm_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i8.p1")] fn nvvm_ldg_u8_p1(&addrspace(1)u8, i32) -> u8;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.i32.p1")] fn nvvm_ldg_i32_p1(&addrspace(1)i32, i32) -> i32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.f32.p1")] fn nvvm_ldg_f32_p1(&addrspace(1)f32, i32) -> f32;
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.i.v4i32.p1")] fn nvvm_ldg4_i32_p1(&addrspace(1)simd[i32 * 4], i32) -> simd[i32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.ldg.global.f.v4f32.p1")] fn nvvm_ldg4_f32_p1(&addrspace(1)simd[f32 * 4], i32) -> simd[f32 * 4];
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.inc.32.p1")] fn nvvm_atomic_inc_global_u32(&mut addrspace(1)u32, u32) -> u32;
+#[import(cc = "device", name = "llvm.nvvm.atomic.load.dec.32.p1")] fn nvvm_atomic_dec_global_u32(&mut addrspace(1)u32, u32) -> u32;
 
 #[import(cc = "device", name = "llvm.nvvm.membar.gl")] fn nvvm_threadfence() -> ();
 #[import(cc = "device", name = "llvm.nvvm.membar.cta")] fn nvvm_threadfence_block() -> ();
@@ -307,7 +307,7 @@
 #[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.i32")] fn nvvm_warp_shfl_sync_bfly_i32(u32, i32, i32, i32) -> i32;
 #[import(cc = "device", name = "llvm.nvvm.shfl.sync.bfly.f32")] fn nvvm_warp_shfl_sync_bfly_f32(u32, f32, i32, i32) -> f32;
 
-// libdevice intrinsics: http://docs.nvidia.com/cuda/libdevice-users-guide
+// libdevice intrinsics: https://docs.nvidia.com/cuda/libdevice-users-guide
 #[import(cc = "C", name = "__nv_expf")]      fn nvvm_expf(f32) -> f32;
 #[import(cc = "C", name = "__nv_exp2f")]     fn nvvm_exp2f(f32) -> f32;
 #[import(cc = "C", name = "__nv_logf")]      fn nvvm_logf(f32) -> f32;
@@ -428,6 +428,47 @@ fn @nvvm_atomic_cas_global_u16(addr: &mut addrspace(1)u16, cmp: u16, new: u16) =
 fn @nvvm_atomic_cas_global_i32(addr: &mut addrspace(1)i32, cmp: i32, new: i32) = match cmpxchg_p1[i32](addr, cmp, new, 2, 2, "") { (old, _success) => old };
 fn @nvvm_atomic_cas_global_u32(addr: &mut addrspace(1)u32, cmp: u32, new: u32) = match cmpxchg_p1[u32](addr, cmp, new, 2, 2, "") { (old, _success) => old };
 fn @nvvm_atomic_cas_global_u64(addr: &mut addrspace(1)u64, cmp: u64, new: u64) = match cmpxchg_p1[u64](addr, cmp, new, 2, 2, "") { (old, _success) => old };
+
+//
+// reductions
+//
+
+//TODO: and, or and xor. Only supported by b32 and b64
+//TODO: Somehow inc and dec return a result.
+
+fn @nvvm_reduce_add_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.add.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.add.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.add.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.add.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_f32(addr: &mut addrspace(1)f32, val: f32) = asm("red.global.add.f32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_global_f64(addr: &mut addrspace(1)f64, val: f64) = asm("red.global.add.f64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_add_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.add.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.add.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.add.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.add.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_f32(addr: &mut addrspace(3)f32, val: f32) = asm("red.shared.add.f32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_add_shared_f64(addr: &mut addrspace(3)f64, val: f64) = asm("red.shared.add.f64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_min_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.min.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.min.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.min.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.min.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_min_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.min.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.min.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.min.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_min_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.min.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_max_global_i32(addr: &mut addrspace(1)i32, val: i32) = asm("red.global.max.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_i64(addr: &mut addrspace(1)i64, val: i64) = asm("red.global.max.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_u32(addr: &mut addrspace(1)u32, val: u32) = asm("red.global.max.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_global_u64(addr: &mut addrspace(1)u64, val: u64) = asm("red.global.max.u64 [$0], $1;" : : "l"(addr), "r"(val) );
+
+fn @nvvm_reduce_max_shared_i32(addr: &mut addrspace(3)i32, val: i32) = asm("red.shared.max.s32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_i64(addr: &mut addrspace(3)i64, val: i64) = asm("red.shared.max.s64 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_u32(addr: &mut addrspace(3)u32, val: u32) = asm("red.shared.max.u32 [$0], $1;" : : "l"(addr), "r"(val) );
+fn @nvvm_reduce_max_shared_u64(addr: &mut addrspace(3)u64, val: u64) = asm("red.shared.max.u64 [$0], $1;" : : "l"(addr), "r"(val) );
 
 // fn @nvvm_warp_sync_all(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 0, predicate) { (_ballot, bit) => bit };
 // fn @nvvm_warp_sync_any(membermask: u32, predicate: bool) -> bool = match nvvm_warp_vote_sync(membermask, 1, predicate) { (_ballot, bit) => bit };

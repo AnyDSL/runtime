@@ -13,14 +13,11 @@
 
 #define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda.h>
+#include <nvrtc.h>
 #include <nvvm.h>
 
-#if CUDA_VERSION < 6050
-    #error "CUDA 6.5 or higher required!"
-#endif
-
-#ifdef AnyDSL_runtime_CUDA_NVRTC
-#include <nvrtc.h>
+#if CUDA_VERSION < 10000
+    #error "CUDA 10.0 or higher required!"
 #endif
 
 /// CUDA platform. Has the same number of devices as that of the CUDA implementation.

@@ -66,7 +66,7 @@ extern "device" {
     fn "llvm.x86.bmi.pext.64" cpu_pext64(i64, i64) -> i64;
     fn "llvm.x86.bmi.pdep.32" cpu_pdep32(i32, i32) -> i32;
     fn "llvm.x86.bmi.pdep.64" cpu_pdep64(i64, i64) -> i64;
-    fn "llvm.prefetch.p0i8"   cpu_prefetch(&u8, i32, i32, i32) -> ();
+    fn "llvm.prefetch.p0"   cpu_prefetch(&u8, i32, i32, i32) -> ();
 }
 
 //

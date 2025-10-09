@@ -21,19 +21,21 @@ class Platform;
 
 enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
 
+struct ParamsArgs {
+    void** data;
+    const uint32_t* sizes;
+    const uint32_t* aligns;
+    const uint32_t* alloc_sizes;
+    const KernelArgType* types;
+};
+
 /// The parameters to a `anydsl_launch_kernel()` call.
 struct LaunchParams {
     const char* file_name;
     const char* kernel_name;
     const uint32_t* grid;
     const uint32_t* block;
-    struct {
-        void** data;
-        const uint32_t* sizes;
-        const uint32_t* aligns;
-        const uint32_t* alloc_sizes;
-        const KernelArgType* types;
-    } args;
+    ParamsArgs args;
     uint32_t num_args;
 };
 
