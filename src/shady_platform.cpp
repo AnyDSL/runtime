@@ -45,6 +45,8 @@ ShadyPlatform::ShadyPlatform(Runtime *r) : Platform(r) {
     cfg.dump_spv = true;
     cfg.use_validation = true;
 
+    compiler_config_.dynamic_scheduling = false;
+
     runner_ = shady::shd_rn_initialize(cfg);
     for (size_t i = 0; i < shd_rn_device_count(runner_); i++) {
         devices_.emplace_back(std::make_unique<ShadyDevice>(*this, (DeviceId) i));
@@ -101,14 +103,21 @@ void ShadyPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_param
     auto& program = device->load_program(launch_params.file_name);
 
     std::vector<void*> args;
+    for (uint32_t argIdx = 0; argIdx < launch_params.num_args; ++argIdx) {
+        args.push_back(launch_params.args.data[argIdx]);
+        //WRAP_LEVEL_ZERO(zeKernelSetArgumentValue(hKernel, argIdx, launch_params.args.sizes[argIdx], launch_params.args.data[argIdx]));
+    }
 
     shady::Command* d = shady::shd_rn_launch_kernel(program.handle_, device->handle_, launch_params.kernel_name, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2], args.size(), args.data(), nullptr);
     assert(d);
     shady::shd_rn_wait_completion(d);
 }
+
 void ShadyPlatform::synchronize(DeviceId dev) {}
 
-void ShadyPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {}
+void ShadyPlatform::copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
+    assert(false);
+}
 
 void ShadyPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) {
     auto& dst_device = devices_[dev_dst];
@@ -119,7 +128,7 @@ void ShadyPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceId
 void ShadyPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) {
     auto& src_device = devices_[dev_src];
     auto& src_buffer = src_device->buffers_[(uint64_t) src];
-    shd_rn_copy_from_buffer(src_buffer->handle_, offset_dst, (char*) dst + offset_dst, size);
+    shd_rn_copy_from_buffer(src_buffer->handle_, offset_src, (char*) dst + offset_dst, size);
 }
 
 void register_shady_platform(Runtime* runtime) {
