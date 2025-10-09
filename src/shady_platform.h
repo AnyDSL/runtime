@@ -5,9 +5,12 @@
 
 namespace shady {
 extern "C" {
-#include "shady/runtime.h"
+#include "shady/runner/runner.h"
+#include "shady/driver.h"
 }
 }
+
+struct ShadyProgram;
 
 class ShadyPlatform : public Platform {
 public:
@@ -33,8 +36,15 @@ public:
     const char * device_name(DeviceId dev) const override { return "TODO"; }
     bool device_check_feature_support(DeviceId dev, const char* feature) const override { return false; }
 
+    struct ShadyDevice;
 private:
-    shady::Runtime* shd_rt;
+    shady::CompilerConfig compiler_config_ = shady::shd_default_compiler_config();
+    shady::Runner* runner_;
+
+    std::vector<std::unique_ptr<ShadyDevice>> devices_;
+
+    friend ShadyDevice;
+    friend ShadyProgram;
 };
 
 #endif //ANYDSL_RUNTIME_RUNTIME_SHADY_H
