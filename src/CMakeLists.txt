@@ -139,6 +139,17 @@ if(pal_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
 
+# look for shady
+find_package(shady)
+if (shady_FOUND)
+    find_package(Vulkan REQUIRED)
+    message("It's shading time")
+    add_library(runtime_shady STATIC shady_platform.cpp shady_platform.h)
+    target_link_libraries(runtime_shady PUBLIC shady::runtime shady::api)
+    list(APPEND RUNTIME_PLATFORMS runtime_shady)
+endif()
+set(AnyDSL_runtime_HAS_SHADY_SUPPORT ${shady_FOUND} CACHE INTERNAL "enables Shady support")
+
 find_package(Vulkan)
 if(Vulkan_FOUND)
     add_library(runtime_vulkan STATIC vulkan_platform.cpp vulkan_platform.h)
