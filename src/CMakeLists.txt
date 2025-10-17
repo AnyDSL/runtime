@@ -152,6 +152,7 @@ set(AnyDSL_runtime_HAS_SHADY_SUPPORT ${shady_FOUND} CACHE INTERNAL "enables Shad
 
 find_package(Vulkan)
 if(Vulkan_FOUND)
+    find_package(shady REQUIRED)
     add_library(runtime_vulkan STATIC vulkan_platform.cpp vulkan_platform.h)
     target_include_directories(runtime_vulkan PRIVATE ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(runtime_vulkan PRIVATE runtime_base ${Vulkan_LIBRARIES})

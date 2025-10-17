@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <functional>
+#include <variant>
 
 /// Vulkan requires you to manually load certain function pointers, we use a macro to automate the boilerplate
 #define DevicesExtensionsFunctions(f) \
@@ -20,21 +21,15 @@ protected:
     void *alloc(DeviceId dev, int64_t size) override;
     void *alloc_host(DeviceId dev, int64_t size) override;
     void *alloc_unified(DeviceId dev, int64_t size) override { command_unavailable("alloc_unified"); }
-
     void *get_device_ptr(DeviceId dev, void *ptr) override;
-
     void release(DeviceId dev, void *ptr) override;
-
     void release_host(DeviceId dev, void *ptr) override;
 
     void launch_kernel(DeviceId dev, const LaunchParams &launch_params) override;
-
     void synchronize(DeviceId dev) override;
 
     void copy(DeviceId dev_src, const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) override;
-
     void copy_from_host(const void *src, int64_t offset_src, DeviceId dev_dst, void *dst, int64_t offset_dst, int64_t size) override;
-
     void copy_to_host(DeviceId dev_src, const void *src, int64_t offset_src, void *dst, int64_t offset_dst, int64_t size) override;
 
     size_t dev_count() const override { return usable_devices.size(); }
@@ -46,21 +41,40 @@ protected:
     struct Device;
 
     struct Resource {
-    //public:
-        Device& device;
-        size_t id;
-        VkDeviceMemory alloc;
+        Device& device_;
 
-        Resource(Device& device) : device(device) {}
-        virtual ~Resource();
+        Resource(Device& device) : device_(device) {}
+        virtual ~Resource() {};
     };
 
     struct Buffer : public Resource {
-        VkBuffer buffer;
-        uint64_t bda = -1;
-        size_t mapped_host_address = 0;
+        VkBuffer handle_;
 
-        Buffer(Device& device) : Resource(device) {}
+        void* host_address_ = nullptr;
+        VkDeviceAddress device_address_ = 0;
+
+        VkDeviceMemory device_memory_;
+
+        const static VkBufferUsageFlags2 ALL_BUFFER_USAGE =
+            VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT |
+            VK_BUFFER_USAGE_2_TRANSFER_DST_BIT;
+
+
+        struct ImportedHostMemory {
+            void* host_memory_;
+        };
+
+        struct DeviceMemory {};
+        struct HostMemory {};
+        struct UnifiedMemory {};
+
+        using BackingStorage = std::variant<ImportedHostMemory, DeviceMemory, HostMemory, UnifiedMemory>;
+        friend Device;
+        friend Platform;
+
+        Buffer(Device& device, size_t size, BackingStorage backing_storage, VkBufferUsageFlags2 usages = ALL_BUFFER_USAGE);
         ~Buffer() override;
     };
 
@@ -82,41 +96,46 @@ protected:
     };
 
     struct Device {
-        enum class AllocHeap {
-            DEVICE_LOCAL,
-            HOST_VISIBLE
-        };
-
         VulkanPlatform& platform;
         VkPhysicalDevice physical_device;
-        VkPhysicalDeviceProperties2 properties;
+        VkDevice handle_ = nullptr;
         size_t device_id;
-        VkDevice device = nullptr;
 
-        size_t min_imported_host_ptr_alignment;
+        ExtensionFns extension_fns;
+
+        VkPhysicalDeviceProperties2 properties = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+        };
+
         bool can_import_host_memory = false;
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_properties {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
+            .pNext = nullptr,
+            .minImportedHostPointerAlignment = 0xFFFFFFFF,
+        };
 
-        std::vector<std::unique_ptr<Resource>> resources;
-        size_t next_resource_id = 1; // resource id 0 is reserved
+        std::unordered_map<VkDeviceAddress, std::unique_ptr<Buffer>> buffers_;
+        std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
+
         VkQueue queue;
         VkCommandPool cmd_pool;
         std::vector<VkCommandBuffer> spare_cmd_bufs;
-        std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
-        ExtensionFns extension_fns;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
 
-        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, AllocHeap);
-
+        uint32_t find_suitable_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags, VkMemoryHeapFlags = 0);
+        VkDeviceMemory allocate_memory(VkDeviceSize, uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags = 0);
         std::pair<VkDeviceMemory, size_t> import_host_memory(void* ptr, size_t size);
-        std::pair<VkBuffer, VkDeviceMemory> import_host_memory_as_buffer(void* ptr, size_t size, VkBufferUsageFlags usage_flags);
-        std::pair<VkBuffer, VkDeviceMemory> allocate_buffer(int64_t, VkBufferUsageFlags usage_flags, AllocHeap);
 
-        Resource* find_resource_by_id(size_t id);
-        Buffer* create_buffer_resource(int64_t, VkBufferUsageFlags usage_flags, AllocHeap);
-        Buffer* find_buffer_by_device_address(uint64_t bda);
-        Buffer* find_buffer_by_host_address(size_t host_address);
+        Buffer* get_buffer_by_device_address(VkDeviceAddress addr) {
+            auto found = buffers_.find(addr);
+            if (found != buffers_.end())
+                return &*found->second;
+            return nullptr;
+        }
+
+        uint64_t create_buffer_resource(size_t, Buffer::BackingStorage backing, VkBufferUsageFlags usage_flags);
 
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);

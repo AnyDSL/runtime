@@ -1,6 +1,5 @@
 #include "shady_platform.h"
 
-
 using namespace shady;
 
 struct ShadyBuffer {
