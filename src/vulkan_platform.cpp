@@ -282,10 +282,9 @@ VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backi
         insert_pnext(buffer_create_info, external_mem_buffer_create_info);
         create_buffer();
 
-        VkDeviceMemory imported_memory;
         size_t imported_offset;
-        std::tie(imported_memory, imported_offset) = device.import_host_memory(import_host->host_memory_, size);
-        vkBindBufferMemory(device.handle_, handle_, imported_memory, imported_offset);
+        std::tie(device_memory_, imported_offset) = device.import_host_memory(import_host->host_memory_, size);
+        vkBindBufferMemory(device.handle_, handle_, device_memory_, imported_offset);
     } else if (std::get_if<DeviceMemory>(&backing)) {
         create_buffer();
         VkMemoryRequirements memory_requirements;
@@ -560,9 +559,9 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
     void* host_ptr = (void*)((size_t)src + offset_src);
         // Import host memory and wrap it in a buffer
     if (device->can_import_host_memory) {
-        tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::ImportedHostMemory { host_ptr }, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::ImportedHostMemory { host_ptr }, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     } else {
-        tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::HostMemory { }, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::HostMemory { }, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         void* mapped = nullptr;
         CHECK(vkMapMemory(device->handle_, tmp_buffer->device_memory_, 0, size, 0, &mapped));
         assert(mapped != nullptr);
