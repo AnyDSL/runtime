@@ -4,6 +4,13 @@
 #include "platform.h"
 #include <vulkan/vulkan.h>
 
+namespace shady {
+extern "C" {
+#include "shady/runtime/vulkan.h"
+#include "shady/driver.h"
+}
+}
+
 #include <functional>
 #include <variant>
 
@@ -79,13 +86,15 @@ protected:
     };
 
     struct Kernel {
-        Device& device;
+        Device& device_;
+
+        shady::Module* shady_module_;
 
         VkShaderModule shader_module;
         VkPipelineLayout layout;
         VkPipeline pipeline;
 
-        Kernel(Device& device) : device(device) {}
+        Kernel(Device& device, std::string);
         ~Kernel();
     };
 
@@ -96,7 +105,7 @@ protected:
     };
 
     struct Device {
-        VulkanPlatform& platform;
+        VulkanPlatform& platform_;
         VkPhysicalDevice physical_device;
         VkDevice handle_ = nullptr;
         size_t device_id;
@@ -113,6 +122,9 @@ protected:
             .pNext = nullptr,
             .minImportedHostPointerAlignment = 0xFFFFFFFF,
         };
+
+        shady::ShadyVkrPhysicalDeviceCaps shady_caps_;
+        shady::TargetConfig target_config_;
 
         std::unordered_map<VkDeviceAddress, std::unique_ptr<Buffer>> buffers_;
         std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
@@ -147,6 +159,8 @@ protected:
     VkInstance instance;
     std::vector<VkPhysicalDevice> physical_devices;
     std::vector<std::unique_ptr<Device>> usable_devices;
+
+    shady::CompilerConfig compiler_config_ = shady::shd_default_compiler_config();
 };
 
 #endif

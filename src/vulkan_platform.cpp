@@ -99,7 +99,7 @@ VulkanPlatform::~VulkanPlatform() {
 }
 
 VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id)
-: platform(platform), physical_device(physical_device), device_id(device_id) {
+: platform_(platform), physical_device(physical_device), device_id(device_id) {
     uint32_t exts_count;
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, nullptr);
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
@@ -402,13 +402,23 @@ VulkanPlatform::Buffer::~Buffer() {
     vkDestroyBuffer(device_.handle_, handle_, nullptr);
 }
 
+VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name) : device_(device) {
+    std::string program_src = device_.platform_.runtime_->load_file(file_name);
+    shd_driver_load_source_file(&device_.platform_.compiler_config_, &device_.target_config_, shady::SrcSPIRV, program_src.size(), program_src.c_str(), "test", &shady_module_);
+
+    shady::DriverConfig config = shady::shd_default_driver_config();
+    //shady::shd_driver_compile()
+    //handle_ = shd_rn_new_program_from_module(device_.platform_.runner_, &device_.platform_.compiler_config_, shady_module_);
+}
+
+
 VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& filename) {
     auto ki = kernels.find(filename);
     if (ki == kernels.end()) {
-        auto [i,b] = kernels.emplace(filename, std::make_unique<Kernel>(*this));
+        auto [i,b] = kernels.emplace(filename, std::make_unique<Kernel>(*this, filename));
         Kernel* kernel = i->second.get();
 
-        std::string bin = platform.runtime_->load_file(filename);
+        std::string bin = platform_.runtime_->load_file(filename);
         auto shader_module_create_info = VkShaderModuleCreateInfo {
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .pNext = nullptr,
@@ -618,7 +628,7 @@ void register_vulkan_platform(Runtime* runtime) {
 }
 
 VulkanPlatform::Kernel::~Kernel() {
-    vkDestroyPipeline(device.handle_, pipeline, nullptr);
-    vkDestroyPipelineLayout(device.handle_, layout, nullptr);
-    vkDestroyShaderModule(device.handle_, shader_module, nullptr);
+    vkDestroyPipeline(device_.handle_, pipeline, nullptr);
+    vkDestroyPipelineLayout(device_.handle_, layout, nullptr);
+    vkDestroyShaderModule(device_.handle_, shader_module, nullptr);
 }
