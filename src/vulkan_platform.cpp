@@ -259,6 +259,48 @@ VkDeviceMemory VulkanPlatform::Device::allocate_memory(VkDeviceSize size, uint32
     return memory;
 }
 
+std::pair<VkDeviceMemory, size_t> VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
+    assert(can_import_host_memory && "This device does not support importing host memory");
+
+    size_t alignment = external_memory_host_properties.minImportedHostPointerAlignment;
+
+    // Align stuff
+    size_t mask = ~(alignment - 1);
+    size_t host_ptr = (size_t)ptr;
+    size_t aligned_host_ptr = host_ptr & mask;
+
+    size_t end = host_ptr + size;
+    size_t aligned_end = ((end + alignment - 1) / alignment) * alignment;
+    size_t aligned_size = aligned_end - aligned_host_ptr;
+
+    // where the memory we wanted to import will actually start
+    size_t offset = host_ptr - aligned_host_ptr;
+
+    // Find the corresponding device memory type index
+    VkMemoryHostPointerPropertiesEXT host_ptr_properties {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
+    };
+    CHECK(extension_fns.vkGetMemoryHostPointerPropertiesEXT(handle_, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, (void*)aligned_host_ptr, &host_ptr_properties));
+    uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    // Import memory
+    auto import_ptr_info = VkImportMemoryHostPointerInfoEXT {
+        .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
+        .pNext = nullptr,
+        .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT,
+        .pHostPointer = (void*) aligned_host_ptr,
+    };
+    auto allocation_info = VkMemoryAllocateInfo {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = &import_ptr_info,
+        .allocationSize = (VkDeviceSize) aligned_size,
+        .memoryTypeIndex = memory_type
+    };
+    VkDeviceMemory imported_memory;
+    CHECK(vkAllocateMemory(handle_, &allocation_info, nullptr, &imported_memory));
+    return std::make_pair(imported_memory, offset);
+}
+
 VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backing, VkBufferUsageFlags2 usage) : Resource(device) {
     VkBufferCreateInfo buffer_create_info {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -450,50 +492,6 @@ void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_para
 
 void VulkanPlatform::synchronize(DeviceId dev) {
     // TODO: don't wait for idle everywhere
-}
-
-VkExternalMemoryHandleTypeFlagBits imported_host_memory_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
-
-std::pair<VkDeviceMemory, size_t> VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
-    assert(can_import_host_memory && "This device does not support importing host memory");
-
-    size_t alignment = external_memory_host_properties.minImportedHostPointerAlignment;
-
-    // Align stuff
-    size_t mask = ~(alignment - 1);
-    size_t host_ptr = (size_t)ptr;
-    size_t aligned_host_ptr = host_ptr & mask;
-
-    size_t end = host_ptr + size;
-    size_t aligned_end = ((end + alignment - 1) / alignment) * alignment;
-    size_t aligned_size = aligned_end - aligned_host_ptr;
-
-    // where the memory we wanted to import will actually start
-    size_t offset = host_ptr - aligned_host_ptr;
-
-    // Find the corresponding device memory type index
-    VkMemoryHostPointerPropertiesEXT host_ptr_properties {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
-    };
-    CHECK(extension_fns.vkGetMemoryHostPointerPropertiesEXT(handle_, imported_host_memory_handle_type, (void*)aligned_host_ptr, &host_ptr_properties));
-    uint32_t memory_type = find_suitable_memory_type(host_ptr_properties.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-
-    // Import memory
-    auto import_ptr_info = VkImportMemoryHostPointerInfoEXT {
-        .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
-        .pNext = nullptr,
-        .handleType = imported_host_memory_handle_type,
-        .pHostPointer = (void*) aligned_host_ptr,
-    };
-    auto allocation_info = VkMemoryAllocateInfo {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = &import_ptr_info,
-        .allocationSize = (VkDeviceSize) aligned_size,
-        .memoryTypeIndex = memory_type
-    };
-    VkDeviceMemory imported_memory;
-    CHECK(vkAllocateMemory(handle_, &allocation_info, nullptr, &imported_memory));
-    return std::make_pair(imported_memory, offset);
 }
 
 VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
