@@ -1,5 +1,12 @@
 #include "vulkan_platform.h"
 
+namespace shady {
+extern "C" {
+#include "shady/jit/vulkan.h"
+#include "shady/be/spirv.h"
+}
+}
+
 const auto khr_validation = "VK_LAYER_KHRONOS_validation";
 
 #define CHECK(stuff) { \
@@ -212,6 +219,10 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
 #define f(s) extension_fns.s = (PFN_##s) vkGetDeviceProcAddr(handle_, #s);
     DevicesExtensionsFunctions(f)
 #undef f
+
+    bool device_ok = shady::shd_rt_vk_check_physical_device_suitability(physical_device, &shady_caps_);
+    assert(device_ok);
+    target_config_ = shady::shd_rt_vk_get_device_target_config(&platform_.compiler_config_, &shady_caps_);
 }
 
 VulkanPlatform::Device::~Device() {
@@ -402,101 +413,129 @@ VulkanPlatform::Buffer::~Buffer() {
     vkDestroyBuffer(device_.handle_, handle_, nullptr);
 }
 
-VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name) : device_(device) {
+VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name, std::string kernel_name) : device_(device) {
+    shady::TargetConfig specialized_target = device_.target_config_;
+    specialized_target.execution_model = shady::ShdExecutionModelCompute;
+    specialized_target.entry_point = kernel_name.c_str();
+
     std::string program_src = device_.platform_.runtime_->load_file(file_name);
     shd_driver_load_source_file(&device_.platform_.compiler_config_, &device_.target_config_, shady::SrcSPIRV, program_src.size(), program_src.c_str(), "test", &shady_module_);
+    // TODO: this will be removed in a future version of Shady
+    shady::CompilerConfig specialized_config = device_.platform_.compiler_config_;
+    shady::SPVBackendConfig backend_config;
+    shady::shd_jit_vk_get_compiler_config_for_device(&device_.shady_caps_, &device_.target_config_, &backend_config, &specialized_config);
+    shady::shd_jit_vk_compile_module(&shady_module_, &specialized_target, &backend_config, &specialized_config);
+    size_t spirv_size;
+    char* spirv_bytes;
+    shady::shd_emit_spirv(&specialized_config, &backend_config, shady_module_, &spirv_size, &spirv_bytes);
 
-    shady::DriverConfig config = shady::shd_default_driver_config();
-    //shady::shd_driver_compile()
-    //handle_ = shd_rn_new_program_from_module(device_.platform_.runner_, &device_.platform_.compiler_config_, shady_module_);
+    size_t interface_size;
+    shady::shd_rt_vk_get_module_interface(shady_module_, &interface_size, nullptr);
+    interface.resize(interface_size);
+    shady::shd_rt_vk_get_module_interface(shady_module_, &interface_size, interface.data());
+
+    for (auto& e : interface) {
+        if (e.dst_kind == shady::RuntimeInterfaceItem::SHD_RII_Dst_PushConstant)
+            push_constant_size = std::max(push_constant_size, e.dst_details.push_constant.offset + e.dst_details.push_constant.size);
+    }
+
+    auto shader_module_create_info = VkShaderModuleCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .codeSize = spirv_size,
+        .pCode = reinterpret_cast<const uint32_t *>(spirv_bytes),
+    };
+    CHECK(vkCreateShaderModule(device.handle_, &shader_module_create_info, nullptr, &shader_module));
+
+    auto stage = VkPipelineShaderStageCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = shader_module,
+        .pName = kernel_name.c_str(),
+        .pSpecializationInfo = nullptr,
+    };
+
+    std::vector<VkPushConstantRange> push_constants {
+        VkPushConstantRange {
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+            .offset = 0,
+            .size = static_cast<uint32_t>(push_constant_size)
+        }
+    };
+    auto layout_create_info = VkPipelineLayoutCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .setLayoutCount = 0,
+        .pSetLayouts = nullptr,
+        .pushConstantRangeCount = (uint32_t) push_constants.size(),
+        .pPushConstantRanges = push_constants.data(),
+    };
+    CHECK(vkCreatePipelineLayout(device.handle_, &layout_create_info, nullptr, &layout));
+
+    auto compute_pipeline_create_info = VkComputePipelineCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .stage = stage,
+        .layout = layout,
+        .basePipelineHandle = VK_NULL_HANDLE,
+        .basePipelineIndex = 0,
+    };
+    CHECK(vkCreateComputePipelines(device.handle_, nullptr, 1, &compute_pipeline_create_info, nullptr, &pipeline));
 }
 
-
-VulkanPlatform::Kernel *VulkanPlatform::Device::load_kernel(const std::string& filename) {
-    auto ki = kernels.find(filename);
+VulkanPlatform::Kernel* VulkanPlatform::Device::load_kernel(const std::string& filename, const std::string& kernel_name) {
+    auto key = filename + "::" + kernel_name;
+    auto ki = kernels.find(key);
     if (ki == kernels.end()) {
-        auto [i,b] = kernels.emplace(filename, std::make_unique<Kernel>(*this, filename));
-        Kernel* kernel = i->second.get();
-
-        std::string bin = platform_.runtime_->load_file(filename);
-        auto shader_module_create_info = VkShaderModuleCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .codeSize = bin.size(),
-            .pCode = reinterpret_cast<const uint32_t *>(bin.c_str()),
-        };
-        CHECK(vkCreateShaderModule(handle_, &shader_module_create_info, nullptr, &kernel->shader_module));
-
-        auto stage = VkPipelineShaderStageCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-            .module = kernel->shader_module,
-            .pName = "kernel_main",
-            .pSpecializationInfo = nullptr,
-        };
-
-        std::vector<VkPushConstantRange> push_constants {
-            VkPushConstantRange {
-                .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-                .offset = 0,
-                .size = 128
-            }
-        };
-        auto layout_create_info = VkPipelineLayoutCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
-            .pushConstantRangeCount = (uint32_t) push_constants.size(),
-            .pPushConstantRanges = push_constants.data(),
-        };
-        CHECK(vkCreatePipelineLayout(handle_, &layout_create_info, nullptr, &kernel->    layout));
-
-        auto compute_pipeline_create_info = VkComputePipelineCreateInfo {
-            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = stage,
-            .layout = kernel->layout,
-            .basePipelineHandle = VK_NULL_HANDLE,
-            .basePipelineIndex = 0,
-        };
-        CHECK(vkCreateComputePipelines(handle_, nullptr, 1, &compute_pipeline_create_info, nullptr, &kernel->pipeline));
-        return kernel;
+        auto [i,b] = kernels.emplace(key, std::make_unique<Kernel>(*this, filename, kernel_name));
+        return &*i->second;
     }
 
     return ki->second.get();
 }
 
+void VulkanPlatform::Kernel::setup(VkCommandBuffer cmdbuf, const LaunchParams& launch_params) {
+    vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    std::vector<char> push_constants;
+    push_constants.resize(push_constant_size);
+
+    for (auto& e : interface) {
+        if (e.dst_kind == shady::RuntimeInterfaceItem::SHD_RII_Dst_PushConstant) {
+            switch (e.src_kind) {
+                case shady::RuntimeInterfaceItem::SHD_RII_Src_Param:
+                    assert(e.dst_details.push_constant.size == launch_params.args.sizes[e.src_details.param.param_idx]);
+                    memcpy(reinterpret_cast<uint8_t*>(push_constants.data()) + e.dst_details.push_constant.offset, launch_params.args.data[e.src_details.param.param_idx], e.dst_details.push_constant.size);
+                    break;
+                default:
+                    error("TODO");
+                //case shady::RuntimeInterfaceItem::SHD_RII_Src_TmpAllocation:
+                //    break;
+                //case shady::RuntimeInterfaceItem::SHD_RII_Src_LiftedConstant:
+                //    break;
+                //case shady::RuntimeInterfaceItem::SHD_RII_Src_ScratchBuffer:
+                //    break;
+            }
+
+        } else {
+            error("todo: implement descriptors");
+        }
+    }
+
+    vkCmdPushConstants(cmdbuf, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constant_size, push_constants.data());
+    vkCmdDispatch(cmdbuf, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2]);
+}
+
 void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_params) {
     auto& device = usable_devices[dev];
-    auto kernel = device->load_kernel(launch_params.file_name);
+    auto kernel = device->load_kernel(launch_params.file_name, launch_params.kernel_name);
 
     device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
-        vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, kernel->pipeline);
-        std::array<char, 128> push_constants {};
-        size_t offset = 0;
-        //for (uint32_t arg = 0; arg < launch_params.num_args; arg++) {
-        //    if (launch_params.args.types[arg] == KernelArgType::Val) {
-        //        assert(launch_params.args.sizes[arg] == 4 && "Preliminary support...");
-        //        memcpy(push_constants.data() + offset, launch_params.args.data[arg], 4);
-        //        offset += 4;
-        //    } else if (launch_params.args.types[arg] == KernelArgType::Ptr) {
-        //        void* buffer = *(void**)launch_params.args.data[arg];
-        //        auto dst_buffer_resource = (Buffer*) device->find_buffer_by_device_address((uint64_t) buffer);
-        //        uint64_t buffer_bda = dst_buffer_resource->bda;
-        //        memcpy(push_constants.data() + offset, &buffer_bda, 8);
-        //        offset += 8;
-        //    } else {
-        //        assert(false && "no struct support yet");
-        //    }
-        //}
-        vkCmdPushConstants(cmd_buf, kernel->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, 128, &push_constants);
-        vkCmdDispatch(cmd_buf, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2]);
+        kernel->setup(cmd_buf, launch_params);
     });
 }
 

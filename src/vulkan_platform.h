@@ -7,7 +7,6 @@
 namespace shady {
 extern "C" {
 #include "shady/runtime/vulkan.h"
-#include "shady/driver.h"
 }
 }
 
@@ -89,12 +88,15 @@ protected:
         Device& device_;
 
         shady::Module* shady_module_;
+        std::vector<shady::RuntimeInterfaceItem> interface;
+        size_t push_constant_size = 0;
 
         VkShaderModule shader_module;
         VkPipelineLayout layout;
         VkPipeline pipeline;
 
-        Kernel(Device& device, std::string);
+        Kernel(Device& device, std::string, std::string);
+        void setup(VkCommandBuffer, const LaunchParams &launch_params);
         ~Kernel();
     };
 
@@ -153,7 +155,7 @@ protected:
         void return_command_buffer(VkCommandBuffer cmd_buf);
         void execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn);
 
-        Kernel* load_kernel(const std::string&);
+        Kernel* load_kernel(const std::string&, const std::string&);
     };
 
     VkInstance instance;
