@@ -20,6 +20,16 @@
 #[import(cc = "thorin")] fn amdgpu_pal(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn levelzero(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
 #[import(cc = "thorin")] fn vulkan_cs(_dev: i32, _grid: (i32, i32, i32), _block: (i32, i32, i32), _body: fn() -> ()) -> ();
+
+struct VulkanOffloadInfo {
+    // talks to the runtime to setup this pipeline for execution
+    setup_offloaded_args: fn() -> (),
+    filename: &[u8],
+    num_stages: u32,
+    stages: &[(u32, &[u8])]
+}
+
+//#[import(cc = "thorin")] fn vulkan_offload(_num_stages: u32, stages: &[(u32, fn() -> ())]) -> VulkanOffloadInfo;
 #[import(cc = "thorin")] fn reserve_shared[T](_size: i32) -> &mut addrspace(3)[T];
 #[import(cc = "thorin")] fn hls(_dev: i32, _body: fn() -> ()) -> ();
 #[import(cc = "thorin", name = "pipeline")] fn thorin_pipeline(_initiation_interval: i32, _lower: i32, _upper: i32, _body: fn(i32) -> ()) -> (); // only for HLS/OpenCL backend
