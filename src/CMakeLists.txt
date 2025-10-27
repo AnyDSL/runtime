@@ -255,6 +255,10 @@ add_library(${AnyDSL_runtime_TARGET_NAME}
     anydsl_runtime.h
     anydsl_runtime.hpp)
 
+#target_include_directories(${AnyDSL_runtime_TARGET_NAME}_base PUBLIC ${CMAKE_BINARY_DIR}/include)
+target_include_directories(${AnyDSL_runtime_TARGET_NAME} PUBLIC ${CMAKE_BINARY_DIR}/include)
+target_include_directories(${AnyDSL_runtime_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 # System threads are required to use either TBB or C++11 threads
 find_package(Threads REQUIRED)
 target_link_libraries(${AnyDSL_runtime_TARGET_NAME} PRIVATE Threads::Threads)

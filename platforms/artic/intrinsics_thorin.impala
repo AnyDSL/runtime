@@ -23,10 +23,9 @@
 
 struct VulkanOffloadInfo {
     // talks to the runtime to setup this pipeline for execution
-    setup_offloaded_args: fn() -> (),
-    filename: &[u8],
+    setup: fn(fn(i32, &[&[u8]]) -> ()) -> (),
     num_stages: u32,
-    stages: &[(u32, &[u8])]
+    stages: &[(u32, &[u8], &[u8])]
 }
 
 //#[import(cc = "thorin")] fn vulkan_offload(_num_stages: u32, stages: &[(u32, fn() -> ())]) -> VulkanOffloadInfo;

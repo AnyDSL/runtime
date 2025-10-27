@@ -32,6 +32,10 @@ Runtime::Runtime(std::pair<ProfileLevel, ProfileLevel> profile)
     , cache_dir_("")
 {}
 
+Platform& Runtime::platform(PlatformId id) {
+    return *platforms_[id];
+}
+
 void Runtime::display_info() const {
     info("Available platforms:");
     for (auto& p: platforms_) {

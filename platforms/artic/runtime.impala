@@ -31,7 +31,8 @@
 #[import(cc = "C", name = "anydsl_print_string")] fn print_string(_: &[u8]) -> ();
 #[import(cc = "C", name = "anydsl_print_flush")]  fn print_flush() -> ();
 
-#[import(cc = "C", name = "anydsl_load_offloaded")] fn runtime_load_offloaded(_device: i32, _filename: &[u8], _name: &[u8], _size: &mut u64) -> &[u8];
+#[import(cc = "C", name = "anydsl_vulkan_load_module")] fn runtime_load_offloaded(_device: i32, _filename: &[u8], _name: &[u8]) -> u64;
+//#[import(cc = "C", name = "anydsl_vulkan_load_module")] fn runtime_load_offloaded(_device: i32, _filename: &[u8], _name: &[u8], _size: &mut u64) -> &[u8];
 
 // TODO
 //struct Buffer[T] {

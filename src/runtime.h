@@ -49,6 +49,8 @@ public:
         platforms_.emplace_back(new T(this, std::forward<Args&&>(args)...));
     }
 
+    Platform& platform(PlatformId id);
+
     /// Displays available platforms.
     void display_info() const;
 
@@ -112,5 +114,7 @@ private:
     std::unordered_map<std::string, std::string> files_;
     std::string cache_dir_;
 };
+
+Runtime& runtime();
 
 #endif

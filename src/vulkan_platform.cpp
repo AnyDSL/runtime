@@ -1,18 +1,18 @@
 #include "vulkan_platform.h"
 
-namespace shady {
+//namespace shady {
 extern "C" {
 #include "shady/jit/vulkan.h"
 #include "shady/be/spirv.h"
 }
-}
+//}
 
 const auto khr_validation = "VK_LAYER_KHRONOS_validation";
 
 #define CHECK(stuff) { \
     auto rslt = stuff; \
     if (rslt != VK_SUCCESS) \
-        error("error, failed %", #stuff); \
+        error("error %d, failed %", rslt, #stuff); \
 }
 
 template<typename T, typename U>
@@ -47,12 +47,16 @@ inline bool is_ext_available(std::vector<VkExtensionProperties>& ext_props, std:
 }
 
 VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
+    printf("vgfvv\n");
     auto available_layers = query_layers_available();
     auto available_instance_extensions = query_extensions_available();
 
     std::vector<const char*> enabled_layers;
     std::vector<const char*> enabled_instance_extensions {
-        "VK_KHR_external_memory_capabilities"
+        "VK_KHR_external_memory_capabilities",
+        "VK_KHR_surface",
+        //"VK_KHR_wayland_surface",
+        "VK_KHR_xcb_surface",
     };
 
     bool should_enable_validation = true;
@@ -73,7 +77,7 @@ VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
     auto app_info = VkApplicationInfo {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pApplicationName = "AnyDSL Runtime",
-        .apiVersion = VK_API_VERSION_1_2,
+        .apiVersion = VK_API_VERSION_1_3,
     };
     auto create_info = VkInstanceCreateInfo {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -84,7 +88,8 @@ VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
         .enabledExtensionCount = (uint32_t) enabled_instance_extensions.size(),
         .ppEnabledExtensionNames = enabled_instance_extensions.data(),
     };
-    vkCreateInstance(&create_info, nullptr, &instance);
+    auto vkCreateInstanceR = vkCreateInstance(&create_info, nullptr, &instance);
+    printf("vkCreateInstance: %d\n", vkCreateInstanceR);
 
     uint32_t physical_devices_count;
     vkEnumeratePhysicalDevices(instance, &physical_devices_count, nullptr);
@@ -112,17 +117,22 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
 
+    for (auto e : available_device_extensions) {
+        printf("pigsex2022: %d\n", e.extensionName);
+    }
+
     std::vector<const char*> enabled_device_extensions {
         "VK_KHR_buffer_device_address",
-        "VK_KHR_shader_non_semantic_info"
+        "VK_KHR_shader_non_semantic_info",
+        "VK_KHR_swapchain",
     };
 
     // Use this to import host memory as GPU-visible memory, otherwise use a fallback path that copies when uploading/downloading
-    if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
-        enabled_device_extensions.push_back("VK_EXT_external_memory_host");
-        insert_pnext(properties, external_memory_host_properties);
-        can_import_host_memory = true;
-    }
+    //if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
+    //    enabled_device_extensions.push_back("VK_EXT_external_memory_host");
+    //    insert_pnext(properties, external_memory_host_properties);
+    //    can_import_host_memory = true;
+    //}
 
     vkGetPhysicalDeviceProperties2(physical_device, &properties);
     auto& device_properties = properties.properties;
@@ -151,7 +161,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         bool has_protected = (queue_f.queueFlags & 0x00000010) != 0;
 
         // TODO perform this intelligently
-        if (compute_queue_family == -1 && has_compute)
+        if (compute_queue_family == -1 && has_compute && has_gfx)
             compute_queue_family = q;
         q++;
     }
@@ -170,23 +180,32 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         assert(false && "unsuitable device");
     }
 
+    auto dynamic_rendering_features = VkPhysicalDeviceDynamicRenderingFeatures {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+        .dynamicRendering = true,
+    };
+    auto sync2features = VkPhysicalDeviceSynchronization2Features {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+        .pNext = &dynamic_rendering_features,
+        .synchronization2 = true,
+    };
     auto bda_features = VkPhysicalDeviceBufferDeviceAddressFeaturesKHR {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-        .pNext = nullptr,
+        .pNext = &sync2features,
         .bufferDeviceAddress = true,
     };
     auto vk11_features = VkPhysicalDeviceVulkan11Features {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
         .pNext = &bda_features,
-        .variablePointersStorageBuffer = true,
-        .variablePointers = true,
+        //.variablePointersStorageBuffer = true,
+        //.variablePointers = true,
     };
     auto enabled_features = VkPhysicalDeviceFeatures2 {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
         .pNext = &vk11_features,
         .features = {
-            .vertexPipelineStoresAndAtomics = true,
-            .fragmentStoresAndAtomics = true,
+            //.vertexPipelineStoresAndAtomics = true,
+            //.fragmentStoresAndAtomics = true,
             .shaderInt64 = true,
             // .shaderInt16 = true,
         }
@@ -220,9 +239,9 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     DevicesExtensionsFunctions(f)
 #undef f
 
-    bool device_ok = shady::shd_rt_vk_check_physical_device_suitability(physical_device, &shady_caps_);
+    bool device_ok = shd_rt_vk_check_physical_device_suitability(physical_device, &shady_caps_);
     assert(device_ok);
-    target_config_ = shady::shd_rt_vk_get_device_target_config(&platform_.compiler_config_, &shady_caps_);
+    target_config_ = shd_rt_vk_get_device_target_config(&platform_.compiler_config_, &shady_caps_);
 }
 
 VulkanPlatform::Device::~Device() {
@@ -413,48 +432,55 @@ VulkanPlatform::Buffer::~Buffer() {
     vkDestroyBuffer(device_.handle_, handle_, nullptr);
 }
 
-VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name, std::string kernel_name) : device_(device) {
-    shady::TargetConfig specialized_target = device_.target_config_;
-    specialized_target.execution_model = shady::ShdExecutionModelCompute;
+VulkanPlatform::Module::Module(VulkanPlatform::Device &device, std::string file_name, std::string kernel_name) : device_(device), entry_point(kernel_name) {
+    TargetConfig specialized_target = device_.target_config_;
+    specialized_target.execution_model = ShdExecutionModelCompute;
     specialized_target.entry_point = kernel_name.c_str();
 
     std::string program_src = device_.platform_.runtime_->load_file(file_name);
-    shd_driver_load_source_file(&device_.platform_.compiler_config_, &device_.target_config_, shady::SrcSPIRV, program_src.size(), program_src.c_str(), "test", &shady_module_);
+    shd_driver_load_source_file(&device_.platform_.compiler_config_, &device_.target_config_, SrcSPIRV, program_src.size(), program_src.c_str(), "test", &shady_module_);
     // TODO: this will be removed in a future version of Shady
-    shady::CompilerConfig specialized_config = device_.platform_.compiler_config_;
-    shady::SPVBackendConfig backend_config;
-    shady::shd_jit_vk_get_compiler_config_for_device(&device_.shady_caps_, &device_.target_config_, &backend_config, &specialized_config);
-    shady::shd_jit_vk_compile_module(&shady_module_, &specialized_target, &backend_config, &specialized_config);
+    CompilerConfig specialized_config = device_.platform_.compiler_config_;
+    specialized_config.dynamic_scheduling = false;
+    SPVBackendConfig backend_config;
+    shd_jit_vk_get_compiler_config_for_device(&device_.shady_caps_, &device_.target_config_, &backend_config, &specialized_config);
+    shd_jit_vk_compile_module(&shady_module_, &specialized_target, &backend_config, &specialized_config);
     size_t spirv_size;
     char* spirv_bytes;
-    shady::shd_emit_spirv(&specialized_config, &backend_config, shady_module_, &spirv_size, &spirv_bytes);
+    shd_emit_spirv(&specialized_config, &backend_config, shady_module_, &spirv_size, &spirv_bytes);
 
     size_t interface_size;
-    shady::shd_rt_vk_get_module_interface(shady_module_, &interface_size, nullptr);
+    shd_rt_vk_get_module_interface(shady_module_, &interface_size, nullptr);
     interface.resize(interface_size);
-    shady::shd_rt_vk_get_module_interface(shady_module_, &interface_size, interface.data());
+    shd_rt_vk_get_module_interface(shady_module_, &interface_size, interface.data());
 
     for (auto& e : interface) {
-        if (e.dst_kind == shady::RuntimeInterfaceItem::SHD_RII_Dst_PushConstant)
+        if (e.dst_kind == RuntimeInterfaceItem::SHD_RII_Dst_PushConstant)
             push_constant_size = std::max(push_constant_size, e.dst_details.push_constant.offset + e.dst_details.push_constant.size);
     }
 
     auto shader_module_create_info = VkShaderModuleCreateInfo {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .codeSize = spirv_size,
-        .pCode = reinterpret_cast<const uint32_t *>(spirv_bytes),
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .codeSize = spirv_size,
+            .pCode = reinterpret_cast<const uint32_t *>(spirv_bytes),
     };
     CHECK(vkCreateShaderModule(device.handle_, &shader_module_create_info, nullptr, &shader_module));
+}
 
+VulkanPlatform::Module::~Module() {
+    vkDestroyShaderModule(device_.handle_, shader_module, nullptr);
+}
+
+VulkanPlatform::Kernel::Kernel(Device& device, Module& module) : device_(device), module_(module) {
     auto stage = VkPipelineShaderStageCreateInfo {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-        .module = shader_module,
-        .pName = kernel_name.c_str(),
+        .module = module_.shader_module,
+        .pName = module.entry_point.c_str(),
         .pSpecializationInfo = nullptr,
     };
 
@@ -462,7 +488,7 @@ VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name, std::strin
         VkPushConstantRange {
             .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
             .offset = 0,
-            .size = static_cast<uint32_t>(push_constant_size)
+            .size = static_cast<uint32_t>(module_.push_constant_size)
         }
     };
     auto layout_create_info = VkPipelineLayoutCreateInfo {
@@ -488,36 +514,48 @@ VulkanPlatform::Kernel::Kernel(Device& device, std::string file_name, std::strin
     CHECK(vkCreateComputePipelines(device.handle_, nullptr, 1, &compute_pipeline_create_info, nullptr, &pipeline));
 }
 
+VulkanPlatform::Kernel::~Kernel() {
+    vkDestroyPipeline(device_.handle_, pipeline, nullptr);
+    vkDestroyPipelineLayout(device_.handle_, layout, nullptr);
+}
+
+VulkanPlatform::Module* VulkanPlatform::Device::load_module(const std::string& filename, const std::string& kernel_name) {
+    auto key = filename + "::" + kernel_name;
+    auto ki = modules.find(key);
+    if (ki == modules.end()) {
+        auto [i,b] = modules.emplace(key, std::make_unique<Module>(*this, filename, kernel_name));
+        return &*i->second;
+    }
+    return ki->second.get();
+}
+
 VulkanPlatform::Kernel* VulkanPlatform::Device::load_kernel(const std::string& filename, const std::string& kernel_name) {
     auto key = filename + "::" + kernel_name;
     auto ki = kernels.find(key);
     if (ki == kernels.end()) {
-        auto [i,b] = kernels.emplace(key, std::make_unique<Kernel>(*this, filename, kernel_name));
+        auto [i,b] = kernels.emplace(key, std::make_unique<Kernel>(*this, *load_module(filename, kernel_name)));
         return &*i->second;
     }
 
     return ki->second.get();
 }
 
-void VulkanPlatform::Kernel::setup(VkCommandBuffer cmdbuf, const LaunchParams& launch_params) {
-    vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    std::vector<char> push_constants;
-    push_constants.resize(push_constant_size);
-
+void VulkanPlatform::Module::setup(VkCommandBuffer cmdbuf, char* push_constants, size_t count, void** args) {
     for (auto& e : interface) {
-        if (e.dst_kind == shady::RuntimeInterfaceItem::SHD_RII_Dst_PushConstant) {
+        if (e.dst_kind == RuntimeInterfaceItem::SHD_RII_Dst_PushConstant) {
             switch (e.src_kind) {
-                case shady::RuntimeInterfaceItem::SHD_RII_Src_Param:
-                    assert(e.dst_details.push_constant.size == launch_params.args.sizes[e.src_details.param.param_idx]);
-                    memcpy(reinterpret_cast<uint8_t*>(push_constants.data()) + e.dst_details.push_constant.offset, launch_params.args.data[e.src_details.param.param_idx], e.dst_details.push_constant.size);
+                case RuntimeInterfaceItem::SHD_RII_Src_Param:
+                    //assert(e.dst_details.push_constant.size == launch_params.args.sizes[e.src_details.param.param_idx]);
+                    assert(e.src_details.param.param_idx < count);
+                    memcpy(reinterpret_cast<uint8_t*>(push_constants) + e.dst_details.push_constant.offset, args[e.src_details.param.param_idx], e.dst_details.push_constant.size);
                     break;
                 default:
                     error("TODO");
-                //case shady::RuntimeInterfaceItem::SHD_RII_Src_TmpAllocation:
+                //case RuntimeInterfaceItem::SHD_RII_Src_TmpAllocation:
                 //    break;
-                //case shady::RuntimeInterfaceItem::SHD_RII_Src_LiftedConstant:
+                //case RuntimeInterfaceItem::SHD_RII_Src_LiftedConstant:
                 //    break;
-                //case shady::RuntimeInterfaceItem::SHD_RII_Src_ScratchBuffer:
+                //case RuntimeInterfaceItem::SHD_RII_Src_ScratchBuffer:
                 //    break;
             }
 
@@ -525,8 +563,16 @@ void VulkanPlatform::Kernel::setup(VkCommandBuffer cmdbuf, const LaunchParams& l
             error("todo: implement descriptors");
         }
     }
+}
 
-    vkCmdPushConstants(cmdbuf, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constant_size, push_constants.data());
+void VulkanPlatform::Kernel::dispatch(VkCommandBuffer cmdbuf, const LaunchParams& launch_params) {
+    vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    std::vector<char> push_constants;
+    push_constants.resize(module_.push_constant_size);
+
+    module_.setup(cmdbuf, push_constants.data(), launch_params.num_args, launch_params.args.data);
+
+    vkCmdPushConstants(cmdbuf, layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, module_.push_constant_size, push_constants.data());
     vkCmdDispatch(cmdbuf, launch_params.grid[0] / launch_params.block[0], launch_params.grid[1] / launch_params.block[1], launch_params.grid[2] / launch_params.block[2]);
 }
 
@@ -535,7 +581,7 @@ void VulkanPlatform::launch_kernel(DeviceId dev, const LaunchParams &launch_para
     auto kernel = device->load_kernel(launch_params.file_name, launch_params.kernel_name);
 
     device->execute_command_buffer_oneshot([&](VkCommandBuffer cmd_buf) {
-        kernel->setup(cmd_buf, launch_params);
+        kernel->dispatch(cmd_buf, launch_params);
     });
 }
 
@@ -664,10 +710,4 @@ const char *VulkanPlatform::device_name(DeviceId dev) const {
 
 void register_vulkan_platform(Runtime* runtime) {
     runtime->register_platform<VulkanPlatform>();
-}
-
-VulkanPlatform::Kernel::~Kernel() {
-    vkDestroyPipeline(device_.handle_, pipeline, nullptr);
-    vkDestroyPipelineLayout(device_.handle_, layout, nullptr);
-    vkDestroyShaderModule(device_.handle_, shader_module, nullptr);
 }

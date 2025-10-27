@@ -4,10 +4,8 @@
 #include "platform.h"
 #include <vulkan/vulkan.h>
 
-namespace shady {
 extern "C" {
 #include "shady/runtime/vulkan.h"
-}
 }
 
 #include <functional>
@@ -23,7 +21,7 @@ public:
     VulkanPlatform(Runtime* runtime);
     ~VulkanPlatform() override;
 
-protected:
+public:
     void *alloc(DeviceId dev, int64_t size) override;
     void *alloc_host(DeviceId dev, int64_t size) override;
     void *alloc_unified(DeviceId dev, int64_t size) override { command_unavailable("alloc_unified"); }
@@ -84,19 +82,30 @@ protected:
         ~Buffer() override;
     };
 
-    struct Kernel {
+    struct Module {
         Device& device_;
 
-        shady::Module* shady_module_;
-        std::vector<shady::RuntimeInterfaceItem> interface;
+        std::string entry_point;
+        ::Module* shady_module_;
+        std::vector<RuntimeInterfaceItem> interface;
         size_t push_constant_size = 0;
 
         VkShaderModule shader_module;
+
+        Module(Device& device, std::string, std::string);
+        void setup(VkCommandBuffer, char*, size_t count, void** args);
+        ~Module();
+    };
+
+    struct Kernel {
+        Device& device_;
+        Module& module_;
+
         VkPipelineLayout layout;
         VkPipeline pipeline;
 
-        Kernel(Device& device, std::string, std::string);
-        void setup(VkCommandBuffer, const LaunchParams &launch_params);
+        Kernel(Device& device, Module&);
+        void dispatch(VkCommandBuffer, const LaunchParams &launch_params);
         ~Kernel();
     };
 
@@ -125,10 +134,11 @@ protected:
             .minImportedHostPointerAlignment = 0xFFFFFFFF,
         };
 
-        shady::ShadyVkrPhysicalDeviceCaps shady_caps_;
-        shady::TargetConfig target_config_;
+        ShadyVkrPhysicalDeviceCaps shady_caps_;
+        TargetConfig target_config_;
 
         std::unordered_map<VkDeviceAddress, std::unique_ptr<Buffer>> buffers_;
+        std::unordered_map<std::string, std::unique_ptr<Module>> modules;
         std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
 
         VkQueue queue;
@@ -155,6 +165,7 @@ protected:
         void return_command_buffer(VkCommandBuffer cmd_buf);
         void execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn);
 
+        Module* load_module(const std::string&, const std::string&);
         Kernel* load_kernel(const std::string&, const std::string&);
     };
 
@@ -162,7 +173,7 @@ protected:
     std::vector<VkPhysicalDevice> physical_devices;
     std::vector<std::unique_ptr<Device>> usable_devices;
 
-    shady::CompilerConfig compiler_config_ = shady::shd_default_compiler_config();
+    CompilerConfig compiler_config_ = shd_default_compiler_config();
 };
 
 #endif
