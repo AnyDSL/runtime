@@ -46,18 +46,32 @@ inline bool is_ext_available(std::vector<VkExtensionProperties>& ext_props, std:
     return false;
 }
 
+static std::string desired_instance_extensions[] = {
+    "VK_KHR_external_memory_capabilities",
+    "VK_KHR_surface",
+    "VK_KHR_wayland_surface",
+    "VK_KHR_xcb_surface",
+};
+
+static std::string desired_device_extensions[] {
+    "VK_KHR_swapchain",
+    "VK_KHR_buffer_device_address",
+    "VK_EXT_external_memory_host",
+    "VK_KHR_shader_non_semantic_info",
+};
+
 VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
-    printf("vgfvv\n");
     auto available_layers = query_layers_available();
     auto available_instance_extensions = query_extensions_available();
 
     std::vector<const char*> enabled_layers;
-    std::vector<const char*> enabled_instance_extensions {
-        "VK_KHR_external_memory_capabilities",
-        "VK_KHR_surface",
-        //"VK_KHR_wayland_surface",
-        "VK_KHR_xcb_surface",
-    };
+    std::vector<const char*> enabled_instance_extensions;
+    for (auto& desired : desired_instance_extensions) {
+        for (auto available : available_instance_extensions) {
+            if (desired == available.extensionName)
+                enabled_instance_extensions.push_back(desired.c_str());
+        }
+    }
 
     bool should_enable_validation = true;
 #ifdef NDEBUG
@@ -117,15 +131,13 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, available_device_extensions.data());
 
-    for (auto e : available_device_extensions) {
-        printf("pigsex2022: %d\n", e.extensionName);
+    std::vector<const char*> enabled_device_extensions;
+    for (auto& desired : desired_device_extensions) {
+        for (auto available : available_device_extensions) {
+            if (desired == available.extensionName)
+                enabled_device_extensions.push_back(desired.c_str());
+        }
     }
-
-    std::vector<const char*> enabled_device_extensions {
-        "VK_KHR_buffer_device_address",
-        "VK_KHR_shader_non_semantic_info",
-        "VK_KHR_swapchain",
-    };
 
     // Use this to import host memory as GPU-visible memory, otherwise use a fallback path that copies when uploading/downloading
     //if (is_ext_available(available_device_extensions, "VK_EXT_external_memory_host")) {
