@@ -86,7 +86,7 @@ endif()
 set(AnyDSL_runtime_HAS_OPENCL_SUPPORT ${OpenCL_FOUND} CACHE INTERNAL "enables OpenCL support")
 
 # look for oneAPI Level Zero
-find_package(LevelZero)
+#find_package(LevelZero)
 if(LevelZero_FOUND)
     add_library(runtime_levelzero STATIC levelzero_platform.cpp levelzero_platform.h)
     target_link_libraries(runtime_levelzero PRIVATE runtime_base LevelZero::LevelZero)
