@@ -23,7 +23,7 @@
 
 struct VulkanOffloadInfo {
     // talks to the runtime to setup this pipeline for execution
-    setup: fn(u64, fn(u64, i32, &[&[u8]]) -> ()) -> (),
+    setup: fn(u64, fn(u64, i32, &[&[u8]], &[u64]) -> ()) -> (),
     num_stages: u32,
     stages: &[(u32, &[u8], &[u8])]
 }
