@@ -51,6 +51,7 @@ static std::string desired_instance_extensions[] = {
     "VK_KHR_surface",
     "VK_KHR_wayland_surface",
     "VK_KHR_xcb_surface",
+    "VK_EXT_metal_surface",
 };
 
 static std::string desired_device_extensions[] {
