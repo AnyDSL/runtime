@@ -164,7 +164,7 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_families_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_families_count, queue_families.data());
-    int compute_queue_family = -1;
+
     int q = 0;
     for (auto& queue_f : queue_families) {
         bool has_gfx       = (queue_f.queueFlags & 0x00000001) != 0;
@@ -174,18 +174,18 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         bool has_protected = (queue_f.queueFlags & 0x00000010) != 0;
 
         // TODO perform this intelligently
-        if (compute_queue_family == -1 && has_compute && has_gfx)
-            compute_queue_family = q;
+        if (selected_queue_family == -1 && has_compute && has_gfx)
+            selected_queue_family = q;
         q++;
     }
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     float one = 1.0f;
-    if (compute_queue_family != -1) {
+    if (selected_queue_family != -1) {
         queue_create_infos.push_back(VkDeviceQueueCreateInfo {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = (uint32_t) compute_queue_family,
+            .queueFamilyIndex = (uint32_t) selected_queue_family,
             .queueCount = 1,
             .pQueuePriorities = &one
         });
@@ -237,13 +237,13 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .pEnabledFeatures = nullptr // controlled via VkPhysicalDeviceFeatures2
     };
     CHECK(vkCreateDevice(physical_device, &device_create_info, nullptr, &handle_));
-    vkGetDeviceQueue(handle_, compute_queue_family, 0, &queue);
+    vkGetDeviceQueue(handle_, selected_queue_family, 0, &queue);
 
     auto cmd_pool_create_info = VkCommandPoolCreateInfo {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = (uint32_t) compute_queue_family,
+        .queueFamilyIndex = (uint32_t) selected_queue_family,
     };
     CHECK(vkCreateCommandPool(handle_, &cmd_pool_create_info, nullptr, &cmd_pool));
 

@@ -142,6 +142,7 @@ public:
         std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
 
         VkQueue queue;
+        int selected_queue_family = -1;
         VkCommandPool cmd_pool;
         std::vector<VkCommandBuffer> spare_cmd_bufs;
 
