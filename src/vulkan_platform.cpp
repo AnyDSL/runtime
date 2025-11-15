@@ -406,6 +406,13 @@ uint64_t VulkanPlatform::Device::create_buffer_resource(size_t size, Buffer::Bac
     return b.device_address_;
 }
 
+void VulkanPlatform::Device::destroy_buffer(uint64_t addr) {
+    auto found = buffers_.find(addr);
+    if (found != buffers_.end()) {
+        buffers_.erase(found);
+    }
+}
+
 void* VulkanPlatform::alloc(DeviceId dev, int64_t size) {
     auto& device = usable_devices[dev];
     return reinterpret_cast<void*>(device->create_buffer_resource(size, Buffer::DeviceMemory(), Buffer::ALL_BUFFER_USAGE));

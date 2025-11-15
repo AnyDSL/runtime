@@ -161,6 +161,7 @@ public:
         }
 
         uint64_t create_buffer_resource(size_t, Buffer::BackingStorage backing, VkBufferUsageFlags usage_flags);
+        void destroy_buffer(uint64_t);
 
         VkCommandBuffer obtain_command_buffer();
         void return_command_buffer(VkCommandBuffer cmd_buf);
