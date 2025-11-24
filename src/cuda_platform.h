@@ -45,6 +45,8 @@ protected:
     std::string name() const override { return "CUDA"; }
     const char* device_name(DeviceId dev) const override;
     int device_nodes(DeviceId dev) const override;
+    int device_threads(DeviceId dev) const override;
+    uint64_t device_memory(DeviceId dev) const override;
     bool device_check_feature_support(DeviceId dev, const char* feature) const override;
 
     typedef std::unordered_map<std::string, CUfunction> FunctionMap;

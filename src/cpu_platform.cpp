@@ -14,6 +14,8 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#elif defined(__linux__)
+#include <unistd.h>
 #endif
 
 CpuPlatform::CpuPlatform(Runtime* runtime)
@@ -68,4 +70,109 @@ CpuPlatform::CpuPlatform(Runtime* runtime)
     std::search(std::istreambuf_iterator<char>(cpuinfo), {}, model_string.begin(), model_string.end());
     std::getline(cpuinfo >> std::ws, device_name_);
     #endif
+}
+
+void get_cpu_info(int* cores, int* threads) {
+    *cores = 0;
+    *threads = 0;
+
+#if defined(_WIN32)
+    // Windows: Use GetLogicalProcessorInformationEx for cores/threads
+    DWORD len = 0;
+    GetLogicalProcessorInformationEx(RelationProcessorCore, NULL, &len);
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* buffer =
+        (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)malloc(len);
+
+    if (GetLogicalProcessorInformationEx(RelationProcessorCore, buffer, &len)) {
+        int core_count = 0;
+        int thread_count = 0;
+        char* ptr = (char*)buffer;
+        char* end = ptr + len;
+        while (ptr < end) {
+            SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* info =
+                (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)ptr;
+            if (info->Relationship == RelationProcessorCore) {
+                core_count++;
+                // Count bits set in info->Processor.GroupMask->Mask
+                DWORD_PTR mask = info->Processor.GroupMask[0].Mask;
+                int bit_count = 0;
+                while (mask) {
+                    bit_count += (mask & 1);
+                    mask >>= 1;
+                }
+                thread_count += bit_count;
+            }
+            ptr += info->Size;
+        }
+        *cores = core_count;
+        *threads = thread_count;
+    }
+    free(buffer);
+
+#elif defined(__APPLE__)
+    // macOS: Use sysctlbyname
+    int mib[2];
+    size_t len;
+    int ncpu = 0, nthreads = 0;
+
+    mib[0] = CTL_HW; mib[1] = HW_PHYSCNT;
+    len = sizeof(ncpu);
+    sysctl(mib, 2, &ncpu, &len, NULL, 0);
+    mib[1] = HW_LOGICALCPU;
+    len = sizeof(nthreads);
+    sysctl(mib, 2, &nthreads, &len, NULL, 0);
+
+    *cores = ncpu;
+    *threads = nthreads;
+#elif defined(__linux__)
+    // Linux: Use sysconf
+    *cores = sysconf(_SC_NPROCESSORS_ONLN);
+    *threads = sysconf(_SC_NPROCESSORS_CONF);
+#endif
+}
+
+// Portable function to get the total system memory in bytes
+size_t get_total_memory() {
+    size_t mem = 0;
+
+#if defined(_WIN32)
+    MEMORYSTATUSEX status;
+    status.dwLength = sizeof(status);
+    if (GlobalMemoryStatusEx(&status)) {
+        mem = (size_t)status.ullTotalPhys;
+    }
+#elif defined(__APPLE__)
+    int mib[2] = {CTL_HW, HW_MEMSIZE};
+    size_t len = sizeof(mem);
+    sysctl(mib, 2, &mem, &len, NULL, 0);
+#elif defined(__linux__)
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    if (pages > 0 && page_size > 0) {
+        mem = (size_t)pages * (size_t)page_size;
+    }
+#endif
+    return mem;
+}
+
+int CpuPlatform::device_nodes(DeviceId) const {
+    int cores = 0;
+    int threads = 0;
+
+    get_cpu_info(&cores, &threads);
+
+    return cores;
+}
+
+int CpuPlatform::device_threads(DeviceId) const {
+    int cores = 0;
+    int threads = 0;
+
+    get_cpu_info(&cores, &threads);
+
+    return threads;
+}
+
+uint64_t CpuPlatform::device_memory(DeviceId) const {
+    return get_total_memory();
 }

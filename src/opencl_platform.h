@@ -44,6 +44,8 @@ protected:
     std::string name() const override { return "OpenCL"; }
     const char* device_name(DeviceId dev) const override;
     int device_nodes(DeviceId dev) const override { return 0; }
+    int device_threads(DeviceId dev) const override { return 0; }
+    uint64_t device_memory(DeviceId dev) const override { return 0; }
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;

@@ -522,6 +522,31 @@ int LevelZeroPlatform::device_nodes(DeviceId dev) const {
     return device_properties.numSlices * device_properties.numSubslicesPerSlice;
 }
 
+uint64_t LevelZeroPlatform::device_memory(DeviceId dev) const {
+    ze_device_handle_t hDevice = devices_[dev].device;
+    uint32_t memoryCount = 0;
+    WRAP_LEVEL_ZERO(zeDeviceGetMemoryProperties(hDevice, &memoryCount, nullptr));
+    std::vector<ze_device_memory_properties_t> memoryProperties(memoryCount);
+    for (uint32_t mem = 0; mem < memoryCount; ++mem)
+    {
+        memoryProperties[mem].stype = ZE_STRUCTURE_TYPE_DEVICE_MEMORY_PROPERTIES;
+        memoryProperties[mem].pNext = nullptr;
+    }
+    WRAP_LEVEL_ZERO(zeDeviceGetMemoryProperties(hDevice, &memoryCount, memoryProperties.data()));
+
+    return memoryProperties[0].totalSize;
+}
+
+int LevelZeroPlatform::device_threads(DeviceId dev) const {
+    ze_device_handle_t hDevice = devices_[dev].device;
+    ze_device_properties_t device_properties;
+    device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    device_properties.pNext = nullptr;
+    WRAP_LEVEL_ZERO(zeDeviceGetProperties(hDevice, &device_properties));
+
+    return device_properties.numSlices * device_properties.numSubslicesPerSlice * device_properties.numEUsPerSubslice * device_properties.numThreadsPerEU;
+}
+
 void register_levelzero_platform(Runtime* runtime) {
     runtime->register_platform<LevelZeroPlatform>();
 }

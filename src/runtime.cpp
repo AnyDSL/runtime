@@ -55,6 +55,16 @@ int Runtime::device_nodes(PlatformId plat, DeviceId dev) const {
     return platforms_[plat]->device_nodes(dev);
 }
 
+int Runtime::device_threads(PlatformId plat, DeviceId dev) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_threads(dev);
+}
+
+uint64_t Runtime::device_memory(PlatformId plat, DeviceId dev) const {
+    check_device(plat, dev);
+    return platforms_[plat]->device_memory(dev);
+}
+
 bool Runtime::device_check_feature_support(PlatformId plat, DeviceId dev, const char* feature) const {
     check_device(plat, dev);
     return platforms_[plat]->device_check_feature_support(dev, feature);
