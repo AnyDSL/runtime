@@ -685,9 +685,24 @@ const char* CudaPlatform::device_name(DeviceId dev) const {
 
 int CudaPlatform::device_nodes(DeviceId dev) const {
     int multiProcessorCount;
+    CHECK_CUDA(cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, devices_[dev].dev), "cuFuncGetAttribute()");
+    return multiProcessorCount;
+}
+
+int CudaPlatform::device_threads(DeviceId dev) const {
+    int multiProcessorCount;
+    int threadsPerProcessorCount;
     CUresult err = cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, devices_[dev].dev);
     CHECK_CUDA(err, "cuFuncGetAttribute()");
-    return multiProcessorCount;
+    err = cuDeviceGetAttribute(&threadsPerProcessorCount, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, devices_[dev].dev);
+    CHECK_CUDA(err, "cuFuncGetAttribute()");
+    return multiProcessorCount * threadsPerProcessorCount;
+}
+
+uint64_t CudaPlatform::device_memory(DeviceId dev) const {
+    uint64_t total_mem;
+    CHECK_CUDA(cuDeviceTotalMem(&total_mem, devices_[dev].dev), "cuDeviceTotalMem");
+    return total_mem;
 }
 
 bool CudaPlatform::device_check_feature_support(DeviceId dev, const char* feature) const {

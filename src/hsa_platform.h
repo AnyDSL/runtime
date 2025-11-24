@@ -42,6 +42,8 @@ protected:
     std::string name() const override { return "HSA"; }
     const char* device_name(DeviceId dev) const override;
     int device_nodes(DeviceId) const override;
+    int device_threads(DeviceId) const override;
+    uint64_t device_memory(DeviceId) const override;
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     struct KernelInfo {

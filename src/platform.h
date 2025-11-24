@@ -56,8 +56,12 @@ public:
     virtual size_t dev_count() const = 0;
     /// Returns the name of the given device.
     virtual const char* device_name(DeviceId dev) const = 0;
-    /// Returns the number of CPUs/SMs or similar for the given device. 0 when not applicable.
+    /// Returns the number of CPU cores/SMs or similar for the given device. 0 when not applicable.
     virtual int device_nodes(DeviceId dev) const = 0;
+    /// Returns the number of threads or similar for the given device. 0 when not applicable.
+    virtual int device_threads(DeviceId dev) const = 0;
+    /// Returns the amount of memory directly attached to the device. 0 when not applicable.
+    virtual uint64_t device_memory(DeviceId dev) const = 0;
     /// Checks whether the given platform-specific feature is supported on the given device.
     virtual bool device_check_feature_support(DeviceId dev, const char* feature) const = 0;
 

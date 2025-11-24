@@ -32,6 +32,8 @@ protected:
     std::string name() const override { return name_; }
     const char* device_name(DeviceId) const override { return "Dummy"; }
     int device_nodes(DeviceId) const override { return 0; }
+    int device_threads(DeviceId) const override { return 0; }
+    uint64_t device_memory(DeviceId) const override { return 0; }
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     std::string name_;

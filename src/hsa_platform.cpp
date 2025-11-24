@@ -740,10 +740,35 @@ const char* HSAPlatform::device_name(DeviceId dev) const {
 }
 
 int HSAPlatform::device_nodes(DeviceId dev) const {
-    int num_nodes;
+    uint64_t num_nodes;
     hsa_status_t status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_COMPUTE_UNIT_COUNT, &num_nodes);
     CHECK_HSA(status, "hsa_agent_get_info()");
     return num_nodes;
+}
+
+int HSAPlatform::device_threads(DeviceId dev) const {
+    int num_nodes, waves_per_sm, wave_size;
+    hsa_status_t status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_COMPUTE_UNIT_COUNT, &num_nodes);
+    CHECK_HSA(status, "hsa_agent_get_info()");
+
+    status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_MAX_WAVES_PER_CU, &waves_per_sm);
+    CHECK_HSA(status, "hsa_agent_get_info()");
+
+    status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AGENT_INFO_WAVEFRONT_SIZE, &wave_size);
+    CHECK_HSA(status, "hsa_agent_get_info()");
+
+    return (num_nodes ? num_nodes : 1) * (waves_per_sm ? waves_per_sm : 1) * (wave_size ? wave_size : 1);
+}
+
+uint64_t HSAPlatform::device_memory(DeviceId dev) const {
+    uint64_t memory;
+    hsa_status_t status = hsa_agent_get_info(devices_[dev].agent, (hsa_agent_info_t)HSA_AMD_AGENT_INFO_MEMORY_AVAIL, &memory);
+    if (status == HSA_STATUS_ERROR_INVALID_ARGUMENT) {
+        debug("something went wrong, we can't get the size of device %", devices_[dev].name);
+        return 0;
+    }
+    CHECK_HSA(status, "hsa_agent_get_info()");
+    return memory;
 }
 
 void register_hsa_platform(Runtime* runtime) {

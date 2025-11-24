@@ -56,6 +56,10 @@ public:
     const char* device_name(PlatformId, DeviceId) const;
     //Returns the number of compute nodes on the given device.
     int device_nodes(PlatformId, DeviceId) const;
+    //Returns the number of threads on the given device.
+    int device_threads(PlatformId, DeviceId) const;
+    //Returns the amount of memory attached directly to the device.
+    uint64_t device_memory(PlatformId, DeviceId) const;
     /// Checks whether feature is supported on device.
     bool device_check_feature_support(PlatformId, DeviceId, const char*) const;
 

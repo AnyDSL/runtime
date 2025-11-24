@@ -4,6 +4,7 @@
 
 #[import(cc = "C", name = "anydsl_device_nodes")]          fn runtime_device_nodes(_device: i32) -> i32;
 #[import(cc = "C", name = "anydsl_device_threads")]          fn runtime_device_threads(_device: i32) -> i32;
+#[import(cc = "C", name = "anydsl_device_memory")]          fn runtime_device_memory(_device: i32) -> u64;
 
 #[import(cc = "C", name = "anydsl_alloc")]          fn runtime_alloc(_device: i32, _size: i64) -> &mut [i8];
 #[import(cc = "C", name = "anydsl_alloc_host")]     fn runtime_alloc_host(_device: i32, _size: i64) -> &mut [i8];
