@@ -74,10 +74,9 @@ VulkanPlatform::VulkanPlatform(Runtime* runtime) : Platform(runtime) {
         }
     }
 
-    bool should_enable_validation = true;
-#ifdef NDEBUG
-    should_enable_validation = false;
-#endif
+    bool should_enable_validation = false;
+    if (getenv("ANYDSL_VULKAN_VALIDATION"))
+        should_enable_validation = true;
     if (should_enable_validation) {
         for (auto& layer : available_layers) {
             if (strcmp(khr_validation, layer.layerName) == 0) {
