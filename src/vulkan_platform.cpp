@@ -125,7 +125,7 @@ VulkanPlatform::~VulkanPlatform() {
 }
 
 VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id)
-: platform_(platform), physical_device(physical_device), device_id(device_id) {
+: platform_(platform), physical_device_(physical_device), device_id_(device_id) {
     uint32_t exts_count;
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &exts_count, nullptr);
     std::vector<VkExtensionProperties> available_device_extensions(exts_count);
@@ -146,16 +146,16 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     //    can_import_host_memory = true;
     //}
 
-    vkGetPhysicalDeviceProperties2(physical_device, &properties);
-    auto& device_properties = properties.properties;
+    vkGetPhysicalDeviceProperties2(physical_device, &properties_);
+    auto& device_properties = properties_.properties;
 
     debug("  GPU%:", device_id);
     debug("  Device name: %", device_properties.deviceName);
     debug("  Vulkan version %.%.%", VK_VERSION_MAJOR(device_properties.apiVersion), VK_VERSION_MINOR(device_properties.apiVersion), VK_VERSION_PATCH(device_properties.apiVersion));
 
-    if (can_import_host_memory) {
-        debug("  Min imported host ptr alignment: %", external_memory_host_properties.minImportedHostPointerAlignment);
-        if (external_memory_host_properties.minImportedHostPointerAlignment == 0xFFFFFFFF)
+    if (can_import_host_memory_) {
+        debug("  Min imported host ptr alignment: %", external_memory_host_properties_.minImportedHostPointerAlignment);
+        if (external_memory_host_properties_.minImportedHostPointerAlignment == 0xFFFFFFFF)
             error("Device does not report minimum host pointer alignment");
     }
 
@@ -173,18 +173,18 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         bool has_protected = (queue_f.queueFlags & 0x00000010) != 0;
 
         // TODO perform this intelligently
-        if (selected_queue_family == -1 && has_compute && has_gfx)
-            selected_queue_family = q;
+        if (selected_queue_family_ == -1 && has_compute && has_gfx)
+            selected_queue_family_ = q;
         q++;
     }
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     float one = 1.0f;
-    if (selected_queue_family != -1) {
+    if (selected_queue_family_ != -1) {
         queue_create_infos.push_back(VkDeviceQueueCreateInfo {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .queueFamilyIndex = (uint32_t) selected_queue_family,
+            .queueFamilyIndex = (uint32_t) selected_queue_family_,
             .queueCount = 1,
             .pQueuePriorities = &one
         });
@@ -236,15 +236,15 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         .pEnabledFeatures = nullptr // controlled via VkPhysicalDeviceFeatures2
     };
     CHECK(vkCreateDevice(physical_device, &device_create_info, nullptr, &handle_));
-    vkGetDeviceQueue(handle_, selected_queue_family, 0, &queue);
+    vkGetDeviceQueue(handle_, selected_queue_family_, 0, &queue_);
 
     auto cmd_pool_create_info = VkCommandPoolCreateInfo {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = (uint32_t) selected_queue_family,
+        .queueFamilyIndex = (uint32_t) selected_queue_family_,
     };
-    CHECK(vkCreateCommandPool(handle_, &cmd_pool_create_info, nullptr, &cmd_pool));
+    CHECK(vkCreateCommandPool(handle_, &cmd_pool_create_info, nullptr, &pool_));
 
     // Load function pointers
 #define f(s) extension_fns.s = (PFN_##s) vkGetDeviceProcAddr(handle_, #s);
@@ -257,8 +257,11 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
 }
 
 VulkanPlatform::Device::~Device() {
-    vkDestroyCommandPool(handle_, cmd_pool, nullptr);
-    kernels.clear();
+    kernels_.clear();
+    buffers_.clear();
+    modules_.clear();
+    command_buffers_.clear();
+    vkDestroyCommandPool(handle_, pool_, nullptr);
     //if (!resources.empty()) {
     //    info("Some vulkan resources were not released. Releasing those automatically...");
     //    resources.clear();
@@ -268,7 +271,7 @@ VulkanPlatform::Device::~Device() {
 
 uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags) {
     VkPhysicalDeviceMemoryProperties device_memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &device_memory_properties);
+    vkGetPhysicalDeviceMemoryProperties(physical_device_, &device_memory_properties);
     for (size_t bit = 0; bit < 32; bit++) {
         auto& memory_type = device_memory_properties.memoryTypes[bit];
         auto& memory_heap = device_memory_properties.memoryHeaps[memory_type.heapIndex];
@@ -302,9 +305,9 @@ VkDeviceMemory VulkanPlatform::Device::allocate_memory(VkDeviceSize size, uint32
 }
 
 std::pair<VkDeviceMemory, size_t> VulkanPlatform::Device::import_host_memory(void *ptr, size_t size) {
-    assert(can_import_host_memory && "This device does not support importing host memory");
+    assert(can_import_host_memory_ && "This device does not support importing host memory");
 
-    size_t alignment = external_memory_host_properties.minImportedHostPointerAlignment;
+    size_t alignment = external_memory_host_properties_.minImportedHostPointerAlignment;
 
     // Align stuff
     size_t mask = ~(alignment - 1);
@@ -540,9 +543,9 @@ VulkanPlatform::Kernel::~Kernel() {
 
 VulkanPlatform::Module* VulkanPlatform::Device::load_module(const std::string& filename, const std::string& kernel_name) {
     auto key = filename + "::" + kernel_name;
-    auto ki = modules.find(key);
-    if (ki == modules.end()) {
-        auto [i,b] = modules.emplace(key, std::make_unique<Module>(*this, filename, kernel_name));
+    auto ki = modules_.find(key);
+    if (ki == modules_.end()) {
+        auto [i,b] = modules_.emplace(key, std::make_unique<Module>(*this, filename, kernel_name));
         return &*i->second;
     }
     return ki->second.get();
@@ -550,9 +553,9 @@ VulkanPlatform::Module* VulkanPlatform::Device::load_module(const std::string& f
 
 VulkanPlatform::Kernel* VulkanPlatform::Device::load_kernel(const std::string& filename, const std::string& kernel_name) {
     auto key = filename + "::" + kernel_name;
-    auto ki = kernels.find(key);
-    if (ki == kernels.end()) {
-        auto [i,b] = kernels.emplace(key, std::make_unique<Kernel>(*this, *load_module(filename, kernel_name)));
+    auto ki = kernels_.find(key);
+    if (ki == kernels_.end()) {
+        auto [i,b] = kernels_.emplace(key, std::make_unique<Kernel>(*this, *load_module(filename, kernel_name)));
         return &*i->second;
     }
 
@@ -609,15 +612,15 @@ void VulkanPlatform::synchronize(DeviceId dev) {
 }
 
 VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
-    if (spare_cmd_bufs.size() > 0) {
-        VkCommandBuffer cmd_buf = spare_cmd_bufs.back();
-        spare_cmd_bufs.pop_back();
+    if (command_buffers_.size() > 0) {
+        VkCommandBuffer cmd_buf = command_buffers_.back();
+        command_buffers_.pop_back();
         return cmd_buf;
     }
     auto cmd_buf_create_info = VkCommandBufferAllocateInfo {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .pNext = nullptr,
-        .commandPool = cmd_pool,
+        .commandPool = pool_,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = 1
     };
@@ -628,7 +631,7 @@ VkCommandBuffer VulkanPlatform::Device::obtain_command_buffer() {
 
 void VulkanPlatform::Device::return_command_buffer(VkCommandBuffer cmd_buf) {
     vkResetCommandBuffer(cmd_buf, 0);
-    spare_cmd_bufs.push_back(cmd_buf);
+    command_buffers_.push_back(cmd_buf);
 }
 
 void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(VkCommandBuffer)> fn) {
@@ -653,7 +656,7 @@ void VulkanPlatform::Device::execute_command_buffer_oneshot(std::function<void(V
         .signalSemaphoreCount = 0,
         .pSignalSemaphores = nullptr,
     };
-    CHECK(vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE));
+    CHECK(vkQueueSubmit(queue_, 1, &submit_info, VK_NULL_HANDLE));
     CHECK(vkDeviceWaitIdle(handle_));
     return_command_buffer(cmd_buf);
 }
@@ -670,7 +673,7 @@ void VulkanPlatform::copy_from_host(const void *src, int64_t offset_src, DeviceI
 
     void* host_ptr = (void*)((size_t)src + offset_src);
         // Import host memory and wrap it in a buffer
-    if (device->can_import_host_memory) {
+    if (device->can_import_host_memory_) {
         tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::ImportedHostMemory { host_ptr }, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     } else {
         tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::HostMemory { }, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -699,7 +702,7 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
 
     void* host_ptr = (void*)((size_t)dst + offset_dst);
         // Import host memory and wrap it in a buffer
-    if (device->can_import_host_memory) {
+    if (device->can_import_host_memory_) {
         tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::ImportedHostMemory { host_ptr }, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     } else {
         tmp_buffer = std::make_unique<Buffer>(*device, size, Buffer::HostMemory { }, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -714,7 +717,7 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
         vkCmdCopyBuffer(cmd_buf, src_buffer->handle_, tmp_buffer->handle_, 1, &copy_region);
     });
 
-    if (!device->can_import_host_memory) {
+    if (!device->can_import_host_memory_) {
         void* mapped = nullptr;
         CHECK(vkMapMemory(device->handle_, tmp_buffer->device_memory_, 0, size, 0, &mapped));
         assert(mapped != nullptr);
@@ -724,7 +727,7 @@ void VulkanPlatform::copy_to_host(DeviceId dev_src, const void *src, int64_t off
 }
 
 const char *VulkanPlatform::device_name(DeviceId dev) const {
-    return usable_devices[dev]->properties.properties.deviceName;
+    return usable_devices[dev]->properties_.properties.deviceName;
 }
 
 void register_vulkan_platform(Runtime* runtime) {

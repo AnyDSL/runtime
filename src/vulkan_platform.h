@@ -117,18 +117,18 @@ public:
 
     struct Device {
         VulkanPlatform& platform_;
-        VkPhysicalDevice physical_device;
+        VkPhysicalDevice physical_device_;
         VkDevice handle_ = nullptr;
-        size_t device_id;
+        size_t device_id_;
 
         ExtensionFns extension_fns;
 
-        VkPhysicalDeviceProperties2 properties = {
+        VkPhysicalDeviceProperties2 properties_ = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
         };
 
-        bool can_import_host_memory = false;
-        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_properties {
+        bool can_import_host_memory_ = false;
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_properties_ {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             .pNext = nullptr,
             .minImportedHostPointerAlignment = 0xFFFFFFFF,
@@ -138,13 +138,13 @@ public:
         TargetConfig target_config_;
 
         std::unordered_map<VkDeviceAddress, std::unique_ptr<Buffer>> buffers_;
-        std::unordered_map<std::string, std::unique_ptr<Module>> modules;
-        std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels;
+        std::unordered_map<std::string, std::unique_ptr<Module>> modules_;
+        std::unordered_map<std::string, std::unique_ptr<Kernel>> kernels_;
 
-        VkQueue queue;
-        int selected_queue_family = -1;
-        VkCommandPool cmd_pool;
-        std::vector<VkCommandBuffer> spare_cmd_bufs;
+        VkQueue queue_;
+        int selected_queue_family_ = -1;
+        VkCommandPool pool_;
+        std::vector<VkCommandBuffer> command_buffers_;
 
         Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id);
         ~Device();
