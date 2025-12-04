@@ -1,7 +1,7 @@
 #ifndef ANYDSL_RUNTIME_VULKAN_PLATFORM_H
 #define ANYDSL_RUNTIME_VULKAN_PLATFORM_H
 
-#include "platform.h"
+#include "../platform.h"
 #include <vulkan/vulkan.h>
 
 extern "C" {
@@ -64,7 +64,6 @@ public:
             VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
             VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT |
             VK_BUFFER_USAGE_2_TRANSFER_DST_BIT;
-
 
         struct ImportedHostMemory {
             void* host_memory_;
@@ -177,5 +176,18 @@ public:
 
     CompilerConfig compiler_config_ = shd_default_compiler_config();
 };
+
+#define CHECK(stuff) { \
+    auto rslt = stuff; \
+    if (rslt != VK_SUCCESS) \
+        error("error %d, failed %", rslt, #stuff); \
+}
+
+template<typename T, typename U>
+void insert_pnext(T& base, U& append) {
+    assert(base.pNext == nullptr);
+    append.pNext = base.pNext;
+    base.pNext = &append;
+}
 
 #endif

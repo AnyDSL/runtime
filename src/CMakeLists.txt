@@ -139,15 +139,17 @@ if(pal_FOUND)
 endif()
 set(AnyDSL_runtime_HAS_PAL_SUPPORT ${pal_FOUND} CACHE INTERNAL "enables PAL support")
 
+#add_subdirectory(vulkan)
 find_package(shady)
 find_package(Vulkan)
 if(Vulkan_FOUND AND shady_FOUND)
-    add_library(runtime_vulkan STATIC vulkan_platform.cpp vulkan_platform.h)
+    add_library(runtime_vulkan STATIC vulkan/platform.cpp vulkan/vulkan_platform.h vulkan/buffer.cpp vulkan/memory.cpp vulkan/module.cpp vulkan/device.cpp vulkan/copy.cpp)
     target_include_directories(runtime_vulkan PRIVATE ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(runtime_vulkan PRIVATE runtime_base ${Vulkan_LIBRARIES} shady::runtime shady::api shady::driver)
     list(APPEND RUNTIME_PLATFORMS runtime_vulkan)
 endif()
 set(AnyDSL_runtime_HAS_Vulkan_SUPPORT ${Vulkan_FOUND} CACHE INTERNAL "enables Vulkan support")
+
 
 # look for LLVM for nvptx and gcn
 find_package(LLVM CONFIG)
