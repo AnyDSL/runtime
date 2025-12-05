@@ -1,6 +1,6 @@
 #include "vulkan_platform.h"
 
-VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backing, VkBufferUsageFlags2 usage) : Resource(device) {
+VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backing, VkBufferUsageFlags2 usage) : Resource(device), backing_storage_(backing) {
     VkBufferCreateInfo buffer_create_info {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
@@ -37,6 +37,7 @@ VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backi
         VkMemoryRequirements memory_requirements;
         vkGetBufferMemoryRequirements(device.handle_, handle_, &memory_requirements);
         device_memory_ = device.allocate_memory(memory_requirements.size, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        can_be_mapped_ = true;
         vkBindBufferMemory(device.handle_, handle_, device_memory_, 0);
     } else {
         abort();

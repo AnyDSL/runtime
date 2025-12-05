@@ -52,13 +52,6 @@ public:
     };
 
     struct Buffer : public Resource {
-        VkBuffer handle_;
-
-        void* host_address_ = nullptr;
-        VkDeviceAddress device_address_ = 0;
-
-        VkDeviceMemory device_memory_;
-
         const static VkBufferUsageFlags2 ALL_BUFFER_USAGE =
             VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT |
             VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
@@ -79,6 +72,15 @@ public:
 
         Buffer(Device& device, size_t size, BackingStorage backing_storage, VkBufferUsageFlags2 usages = ALL_BUFFER_USAGE);
         ~Buffer() override;
+
+        VkBuffer handle_;
+
+        bool can_be_mapped_ = false;
+        void* persistently_mapped_host_address_ = nullptr;
+        VkDeviceAddress device_address_ = 0;
+        VkDeviceMemory device_memory_;
+
+        BackingStorage backing_storage_;
     };
 
     struct Module {
