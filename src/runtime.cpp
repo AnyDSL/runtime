@@ -229,7 +229,7 @@ std::string Runtime::load_file(const std::string& filename) const {
     if (file_it != files_.end())
         return file_it->second;
 
-    std::ifstream src_file(filename);
+    std::ifstream src_file(filename, std::ios_base::in | std::ios_base::binary);
     if (!src_file)
         error("Can't open source file '%'", filename);
     return read_stream(src_file);
