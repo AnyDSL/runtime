@@ -1,5 +1,6 @@
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 #include "anydsl_runtime.h"
 
@@ -230,9 +231,19 @@ std::string Runtime::load_file(const std::string& filename) const {
         return file_it->second;
 
     std::ifstream src_file(filename, std::ios_base::in | std::ios_base::binary);
-    if (!src_file)
-        error("Can't open source file '%'", filename);
-    return read_stream(src_file);
+    if (src_file)
+        return read_stream(src_file);
+
+    std::filesystem::path self_path(get_self_directory());
+    std::filesystem::path target_path(filename);
+
+    std::filesystem::path alt = self_path / target_path.filename();
+
+    std::ifstream src_file_fallback(alt, std::ios_base::in | std::ios_base::binary);
+    if (src_file_fallback)
+        return read_stream(src_file_fallback);
+
+    error("Can't open source file '%'", filename);
 }
 
 void Runtime::store_file(const std::string& filename, const std::string& str) const {
