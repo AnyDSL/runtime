@@ -79,6 +79,7 @@ public:
         void* persistently_mapped_host_address_ = nullptr;
         VkDeviceAddress device_address_ = 0;
         VkDeviceMemory device_memory_;
+        size_t device_memory_bytes_ = 0;
 
         BackingStorage backing_storage_;
     };
@@ -151,7 +152,7 @@ public:
         ~Device();
 
         uint32_t find_suitable_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags, VkMemoryHeapFlags = 0);
-        VkDeviceMemory allocate_memory(VkDeviceSize, uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags = 0);
+        VkDeviceMemory allocate_memory(VkDeviceSize, uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags = 0, VkMemoryAllocateFlags allocation_flags = 0);
         std::pair<VkDeviceMemory, size_t> import_host_memory(void* ptr, size_t size);
 
         Buffer* get_buffer_by_device_address(VkDeviceAddress addr) {

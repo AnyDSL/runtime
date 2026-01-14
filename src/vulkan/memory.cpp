@@ -15,22 +15,22 @@ uint32_t VulkanPlatform::Device::find_suitable_memory_type(uint32_t memory_type_
     assert(false && "Unable to find a suitable memory type");
 }
 
-VkDeviceMemory VulkanPlatform::Device::allocate_memory(VkDeviceSize size, uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags) {
+VkDeviceMemory VulkanPlatform::Device::allocate_memory(VkDeviceSize size, uint32_t memory_type_bits, VkMemoryPropertyFlags memory_flags, VkMemoryHeapFlags heap_flags, VkMemoryAllocateFlags allocation_flags) {
     auto allocate_flags = VkMemoryAllocateFlagsInfo {
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
-            .pNext = nullptr,
-            .flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR,
-            .deviceMask = 0
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+        .pNext = nullptr,
+        .flags = allocation_flags,
+        .deviceMask = 0
     };
 
     auto allocation_info = VkMemoryAllocateInfo {
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .pNext = &allocate_flags,
-            .allocationSize = size, // the driver might want padding !
-            .memoryTypeIndex = find_suitable_memory_type(memory_type_bits, memory_flags, heap_flags),
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = &allocate_flags,
+        .allocationSize = size, // the driver might want padding !
+        .memoryTypeIndex = find_suitable_memory_type(memory_type_bits, memory_flags, heap_flags),
     };
     VkDeviceMemory memory;
-    vkAllocateMemory(handle_, &allocation_info, nullptr, &memory);
+    CHECK(vkAllocateMemory(handle_, &allocation_info, nullptr, &memory));
 
     return memory;
 }

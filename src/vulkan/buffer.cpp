@@ -1,16 +1,22 @@
 #include "vulkan_platform.h"
 
-VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backing, VkBufferUsageFlags2 usage) : Resource(device), backing_storage_(backing) {
+VulkanPlatform::Buffer::Buffer(Device& device, const size_t size, BackingStorage backing, VkBufferUsageFlags2 usage) : Resource(device), backing_storage_(backing) {
+    //size *= 2;
     VkBufferCreateInfo buffer_create_info {
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .size = (VkDeviceSize) size,
-            .usage = static_cast<VkBufferUsageFlags>(usage),
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .queueFamilyIndexCount = 0,
-            .pQueueFamilyIndices = nullptr,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = (VkDeviceSize) size,
+        .usage = static_cast<VkBufferUsageFlags>(usage),
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
     };
+
+    VkMemoryAllocateFlags allocation_flags = 0;
+    if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+        allocation_flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    }
 
     auto create_buffer = [&]() { vkCreateBuffer(device.handle_, &buffer_create_info, nullptr, &handle_); };
 
@@ -30,15 +36,17 @@ VulkanPlatform::Buffer::Buffer(Device& device, size_t size, BackingStorage backi
         create_buffer();
         VkMemoryRequirements memory_requirements;
         vkGetBufferMemoryRequirements(device.handle_, handle_, &memory_requirements);
-        device_memory_ = device.allocate_memory(memory_requirements.size, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        vkBindBufferMemory(device.handle_, handle_, device_memory_, 0);
+        device_memory_bytes_ = memory_requirements.size;
+        device_memory_ = device.allocate_memory(memory_requirements.size, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, allocation_flags);
+        CHECK(vkBindBufferMemory(device.handle_, handle_, device_memory_, 0));
     } else if (std::get_if<HostMemory>(&backing)) {
         create_buffer();
         VkMemoryRequirements memory_requirements;
         vkGetBufferMemoryRequirements(device.handle_, handle_, &memory_requirements);
-        device_memory_ = device.allocate_memory(memory_requirements.size, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        device_memory_bytes_ = memory_requirements.size;
+        device_memory_ = device.allocate_memory(memory_requirements.size, memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , 0, allocation_flags);
         can_be_mapped_ = true;
-        vkBindBufferMemory(device.handle_, handle_, device_memory_, 0);
+        CHECK(vkBindBufferMemory(device.handle_, handle_, device_memory_, 0));
     } else {
         abort();
     }
