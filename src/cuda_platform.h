@@ -65,7 +65,7 @@ protected:
             , compute_capability(data.compute_capability)
             , modules(std::move(data.modules))
             , functions(std::move(data.functions))
-            , name(std::move(name))
+            , name(std::move(data.name))
         {}
 
         void lock() {

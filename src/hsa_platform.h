@@ -84,7 +84,7 @@ protected:
             , amd_coarsegrained_pool(data.amd_finegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
-            , name(data.name)
+            , name(std::move(data.name))
         {}
 
         void lock() {
