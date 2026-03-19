@@ -81,7 +81,7 @@ protected:
             , coarsegrained_region(data.coarsegrained_region)
             , amd_kernarg_pool(data.amd_kernarg_pool)
             , amd_finegrained_pool(data.amd_finegrained_pool)
-            , amd_coarsegrained_pool(data.amd_finegrained_pool)
+            , amd_coarsegrained_pool(data.amd_coarsegrained_pool)
             , programs(std::move(data.programs))
             , kernels(std::move(data.kernels))
             , name(std::move(data.name))
