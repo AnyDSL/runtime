@@ -102,6 +102,7 @@ protected:
     void* alloc_hsa(int64_t, hsa_region_t);
     void* alloc_hsa(int64_t, hsa_amd_memory_pool_t);
     static hsa_status_t iterate_agents_callback(hsa_agent_t, void*);
+    static hsa_status_t iterate_isas_callback(hsa_isa_t, void*);
     static hsa_status_t iterate_regions_callback(hsa_region_t, void*);
     static hsa_status_t iterate_memory_pools_callback(hsa_amd_memory_pool_t, void*);
     KernelInfo& load_kernel(DeviceId, const std::string&, const std::string&);

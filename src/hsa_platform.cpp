@@ -59,6 +59,7 @@ std::string get_device_type_str(hsa_device_type_t device_type) {
         HSA_DEVICE_TYPE(HSA_DEVICE_TYPE_CPU)
         HSA_DEVICE_TYPE(HSA_DEVICE_TYPE_GPU)
         HSA_DEVICE_TYPE(HSA_DEVICE_TYPE_DSP)
+        HSA_DEVICE_TYPE(HSA_DEVICE_TYPE_AIE)
         default: return "unknown HSA device type";
     }
 }
@@ -112,15 +113,6 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_DEFAULT_FLOAT_ROUNDING_MODE, &float_mode);
     CHECK_HSA(status, "hsa_agent_get_info()");
 
-    hsa_isa_t isa;
-    status = hsa_agent_get_info(agent, HSA_AGENT_INFO_ISA, &isa);
-    CHECK_HSA(status, "hsa_agent_get_info()");
-    uint32_t name_length;
-    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME_LENGTH, &name_length);
-    char isa_name[64] = { 0 };
-    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, isa_name);
-    debug("      Device ISA: %", isa_name);
-
     hsa_device_type_t device_type;
     status = hsa_agent_get_info(agent, HSA_AGENT_INFO_DEVICE, &device_type);
     CHECK_HSA(status, "hsa_agent_get_info()");
@@ -165,10 +157,32 @@ hsa_status_t HSAPlatform::iterate_agents_callback(hsa_agent_t agent, void* data)
 
     status = hsa_signal_create(0, 0, nullptr, &device->signal);
     CHECK_HSA(status, "hsa_signal_create()");
+
+    if (device_type == HSA_DEVICE_TYPE_GPU) {
+        int isa_num = 0;
+        CHECK_HSA(status, "hsa_agent_get_info()");
+        status = hsa_agent_iterate_isas(agent, iterate_isas_callback, &isa_num);
+        CHECK_HSA(status, "hsa_agent_iterate_isas()");
+    }
     status = hsa_agent_iterate_regions(agent, iterate_regions_callback, device);
     CHECK_HSA(status, "hsa_agent_iterate_regions()");
     status = hsa_amd_agent_iterate_memory_pools(agent, iterate_memory_pools_callback, device);
     CHECK_HSA(status, "hsa_amd_agent_iterate_memory_pools()");
+
+    return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSAPlatform::iterate_isas_callback(hsa_isa_t isa, void* data) {
+    int* isa_num = static_cast<int*>(data);
+    hsa_status_t status;
+
+    uint32_t name_length;
+    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME_LENGTH, &name_length);
+    CHECK_HSA(status, "hsa_agent_get_info_alt()");
+    char isa_name[name_length] = { 0 };
+    status = hsa_isa_get_info_alt(isa, HSA_ISA_INFO_NAME, isa_name);
+    CHECK_HSA(status, "hsa_agent_get_info_alt()");
+    debug("      Device ISA %: %", (*isa_num)++, isa_name);
 
     return HSA_STATUS_SUCCESS;
 }
