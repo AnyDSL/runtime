@@ -13,6 +13,7 @@
 #include <OpenCL/cl_ext.h>
 #else
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#define CL_TARGET_OPENCL_VERSION 300
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 #endif
@@ -43,9 +44,9 @@ protected:
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "OpenCL"; }
     const char* device_name(DeviceId dev) const override;
-    int device_nodes(DeviceId dev) const override { return 0; }
-    int device_threads(DeviceId dev) const override { return 0; }
-    uint64_t device_memory(DeviceId dev) const override { return 0; }
+    int device_nodes(DeviceId) const override { return 0; }
+    int device_threads(DeviceId) const override { return 0; }
+    uint64_t device_memory(DeviceId) const override { return 0; }
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     typedef std::unordered_map<std::string, cl_kernel> KernelMap;
