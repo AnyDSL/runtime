@@ -10,14 +10,14 @@ def patch_llvmir(rttype):
             for line in f:
                 if rttype=="amdgpu" or rttype=="nvvm" or rttype=="ll":
                     # patch to opaque identity functions
-                    m = re.match(r'^declare (.*) @(magic_.*_id)\((.*)\) (?:local_)?unnamed_addr(?: #[0-9]+)?\n$', line)
+                    m = re.match(r'^declare (?:(?P<cc>\w+)\s+)?(?P<rettype>\S+)\s+@(?P<fname>magic_.*_id)\((?P<argtype>.*)\)(?: local_unnamed_addr)?(?: unnamed_addr)?(?: #[0-9]+)?\n$', line)
                     if m is not None:
-                        ty1, fname, ty2 = m.groups()
-                        assert ty1 == ty2, "Argument and return types of magic IDs must match"
+                        cc, rettype, fname, argtype =  m.group('cc'), m.group('rettype'), m.group('fname'), m.group('argtype')
+                        assert rettype == argtype, "Argument and return types of magic IDs must match"
                         print("Patching magic ID {0} in {1}".format(fname, filename))
                         # emit definition instead
-                        result.append('define {0} @{1}({0} %name) {{\n'.format(ty1, fname))
-                        result.append('  ret {0} %name\n'.format(ty1))
+                        result.append('define {0}{1} @{2}({1} %name) {{\n'.format('%s ' % cc if cc else '', rettype, fname))
+                        result.append('  ret {0} %name\n'.format(rettype))
                         result.append('}\n')
                         continue
 
