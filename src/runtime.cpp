@@ -78,6 +78,16 @@ void Runtime::release_host(PlatformId plat, DeviceId dev, void* ptr) {
     platforms_[plat]->release_host(dev, ptr);
 }
 
+void Runtime::map_buffer_svm(PlatformId plat, DeviceId dev, void* ptr, int64_t size) {
+    check_device(plat, dev);
+    platforms_[plat]->map_buffer_svm(dev, ptr, size);
+}
+
+void Runtime::unmap_buffer_svm(PlatformId plat, DeviceId dev, void* ptr) {
+    check_device(plat, dev);
+    platforms_[plat]->unmap_buffer_svm(dev, ptr);
+}
+
 void Runtime::copy(
     PlatformId plat_src, DeviceId dev_src, const void* src, int64_t offset_src,
     PlatformId plat_dst, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) {

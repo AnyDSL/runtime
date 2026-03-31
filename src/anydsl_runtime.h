@@ -33,6 +33,9 @@ AnyDSL_runtime_API void* anydsl_get_device_ptr(int32_t, void*);
 AnyDSL_runtime_API void  anydsl_release(int32_t, void*);
 AnyDSL_runtime_API void  anydsl_release_host(int32_t, void*);
 
+AnyDSL_runtime_API void anydsl_map_buffer_svm(int32_t, void*, int64_t size);
+AnyDSL_runtime_API void anydsl_unmap_buffer_svm(int32_t, void*);
+
 AnyDSL_runtime_API void anydsl_copy(int32_t, const void*, int64_t, int32_t, void*, int64_t, int64_t);
 
 AnyDSL_runtime_API void anydsl_launch_kernel(

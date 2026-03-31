@@ -31,12 +31,16 @@ protected:
     void release(DeviceId dev, void* ptr) override;
     void release_host(DeviceId, void*) override { command_unavailable("release_host"); }
 
+    void map_buffer_svm(DeviceId, void*, int64_t) override;
+    void unmap_buffer_svm(DeviceId, void*) override;
+
     void launch_kernel(DeviceId dev, const LaunchParams& launch_params) override;
     void synchronize(DeviceId dev) override;
 
     void copy(DeviceId dev_src, const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_from_host(const void* src, int64_t offset_src, DeviceId dev_dst, void* dst, int64_t offset_dst, int64_t size) override;
     void copy_to_host(DeviceId dev_src, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override;
+    void copy_svm_device(DeviceId dev, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
     void copy_svm(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
     void dynamic_profile(DeviceId dev, const std::string& filename);
 
@@ -58,6 +62,7 @@ protected:
         cl_command_queue queue = nullptr;
         cl_context ctx = nullptr;
         #ifdef CL_VERSION_2_0
+        bool use_svm = false;
         cl_device_svm_capabilities svm_caps;
         #endif
         bool is_intel_fpga = false;

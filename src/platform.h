@@ -37,6 +37,10 @@ public:
     virtual void release(DeviceId dev, void* ptr) = 0;
     /// Releases page-locked host memory for a device on this platform.
     virtual void release_host(DeviceId dev, void* ptr) = 0;
+    /// Map a coarse-grained SVM buffer for host access
+    virtual void map_buffer_svm(DeviceId dev, void* ptr, int64_t size) { command_unavailable("map_buffer_svm"); };
+    /// Unmap a coarse-grained SVM buffer for device access
+    virtual void unmap_buffer_svm(DeviceId dev, void* ptr) { command_unavailable("unmap_buffer_svm"); };
 
     /// Launches a kernel with the given block/grid size and arguments.
     virtual void launch_kernel(DeviceId dev, const LaunchParams& launch_params) = 0;
