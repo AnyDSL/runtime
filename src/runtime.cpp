@@ -117,6 +117,36 @@ void Runtime::synchronize(PlatformId plat, DeviceId dev) {
     platforms_[plat]->synchronize(dev);
 }
 
+uint64_t Runtime::create_event(PlatformId plat, DeviceId dev) {
+    check_device(plat, dev);
+    return platforms_[plat]->create_event(dev);
+}
+
+void Runtime::destroy_event(PlatformId plat, DeviceId dev, uint64_t event) {
+    check_device(plat, dev);
+    platforms_[plat]->destroy_event(dev, event);
+}
+
+void Runtime::record_event(PlatformId plat, DeviceId dev, uint64_t event) {
+    check_device(plat, dev);
+    platforms_[plat]->record_event(dev, event);
+}
+
+bool Runtime::check_event(PlatformId plat, DeviceId dev, uint64_t event) {
+    check_device(plat, dev);
+    return platforms_[plat]->check_event(dev, event);
+}
+
+uint64_t Runtime::query_us_event(PlatformId plat, DeviceId dev, uint64_t event_start, uint64_t event_end) {
+    check_device(plat, dev);
+    return platforms_[plat]->query_us_event(dev, event_start, event_end);
+}
+
+void Runtime::sync_event(PlatformId plat, DeviceId dev, uint64_t event) {
+    check_device(plat, dev);
+    platforms_[plat]->sync_event(dev, event);
+}
+
 #ifdef _WIN32
 #include <direct.h>
 #define PATH_DIR_SEPARATOR '\\'

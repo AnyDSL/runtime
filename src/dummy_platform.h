@@ -34,6 +34,13 @@ protected:
     bool device_check_feature_support(DeviceId, const char*) const override { return false; }
 
     std::string name_;
+
+    EventId create_event(DeviceId) override { platform_error(); return 0; }
+    void destroy_event(DeviceId, EventId) override { platform_error(); }
+    void record_event(DeviceId, EventId) override { platform_error(); }
+    bool check_event(DeviceId, EventId) override { platform_error(); return false; }
+    uint64_t query_us_event(DeviceId, EventId, EventId) override { platform_error(); return 0; }
+    void sync_event(DeviceId, EventId) override { platform_error(); }
 };
 
 #endif

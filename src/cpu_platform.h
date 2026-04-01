@@ -67,7 +67,14 @@ protected:
     size_t dev_count() const override { return 1; }
     std::string name() const override { return "CPU"; }
     const char* device_name(DeviceId) const override { return device_name_.c_str(); }
-    bool device_check_feature_support(DeviceId, const char*) const override { return false; }
+    bool device_check_feature_support(DeviceId, const char*) const override;
+
+    EventId create_event(DeviceId dev) override;
+    void destroy_event(DeviceId dev, EventId event) override;
+    void record_event(DeviceId dev, EventId event) override;
+    bool check_event(DeviceId dev, EventId event) override;
+    uint64_t query_us_event(DeviceId dev, EventId event_start, EventId event_end) override;
+    void sync_event(DeviceId dev, EventId event) override;
 };
 
 #endif

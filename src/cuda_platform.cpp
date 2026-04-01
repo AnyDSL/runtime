@@ -686,9 +686,57 @@ const char* CudaPlatform::device_name(DeviceId dev) const {
 bool CudaPlatform::device_check_feature_support(DeviceId dev, const char* feature) const {
     if (feature == "ITS"sv)
         return static_cast<int>(devices_[dev].compute_capability) >= 70;
+    if (feature == "event"sv)
+        return true;
     return false;
+}
+
+EventId CudaPlatform::create_event(DeviceId) {
+    CUevent event;
+    CHECK_CUDA(cuEventCreate(&event, CU_EVENT_DEFAULT), "cuEventCreate()");
+    return (EventId)reinterpret_cast<uintptr_t>(event);
+}
+
+void CudaPlatform::destroy_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CUevent>((uintptr_t)event);
+    CHECK_CUDA(cuEventDestroy(eventPtr), "cuEventDestroy");
+}
+
+void CudaPlatform::record_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CUevent>((uintptr_t)event);
+    CHECK_CUDA(cuEventRecord(eventPtr, 0), "cuEventRecord");
+}
+
+bool CudaPlatform::check_event(DeviceId, EventId event) {
+    auto eventPtr = reinterpret_cast<CUevent>((uintptr_t)event);
+
+    CUresult err = cuEventQuery(eventPtr);
+    if (err == CUDA_ERROR_NOT_READY)
+        return false;
+
+    CHECK_CUDA(err, "cuEventQuery");
+    return err == CUDA_SUCCESS;
+}
+
+uint64_t CudaPlatform::query_us_event(DeviceId, EventId event_start, EventId event_end) {
+    auto eventStartPtr = reinterpret_cast<CUevent>((uintptr_t)event_start);
+    auto eventEndPtr = reinterpret_cast<CUevent>((uintptr_t)event_end);
+
+    float milliseconds;
+    CUresult err = cuEventElapsedTime(&milliseconds, eventStartPtr, eventEndPtr);
+    if (err == CUDA_ERROR_NOT_READY)
+        return UINT64_MAX;
+
+    CHECK_CUDA(err, "cuEventElapsedTime");
+    return static_cast<uint64_t>(milliseconds * 1000);
+}
+
+void CudaPlatform::sync_event(DeviceId, EventId event){
+    auto eventPtr = reinterpret_cast<CUevent>((uintptr_t)event);
+    CHECK_CUDA(cuEventSynchronize(eventPtr), "cuEventSynchronize");
 }
 
 void register_cuda_platform(Runtime* runtime) {
     runtime->register_platform<CudaPlatform>();
 }
+

@@ -17,6 +17,8 @@ enum DeviceId   : uint32_t {};
 enum PlatformId : uint32_t {};
 enum class ProfileLevel : uint8_t { None = 0, Full, Fpga_dynamic };
 
+using EventId = uint64_t;
+
 class Platform;
 
 enum class KernelArgType : uint8_t { Val = 0, Ptr, Struct };
@@ -101,6 +103,13 @@ public:
 
     static void* aligned_malloc(size_t, size_t);
     static void aligned_free(void*);
+
+    EventId create_event(PlatformId plat, DeviceId dev);
+    void destroy_event(PlatformId plat, DeviceId dev, EventId event);
+    void record_event(PlatformId plat, DeviceId dev, EventId event);
+    bool check_event(PlatformId plat, DeviceId dev, EventId event);
+    uint64_t query_us_event(PlatformId plat, DeviceId dev, EventId event_start, EventId event_end);
+    void sync_event(PlatformId plat, DeviceId dev, EventId event);
 
 private:
     void check_device(PlatformId, DeviceId) const;
