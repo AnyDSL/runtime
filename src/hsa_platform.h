@@ -33,10 +33,10 @@ protected:
     void launch_kernel(DeviceId dev, const LaunchParams& launch_params) override;
     void synchronize(DeviceId dev) override;
 
-    void copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size);
-    void copy(DeviceId, const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) override { copy(src, offset_src, dst, offset_dst, size); }
-    void copy_from_host(const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size) override { copy(src, offset_src, dst, offset_dst, size); }
-    void copy_to_host(DeviceId, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size) override { copy(src, offset_src, dst, offset_dst, size); }
+    void copy(const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async);
+    void copy(DeviceId, const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size, bool hint_async) override { copy(src, offset_src, dst, offset_dst, size, hint_async); }
+    void copy_from_host(const void* src, int64_t offset_src, DeviceId, void* dst, int64_t offset_dst, int64_t size, bool hint_async) override { copy(src, offset_src, dst, offset_dst, size, hint_async); }
+    void copy_to_host(DeviceId, const void* src, int64_t offset_src, void* dst, int64_t offset_dst, int64_t size, bool hint_async) override { copy(src, offset_src, dst, offset_dst, size, hint_async); }
 
     size_t dev_count() const override { return devices_.size(); }
     std::string name() const override { return "HSA"; }
