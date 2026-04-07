@@ -1,1 +1,4 @@
 #[import(cc = "device", name = "spirv.builtin")] fn spirv_get_builtin[T](i32) -> T;
+
+#[import(cc = "device", name = "spirv.global")] fn spirv_make_global_variable[T]() -> T;
+#[import(cc = "device", name = "spirv.decorate")] fn spirv_decorate_literal[T](T, u32, u32) -> ();

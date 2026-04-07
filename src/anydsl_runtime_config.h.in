@@ -11,6 +11,8 @@
 #cmakedefine AnyDSL_runtime_HAS_LEVELZERO_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_HSA_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_PAL_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_SHADY_SUPPORT
+#cmakedefine AnyDSL_runtime_HAS_Vulkan_SUPPORT
 #cmakedefine AnyDSL_runtime_HAS_TBB_SUPPORT
 
 

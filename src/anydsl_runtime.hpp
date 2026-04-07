@@ -13,7 +13,8 @@ enum class Platform : int32_t {
     OpenCL = ANYDSL_OPENCL,
     HSA = ANYDSL_HSA,
     PAL = ANYDSL_PAL,
-    LevelZero = ANYDSL_LEVELZERO
+    LevelZero = ANYDSL_LEVELZERO,
+    Vulkan = ANYDSL_Vulkan
 };
 
 struct Device {

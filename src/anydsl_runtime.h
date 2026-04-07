@@ -18,7 +18,8 @@ enum {
     ANYDSL_OPENCL = 2,
     ANYDSL_HSA = 3,
     ANYDSL_PAL = 4,
-    ANYDSL_LEVELZERO = 5
+    ANYDSL_LEVELZERO = 5,
+    ANYDSL_Vulkan = 6
 };
 
 AnyDSL_runtime_API void anydsl_info(void);

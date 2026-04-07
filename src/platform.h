@@ -14,6 +14,7 @@ void register_opencl_platform(Runtime*);
 void register_hsa_platform(Runtime*);
 void register_pal_platform(Runtime*);
 void register_levelzero_platform(Runtime*);
+void register_vulkan_platform(Runtime*);
 
 /// A runtime platform. Exposes a set of devices, a copy function,
 /// and functions to allocate and release memory.
