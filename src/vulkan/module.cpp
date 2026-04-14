@@ -3,21 +3,26 @@
 extern "C" {
 #include "shady/jit/vulkan.h"
 #include "shady/be/spirv.h"
+#include "shady/driver.h"
+#include "shady/ir/module.h"
 }
 
 VulkanPlatform::Module::Module(VulkanPlatform::Device& device, std::string file_name, std::string kernel_name) : device_(device), entry_point(kernel_name) {
     TargetConfig specialized_target = device_.target_config_;
-    specialized_target.execution_model = ShdExecutionModelCompute;
-    specialized_target.entry_point = kernel_name.c_str();
 
     std::string program_src = device_.platform_.runtime_->load_file(file_name);
     shd_driver_load_source_file(&device_.platform_.compiler_config_, &device_.target_config_, SrcSPIRV, program_src.size(), program_src.c_str(), "test", &shady_module_);
     // TODO: this will be removed in a future version of Shady
     CompilerConfig specialized_config = device_.platform_.compiler_config_;
-    specialized_config.dynamic_scheduling = false;
+    //specialized_config.dynamic_scheduling = false;
+    ShaderLoweringConfig lowering_config = shd_default_shader_target_config();
+    const Node* entry_pt = shd_module_get_exported(shady_module_, kernel_name.c_str());
+    assert(entry_pt);
+    auto exec_model_info = shd_get_execution_model_info_from_entry_point(entry_pt);
+    lowering_config.exec_model_info = &exec_model_info;
     SPVBackendConfig backend_config;
     shd_jit_vk_get_compiler_config_for_device(&device_.shady_caps_, &device_.target_config_, &backend_config, &specialized_config);
-    shd_jit_vk_compile_module(&shady_module_, &specialized_target, &backend_config, &specialized_config);
+    shd_jit_vk_compile_module(&shady_module_, &specialized_target, &lowering_config, &backend_config, &specialized_config);
     size_t spirv_size;
     char* spirv_bytes;
     shd_emit_spirv(&specialized_config, &backend_config, shady_module_, &spirv_size, &spirv_bytes);
