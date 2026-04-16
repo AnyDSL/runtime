@@ -5,6 +5,7 @@ extern "C" {
 #include "shady/be/spirv.h"
 #include "shady/driver.h"
 #include "shady/ir/module.h"
+#include "shady/ir/annotation.h"
 }
 
 VulkanPlatform::Module::Module(VulkanPlatform::Device& device, std::string file_name, std::string kernel_name) : device_(device), entry_point(kernel_name) {
@@ -22,6 +23,13 @@ VulkanPlatform::Module::Module(VulkanPlatform::Device& device, std::string file_
     lowering_config.exec_model_info = &exec_model_info;
     SPVBackendConfig backend_config;
     shd_jit_vk_get_compiler_config_for_device(&device_.shady_caps_, &device_.target_config_, &backend_config, &specialized_config);
+    auto decls = shd_module_get_all_exported(shady_module_);
+    for (size_t i = 0; i < decls.count; i++) {
+        auto decl = decls.nodes[i];
+        if (decl == entry_pt || !shd_lookup_annotation(decl, "EntryPoint"))
+            continue;
+        shd_module_remove_export(shady_module_, decl);
+    }
     shd_jit_vk_compile_module(&shady_module_, &specialized_target, &lowering_config, &backend_config, &specialized_config);
     size_t spirv_size;
     char* spirv_bytes;
