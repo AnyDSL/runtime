@@ -5,6 +5,7 @@ static std::string desired_device_extensions[] {
     "VK_KHR_buffer_device_address",
     "VK_EXT_external_memory_host",
     "VK_KHR_shader_non_semantic_info",
+    "VK_EXT_mesh_shader",
 };
 
 VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physical_device, size_t device_id)
@@ -95,9 +96,14 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
         //.variablePointersStorageBuffer = true,
         //.variablePointers = true,
     };
+    auto mesh_shader_features = VkPhysicalDeviceMeshShaderFeaturesEXT {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
+        .pNext = &vk11_features,
+        .meshShader = true,
+    };
     auto enabled_features = VkPhysicalDeviceFeatures2 {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = &vk11_features,
+        .pNext = &mesh_shader_features,
         .features = {
             //.vertexPipelineStoresAndAtomics = true,
             //.fragmentStoresAndAtomics = true,
