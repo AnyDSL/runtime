@@ -10,3 +10,6 @@
 
 #[import(cc = "device", name = "spirv.decorate_type_member")] fn spirv_decorate_type_member_literal[T](T, u32, u32, u32) -> ();
 #[import(cc = "device", name = "spirv.decorate_type_member")] fn spirv_decorate_type_member[T](T, u32, u32) -> ();
+
+#[import(cc = "device", name = "spirv.extension")] fn spirv_extension(&[u8]) -> ();
+#[import(cc = "device", name = "spirv.capability")] fn spirv_capability(u32) -> ();
