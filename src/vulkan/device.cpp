@@ -30,6 +30,9 @@ VulkanPlatform::Device::Device(VulkanPlatform& platform, VkPhysicalDevice physic
     //    can_import_host_memory = true;
     //}
 
+
+    properties_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    properties_.pNext = nullptr;
     vkGetPhysicalDeviceProperties2(physical_device, &properties_);
     auto& device_properties = properties_.properties;
 

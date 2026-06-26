@@ -124,9 +124,7 @@ public:
 
         ExtensionFns extension_fns;
 
-        VkPhysicalDeviceProperties2 properties_ = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-        };
+        VkPhysicalDeviceProperties2 properties_;
 
         bool can_import_host_memory_ = false;
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_properties_ {
