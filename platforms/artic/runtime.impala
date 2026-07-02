@@ -31,6 +31,18 @@
 #[import(cc = "C", name = "anydsl_print_string")] fn print_string(_: &[u8]) -> ();
 #[import(cc = "C", name = "anydsl_print_flush")]  fn print_flush() -> ();
 
+#[import(cc = "device", name = "printf")] fn print_fmt_10[A, B, C, D, E, F, G, H, I, J](_: &[u8], _: A, _: B, _: C, _: D, _: E, _: F, _: G, _: H, _: I, _: J) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_9[A, B, C, D, E, F, G, H, I](_: &[u8], _: A, _: B, _: C, _: D, _: E, _: F, _: G, _: H, _: I) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_8[A, B, C, D, E, F, G, H](_: &[u8], _: A, _: B, _: C, _: D, _: E, _: F, _: G, _: H) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_7[A, B, C, D, E, F, G](_: &[u8], _: A, _: B, _: C, _: D, _: E, _: F, _: G) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_6[A, B, C, D, E, F](_: &[u8], _: A, _: B, _: C, _: D, _: E, _: F) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_5[A, B, C, D, E](_: &[u8], _: A, _: B, _: C, _: D, _: E) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_4[A, B, C, D](_: &[u8], _: A, _: B, _: C, _: D) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_3[A, B, C](_: &[u8], _: A, _: B, _: C) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_2[A, B](_: &[u8], _: A, _: B) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_1[A](_: &[u8], _: A) -> ();
+#[import(cc = "device", name = "printf")] fn print_fmt_0(_: &[u8]) -> ();
+
 #[import(cc = "C", name = "anydsl_vulkan_load_module")] fn runtime_load_offloaded(_device: i32, _filename: &[u8], _name: &[u8]) -> u64;
 //#[import(cc = "C", name = "anydsl_vulkan_load_module")] fn runtime_load_offloaded(_device: i32, _filename: &[u8], _name: &[u8], _size: &mut u64) -> &[u8];
 
