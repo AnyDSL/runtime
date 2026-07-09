@@ -191,7 +191,7 @@ endforeach()
 function(anydsl_runtime_wrap outfiles)
     cmake_parse_arguments(
         "PARGS"
-        "EMIT_C"
+        "EMIT_C;NO_PLATFORM_FILES"
         "FRONTEND;INTERFACE;NAME"
         "ARTIC_FLAGS;IMPALA_FLAGS;CLANG_FLAGS;HLS_FLAGS;FILES" ${ARGN})
     if(NOT "${PARGS_UNPARSED_ARGUMENTS}" STREQUAL "")
@@ -279,6 +279,10 @@ function(anydsl_runtime_wrap outfiles)
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/intrinsics_thorin.impala
         ${AnyDSL_runtime_ROOT_DIR}/platforms/${_frontend}/runtime.impala
         ${_additional_platform_files})
+
+    if (PARGS_NO_PLATFORM_FILES)
+        unset(_frontend_platform_files)
+    endif()
 
     if(NOT MSVC)
         list(APPEND _clang_flags -fPIE)
