@@ -1,0 +1,14 @@
+mod builtin {
+    struct AddOp[S, T]   { add : fn(S, T) -> T }
+    struct SubOp[S, T]   { sub : fn(S, T) -> T }
+    struct MulOp[S, T]   { mul : fn(S, T) -> T }
+    struct DivOp[S, T]   { div : fn(S, T) -> T }
+    struct RemOp[S, T]   { rem : fn(S, T) -> T }
+    struct AndOp[S, T]   { and : fn(S, T) -> T }
+    struct OrOp[S, T]    { or  : fn(S, T) -> T }
+    struct XorOp[S, T]   { xor : fn(S, T) -> T }
+    struct LShftOp[S, T] { shl : fn(S, T) -> T }
+    struct RShftOp[S, T] { shr : fn(S, T) -> T }
+
+    struct CastOp[S, T] { cast : fn(S) -> T }
+}

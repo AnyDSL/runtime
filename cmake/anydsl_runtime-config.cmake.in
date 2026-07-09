@@ -215,6 +215,7 @@ function(anydsl_runtime_wrap outfiles)
         set(_frontend_bin ${Artic_BIN})
         list(APPEND _additional_platform_files ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_math.impala
                                                ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_wmma.impala
+                                               ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_overloads.impala
                                                ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_spirv.impala
                                                ${AnyDSL_runtime_ROOT_DIR}/platforms/artic/intrinsics_levelzero.impala)
     endif()
