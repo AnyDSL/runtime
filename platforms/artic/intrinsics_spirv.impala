@@ -14,3 +14,5 @@
 
 #[import(cc = "device", name = "spirv.extension")] fn spirv_extension(&[u8]) -> ();
 #[import(cc = "device", name = "spirv.capability")] fn spirv_capability(u32) -> ();
+
+fn @spirv_demote() = spirv_operation[(), ()](5380, ());
