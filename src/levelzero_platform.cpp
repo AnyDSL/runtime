@@ -144,7 +144,11 @@ LevelZeroPlatform::LevelZeroPlatform(Runtime* runtime)
     : Platform(runtime)
 {
     // limit to GPUs since we do use VPUs yet
-    WRAP_LEVEL_ZERO(zeInit(ZE_INIT_FLAG_GPU_ONLY));
+    ze_result_t init_success = zeInit(ZE_INIT_FLAG_GPU_ONLY);
+    if (init_success != ZE_RESULT_SUCCESS) {
+        info("oneAPI Level Zero init failed: %", get_ze_error_code_str(init_success));
+        return;
+    }
 
     uint32_t driverCount = 0;
     WRAP_LEVEL_ZERO(zeDriverGet(&driverCount, nullptr));
