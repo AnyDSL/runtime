@@ -41,3 +41,5 @@
 fn @pipeline(body: fn(i32) -> ()) = @|initiation_interval: i32, lower: i32, upper: i32| thorin_pipeline(initiation_interval, lower, upper, body);
 fn @parallel(body: fn(i32) -> ()) = @|num_threads: i32, lower: i32, upper: i32| thorin_parallel(num_threads, lower, upper, body);
 fn @spawn(body: fn() -> ()) = @|| thorin_spawn(body);
+
+#[import(cc="device", name="gpu_set_subgroup_size")] fn gpu_set_subgroup_size(i32) -> ();
