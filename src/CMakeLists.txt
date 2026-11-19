@@ -43,6 +43,17 @@ if(CUDAToolkit_FOUND)
 
     target_link_libraries(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ${AnyDSL_runtime_TARGET_NAME}_base CUDA::cuda_driver CUDA::nvrtc ${CUDAToolkit_NVVM_LIBRARY})
 
+    find_library(CUDA_cudadevrt_PATH
+        NAMES cudadevrt
+        HINTS "${CUDAToolkit_LIBRARY_DIR}"
+        NO_DEFAULT_PATH
+    )
+    mark_as_advanced(CUDA_cudadevrt_PATH)
+
+    if (CUDA_cudadevrt_PATH)
+        target_compile_definitions(${AnyDSL_runtime_TARGET_NAME}_cuda PRIVATE ANYDSL_CUDA_LIBCUDADEVRT_PATH="${CUDA_cudadevrt_PATH}")
+    endif()
+
     if ((${CUDAToolkit_VERSION} VERSION_GREATER_EQUAL "11.1") AND NOT MSVC)
         # we cannot link against lib nvptxcompiler_static using MSVC due to a mixup of msvcrt variants
         if (TARGET CUDA::nvptxcompiler_static)

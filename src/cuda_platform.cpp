@@ -602,8 +602,6 @@ std::string CudaPlatform::compile_cuda(DeviceId dev, const std::string& filename
     return ptx;
 }
 
-#define LIBCUDADEVRT_PATH "/opt/cuda/targets/x86_64-linux/lib/libcudadevrt.a"
-
 CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, const std::string& ptx_string) const {
     CUmodule mod;
 
@@ -624,11 +622,83 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     int num_jit_options = std::size(jit_option_values);
 
 #ifdef CUDA_USE_NVPTXCOMPILER_API
-    //XXX: This vibe-coded mess was the result of letting Claude implement the pass through the cuda linker.
-    //This skipps nvPTX entirely. Clearly, that was not the intention here, so this requires some cleanup.
-    //I suspect there is a way to lower dynamic parallelism to intrinsics that do not require libcudadevrt.
-    //As it stands, this is the easiest way to get to a working prototype.
-    //
+    debug("Creating module from PTX '%' on CUDA device % using nvPTXCompiler", filename, dev);
+
+    nvPTXCompilerHandle handle;
+    nvPTXCompileResult err = nvPTXCompilerCreate(&handle, ptx_string.length(), const_cast<char*>(ptx_string.c_str()));
+    CHECK_NVPTXCOMPILER(err, "nvPTXCompilerCreate()");
+
+    std::string sm_arch("-arch=sm_" + std::to_string(devices_[dev].compute_capability));
+    std::string opt_str("-O" + std::to_string(opt_level));
+    const char* ptxcompiler_options[] = {
+        sm_arch.c_str(),
+        opt_str.c_str(),
+        "--compile-only",
+    };
+    int num_ptxcompiler_options = std::size(ptxcompiler_options);
+
+    err = nvPTXCompilerCompile(handle, num_ptxcompiler_options, ptxcompiler_options);
+    size_t info_log_size;
+    size_t error_log_size;
+    nvPTXCompilerGetInfoLogSize(handle, &info_log_size);
+    nvPTXCompilerGetErrorLogSize(handle, &error_log_size);
+    if (info_log_size) {
+        std::string info_log(info_log_size, '\0');
+        nvPTXCompilerGetInfoLog(handle, &info_log[0]);
+        info("Compilation info: %", info_log);
+    }
+    if (error_log_size) {
+        std::string error_log(error_log_size, '\0');
+        nvPTXCompilerGetErrorLog(handle, &error_log[0]);
+        info("Compilation error: %", error_log);
+    }
+    CHECK_NVPTXCOMPILER(err, "nvPTXCompilerCompile()");
+
+    size_t binary_size;
+    CHECK_NVPTXCOMPILER(nvPTXCompilerGetCompiledProgramSize(handle, &binary_size), "nvPTXCompilerGetCompiledProgramSize()");
+
+    std::string binary(binary_size, '\0');
+    CHECK_NVPTXCOMPILER(nvPTXCompilerGetCompiledProgram(handle, &binary[0]), "nvPTXCompilerGetCompiledProgram()");
+
+#ifdef ANYDSL_CUDA_LIBCUDADEVRT_PATH
+    /* Link against CUDA's libcudadevrt */
+    debug("Linking Module '%' on CUDA device % to library '%'", filename, dev, ANYDSL_CUDA_LIBCUDADEVRT_PATH);
+
+    CUlinkState linker;
+    CHECK_CUDA(cuLinkCreate(num_jit_options, jit_options, jit_option_values, &linker), "cuLinkCreate()");
+    CHECK_CUDA(cuLinkAddData(linker, CU_JIT_INPUT_CUBIN,
+        const_cast<char*>(binary.c_str()), binary_size,
+        "kernel.ptx", 0, nullptr, nullptr), "cuLinkAddData()");
+    CHECK_CUDA(cuLinkAddFile(linker, CU_JIT_INPUT_LIBRARY, ANYDSL_CUDA_LIBCUDADEVRT_PATH, 0, nullptr, nullptr), "cuLinkAddFile(libcudadevrt)");
+
+    void* final_cubin;
+    size_t final_cubin_size;
+    CHECK_CUDA(cuLinkComplete(linker, &final_cubin, &final_cubin_size), "cuLinkComplete()");
+
+    if (info_log_buffer[0] != '\0')
+        info("Linking info: %", info_log_buffer);
+    if (error_log_buffer[0] != '\0')
+        info("Linking error: %", error_log_buffer);
+    auto module_string = final_cubin;
+    auto module_string_size = final_cubin_size;
+#else
+    auto module_string = binary.c_str();
+    auto module_string_size = binary_size;
+#endif
+
+    if (dump_binaries) {
+        auto cubin_name = filename + ".sm_" + std::to_string(devices_[dev].compute_capability) + ".cubin";
+        runtime_->store_file(cubin_name, reinterpret_cast<const std::byte*>(module_string), module_string_size);
+    }
+
+    CHECK_CUDA(cuModuleLoadDataEx(&mod, module_string, num_jit_options, jit_options, jit_option_values), "cuModuleLoadDataEx()");
+    CHECK_NVPTXCOMPILER(nvPTXCompilerDestroy(&handle), "nvPTXCompilerDestroy()");
+#ifdef ANYDSL_CUDA_LIBCUDADEVRT_PATH
+    CHECK_CUDA(cuLinkDestroy(linker), "cuLinkDestroy()");
+#endif
+#else
+    /* Instead of directly loading the PTX using cuModuelLoadDataEx, we pass it through the cudaLinker to link against libcudadevrt.
+     * cuLinkAddData also compiles PTX to cubin. */
     debug("Creating module from PTX '%' on CUDA device % using CUDA driver linker", filename, dev);
 
     CUlinkState linker;
@@ -637,7 +707,9 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     CHECK_CUDA(cuLinkAddData(linker, CU_JIT_INPUT_PTX,
         const_cast<char*>(ptx_string.c_str()), ptx_string.size(),
         "kernel.ptx", 0, nullptr, nullptr), "cuLinkAddData()");
-    CHECK_CUDA(cuLinkAddFile(linker, CU_JIT_INPUT_LIBRARY, LIBCUDADEVRT_PATH, 0, nullptr, nullptr), "cuLinkAddFile(libcudadevrt)");
+#ifdef ANYDSL_CUDA_LIBCUDADEVRT_PATH
+    CHECK_CUDA(cuLinkAddFile(linker, CU_JIT_INPUT_LIBRARY, ANYDSL_CUDA_LIBCUDADEVRT_PATH, 0, nullptr, nullptr), "cuLinkAddFile(libcudadevrt)");
+#endif
 
     void* final_cubin;
     size_t final_cubin_size;
@@ -648,16 +720,13 @@ CUmodule CudaPlatform::create_module(DeviceId dev, const std::string& filename, 
     if (error_log_buffer[0] != '\0')
         info("Linking error: %", error_log_buffer);
 
-    CHECK_CUDA(cuModuleLoadData(&mod, final_cubin), "cuModuleLoadData()");
-    CHECK_CUDA(cuLinkDestroy(linker), "cuLinkDestroy()");
-#else
-    debug("Creating module from PTX '%' on CUDA device % using CUDA driver PTX compiler", filename, dev);
-    CUresult err = cuModuleLoadDataEx(&mod, ptx_string.c_str(), num_jit_options, jit_options, jit_option_values);
+    CUresult err = cuModuleLoadDataEx(&mod, final_cubin, num_jit_options, jit_options, jit_option_values);
     if (info_log_buffer[0] != '\0')
         info("Compilation info: %", info_log_buffer);
     if (error_log_buffer[0] != '\0')
         info("Compilation error: %", error_log_buffer);
-    CHECK_CUDA(err, "cuModuleLoadDataEx()");
+    CHECK_CUDA(err, "cuModuleLoadDataEx()");*/
+    CHECK_CUDA(cuLinkDestroy(linker), "cuLinkDestroy()");
 #endif
 
     return mod;
