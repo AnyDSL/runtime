@@ -461,12 +461,14 @@ ze_kernel_handle_t LevelZeroPlatform::load_kernel(DeviceId dev, const std::strin
         auto src_path = canonical;
         std::string mod_src = runtime_->load_file(src_path.string());
 
+        std::string build_flags = "-ze-opt-large-register-file";
+
         ze_module_desc_t mod_desc = {};
         mod_desc.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
         mod_desc.pNext = nullptr;
         mod_desc.format = ZE_MODULE_FORMAT_IL_SPIRV;
         mod_desc.inputSize = mod_src.length();
-        mod_desc.pBuildFlags = nullptr;
+        mod_desc.pBuildFlags = build_flags.c_str();
         mod_desc.pConstants = nullptr;
         mod_desc.pInputModule = reinterpret_cast<const uint8_t*>(mod_src.c_str());
 
@@ -480,7 +482,7 @@ ze_kernel_handle_t LevelZeroPlatform::load_kernel(DeviceId dev, const std::strin
                 WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, nullptr));
                 buildlog.resize(blSize);
                 WRAP_LEVEL_ZERO(zeModuleBuildLogGetString(hBuildLog, &blSize, buildlog.data()));
-                debug("Build log of Level Zero module %\n%", filename, buildlog);
+                error("Build log of Level Zero module %\n%", filename, buildlog);
             }
         );
         WRAP_LEVEL_ZERO(zeModuleBuildLogDestroy(hBuildLog));
